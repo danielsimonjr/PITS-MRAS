@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 2 — Neural Network Models** (`docs/ROADMAP.md` Phase 2): real torch
+  implementations replacing the model stubs:
+  - `models/attention.py` — `PhysicsInformedAttention`: three-headed attention
+    (temporal scaled-dot-product, physical, error-driven cosine) fused by a learned
+    3-way softmax gate; `attention_regularization_loss`.
+  - `models/decoders.py` — `HamiltonianNet` (Softplus → H>0), `DissipationNet`
+    (Cholesky → R=LᵀL⪰0), `PortHamiltonianDecoder` (f̂=J∇H − R·q̇ + B·u + W_corr·c_t,
+    enforcing the §3.1 identities; ∇H via autograd `create_graph=True`).
+  - `models/critic.py` — `QuadraticCritic`: V̂(e)=eᵀP̂e with P̂=LᵀL+εI; `costate`
+    returns λ=2P̂e (Identity 2: costate = critic gradient = ∇V̂).
+  - `models/pitnn.py` — `PITNN`: LSTM encoder → physics-informed attention →
+    port-Hamiltonian decoder; `forward(...)` returns `f`, `h`, `context`, `alpha`,
+    `h_enc` plus monitoring keys `f_hat`, `h_val`, `p_diss`, `energy_loss`,
+    `attn_reg_loss`. (The critic is standalone in `critic.py`; it is wired into the
+    control loop by the Phase-4 controller, per spec §7.3 — PITNN does not embed it.)
+  - Tests added to `tests/test_models.py` (attention shapes / alpha-sum, decoder
+    shapes + backprop, critic value/costate/positivity, PITNN forward dict);
+    un-skipped the three model gate tests (`test_dissipation_matrix_psd`,
+    `test_J_skew_symmetric`, `test_hamiltonian_positive`) and, in
+    `tests/test_identity_costate.py`, `test_costate_equals_grad_V`.
+  - Acceptance gate (`pytest tests/test_models.py`) passes (12/12). Independently
+    reviewed (APPROVE_WITH_NITS): the out-of-place decoder assembly is autograd-safe
+    and numerically equivalent to the spec; `QuadraticCritic.costate` matches autograd
+    ∇V̂ to 0.0.
+
 - **Phase 1 — Foundation Layer** (`docs/ROADMAP.md` Phase 1): real implementations
   replacing the stubs in `src/pits_mras/`:
   - `config.py` — six dataclasses (`NetworkConfig`, `PhysicsConfig`, `MRASConfig`,
@@ -71,8 +96,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Status:** Phase 1 (Foundation Layer) is implemented and tested; Phases 2–9
   (models, losses, controllers, training, inference, examples) remain documented
   stubs raising `NotImplementedError`. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 1: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 60 passed, 14 skipped (later-phase tests); `import pits_mras` → 0.1.0.
+- Verified gates after Phase 2: `flake8 src tests` → 0; `mypy src` → 0;
+  `pytest` → 73 passed, 10 skipped (later-phase tests); `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
   Phase-1 runtime deps (CPU-only torch) before running the gates.
