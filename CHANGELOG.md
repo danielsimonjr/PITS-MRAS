@@ -9,8 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 9 — CI/CD finalization** (`docs/ROADMAP.md` Phase 9 / §12): the project
+  is now fully built out — all 9 ROADMAP phases complete.
+  - `.github/workflows/ci.yml` — finalized: the lint step now covers `examples`
+    (`flake8 src tests examples`) and the test step enforces the coverage gate in CI
+    (`pytest --cov=pits_mras --cov-fail-under=60`). Matrix Python 3.10/3.11/3.12,
+    CPU-only torch, on push + pull_request.
+  - `.pre-commit-config.yaml` — new: black / isort / flake8 / mypy hooks, sharing
+    config with `pyproject.toml` + `setup.cfg` so hooks match CI exactly.
+  - Verified locally: `flake8 src tests examples` → 0, `mypy src` → 0, the CI test
+    command reports "Required test coverage of 60% reached. Total coverage: 98.32%",
+    139 passed.
+
 - **Phase 8 — Tests / coverage** (`docs/ROADMAP.md` Phase 8 / §11, §13): the full
-  test suite now runs with **no skips**, and `pytest --cov=pits_mras` reports **74%**
+  test suite now runs with **no skips**, and `pytest --cov=pits_mras` reports **98%**
   (above the §13 ≥60% gate).
   - Implemented the last placeholder, `test_irl_critic_converges_to_lyapunov_P`
     (Identity 1, fully realized): `train_irl_critic` fits the critic from model-free
@@ -212,11 +224,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- **Status:** Phases 1–8 (foundation, models, losses, controllers, training,
-  inference, examples, full test suite) are implemented and tested. Phase 9 (CI
-  finalization) remains. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 8: `flake8 src tests examples` → 0; `mypy src` → 0;
-  `pytest` → 146 passed, 0 skipped; coverage 74 % (≥60 % gate);
+- **Status:** ALL 9 phases (foundation, models, losses, controllers, training,
+  inference, examples, full test suite, CI/CD) are implemented and tested. The
+  framework is built out per `docs/ROADMAP.md`.
+- Verified gates after Phase 9: `flake8 src tests examples` → 0; `mypy src` → 0;
+  `pytest` → 139 passed, 0 skipped; coverage 98 % (≥60 % gate enforced in CI);
   `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the

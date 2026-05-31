@@ -36,10 +36,10 @@ jobs:
           pip install -e . --no-deps
 
       - name: Lint (flake8)
-        run: flake8 src tests
+        run: flake8 src tests examples
 
       - name: Type-check (mypy)
         run: mypy src
 
       - name: Test (pytest + coverage)
-        run: pytest --cov=pits_mras --cov-report=term-missing
+        run: pytest --cov=pits_mras --cov-report=term-missing --cov-fail-under=60

@@ -1,0 +1,32 @@
+# Pre-commit hooks for PITS-MRAS (Implementation Plan §12).
+# Install: pip install pre-commit && pre-commit install
+# Run on all files: pre-commit run --all-files
+#
+# Config for each tool lives in pyproject.toml (black/isort/mypy) and
+# setup.cfg (flake8), so the hooks below stay in sync with CI and local runs.
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (black profile)
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        # flake8 reads its config from setup.cfg (max-line-length=100,
+        # extend-ignore=E203,W503).
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        files: ^src/
+        additional_dependencies: []
