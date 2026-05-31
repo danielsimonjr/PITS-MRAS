@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Floor is 3.10 (plan stated 3.9): current mypy dropped 3.9 target
+        # support and torch>=2.0.0 requires 3.10+.
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dev toolchain
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          # Install the package itself WITHOUT its heavy ML runtime deps
+          # (torch/numpy/etc.). The Phase-0 scaffold imports only stdlib, so
+          # the import smoke test passes under --no-deps. Once modules begin
+          # importing the ML stack (Phase 2+), switch to `pip install -e .[dev]`.
+          pip install -e . --no-deps
+
+      - name: Lint (flake8)
+        run: flake8 src tests
+
+      - name: Type-check (mypy)
+        run: mypy src
+
+      - name: Test (pytest + coverage)
+        run: pytest --cov=pits_mras --cov-report=term-missing

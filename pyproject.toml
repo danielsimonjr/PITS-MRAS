@@ -1,0 +1,24 @@
+# Tooling configuration for PITS-MRAS (per Implementation Plan §12).
+# Note: packaging is still driven by setup.py (src-layout). This file holds
+# only tool config; flake8 config lives in setup.cfg (it ignores pyproject.toml).
+
+# Python floor is 3.10 (not the plan's stated 3.9): the current mypy release
+# dropped `python_version = 3.9` support, and torch>=2.0.0 supports 3.10+.
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
