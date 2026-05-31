@@ -9,5 +9,192 @@ activation flag, (d) critic-convergence
 :math:`\|\hat P-P_{CARE}\|_F/\|P_{CARE}\|_F`. This is the Phase-6 acceptance
 gate (100-step run generates plots without error).
 
-TODO(phase-7): implement per docs/ARCHITECTURE.md §10.1.
+Simplifications (flagged): the plant is the linear reference-model surrogate
+driven by :class:`RealtimeInferenceEngine`; full nonlinear :math:`M(q)`
+rigid-body dynamics are NOT simulated. This is an end-to-end closed-loop *demo*
+of the PITNN -> MRAS -> CBF stack on a manipulator-style 2nd-order joint
+(state = ``[q, qdot]``, one tracked joint coordinate), not a research-grade
+manipulator simulator. The sinusoidal joint reference and all four diagnostic
+panels are real.
+
+Import-safe: nothing heavy runs at import time. All model construction,
+simulation and plotting live inside :func:`run` / :func:`main`, guarded by
+``if __name__ == "__main__"``.
 """
+
+from __future__ import annotations
+
+import math
+from typing import Any
+
+
+def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
+    """Run the closed-loop 2-DOF manipulator demo and return diagnostics.
+
+    Args:
+        steps: number of fixed-``dt`` control steps to simulate.
+        show: when ``True`` display + save the figure interactively; otherwise
+            the figure is built headlessly (Agg) and returned for the caller to
+            save. The figure is always returned under the ``"figure"`` key.
+
+    Returns:
+        Dict with per-step series (``error_norm``, ``v_hat``, ``cbf_active``,
+        ``critic_convergence``), scalar summary metrics, and the matplotlib
+        ``Figure`` under ``"figure"``.
+    """
+    import matplotlib
+
+    if not show:
+        matplotlib.use("Agg")
+    import numpy as np
+    import torch
+
+    from pits_mras.config import NetworkConfig, PhysicsConfig, PITSMRASConfig
+    from pits_mras.controllers.mras import MRASController
+    from pits_mras.controllers.reference_models import LinearReferenceModel
+    from pits_mras.inference.realtime import RealtimeInferenceEngine
+    from pits_mras.models import PITNN
+
+    torch.manual_seed(0)
+    np.random.seed(0)
+
+    # ---- Reference model: stable 2nd-order joint-tracking model. -------------
+    # State = [q, qdot] for one tracked joint coordinate; critically damped.
+    a_m = np.array([[0.0, 1.0], [-4.0, -4.0]])
+    b_m = np.array([[0.0], [4.0]])
+    c_m = np.eye(2)
+    q_mat = np.eye(2)
+    r_mat = np.eye(1)
+    ref_model = LinearReferenceModel(a_m, b_m, c_m, q_mat, r_mat)
+
+    # ---- PITNN (physics-informed dynamics + value). -------------------------
+    cfg = PITSMRASConfig()
+    cfg.network = NetworkConfig(
+        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
+        attention_heads=2, embedding_dim=8,
+    )
+    cfg.physics = PhysicsConfig(
+        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+    )
+    pitnn = PITNN(cfg.network, cfg.physics)
+
+    # ---- MRAS controller + CBF safety filter. -------------------------------
+    controller = MRASController(
+        reference_model=ref_model,
+        state_dim=2,
+        control_dim=1,
+        ref_dim=1,
+        plant_dim=2,
+        use_safety_filter=True,
+    )
+    controller.setup_safety_filter()
+
+    engine = RealtimeInferenceEngine(
+        pitnn, controller, ref_model, horizon=50, device="cpu"
+    )
+
+    # ---- CARE reference for the critic-convergence panel. -------------------
+    p_care = ref_model.P_opt.detach().cpu().numpy()
+    p_care_norm = float(np.linalg.norm(p_care))
+
+    # ---- Closed-loop simulation. --------------------------------------------
+    dt = 0.01
+    x_p = torch.zeros(2)
+    error_norm: list[float] = []
+    v_hat: list[float] = []
+    cbf_active: list[bool] = []
+    critic_convergence: list[float] = []
+
+    for k in range(steps):
+        t = k * dt
+        # Sinusoidal joint-angle reference (position command for one joint).
+        r = torch.tensor(
+            [0.5 * math.sin(2.0 * math.pi * 0.5 * t)], dtype=torch.float32
+        )
+        out = engine.step(x_p, r, dt=dt)
+
+        e = out["e"].detach().cpu().reshape(-1)
+        error_norm.append(float(torch.linalg.vector_norm(e)))
+        v_hat.append(float(out["v_hat"].detach().reshape(-1)[0]))
+        cbf_active.append(bool(out["cbf_active"]))
+
+        p_hat = controller.critic.extract_P().detach().cpu().numpy()
+        if p_care_norm > 0.0:
+            conv = float(np.linalg.norm(p_hat - p_care) / p_care_norm)
+        else:
+            conv = float(np.linalg.norm(p_hat - p_care))
+        critic_convergence.append(conv)
+
+        # Advance the toy plant under the applied safe control (surrogate).
+        u = float(out["u_safe"].detach().cpu().reshape(-1)[0])
+        x0, x1 = float(x_p[0]), float(x_p[1])
+        x_p = torch.tensor(
+            [x0 + dt * x1, x1 + dt * (u - 4.0 * x0 - 4.0 * x1)],
+            dtype=torch.float32,
+        )
+
+    # ---- Diagnostic figure: 4 panels. ---------------------------------------
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(2, 2, figsize=(10, 7))
+    fig.suptitle("2-DOF manipulator: PITNN-MRAS-CBF closed loop")
+    tgrid = [k * dt for k in range(steps)]
+
+    axes[0, 0].plot(tgrid, error_norm)
+    axes[0, 0].set_title(r"(a) tracking error $\|e(t)\|$")
+    axes[0, 0].set_xlabel("t [s]")
+    axes[0, 0].set_ylabel(r"$\|e\|$")
+
+    axes[0, 1].plot(tgrid, v_hat, color="tab:orange")
+    axes[0, 1].set_title(r"(b) critic value $\hat V(e(t))$")
+    axes[0, 1].set_xlabel("t [s]")
+    axes[0, 1].set_ylabel(r"$\hat V$")
+
+    axes[1, 0].step(
+        tgrid, [int(c) for c in cbf_active], where="post", color="tab:red"
+    )
+    axes[1, 0].set_title("(c) CBF activation flag")
+    axes[1, 0].set_xlabel("t [s]")
+    axes[1, 0].set_ylabel("active")
+    axes[1, 0].set_ylim(-0.1, 1.1)
+
+    axes[1, 1].plot(tgrid, critic_convergence, color="tab:green")
+    axes[1, 1].set_title(
+        r"(d) critic conv. $\|\hat P-P_{CARE}\|_F/\|P_{CARE}\|_F$"
+    )
+    axes[1, 1].set_xlabel("t [s]")
+    axes[1, 1].set_ylabel("rel. error")
+
+    fig.tight_layout()
+    if show:
+        fig.savefig("robotic_manipulator.png", dpi=120)
+        if matplotlib.get_backend().lower() != "agg":
+            plt.show()
+
+    return {
+        "error_norm": error_norm,
+        "v_hat": v_hat,
+        "cbf_active": cbf_active,
+        "critic_convergence": critic_convergence,
+        "final_error_norm": error_norm[-1] if error_norm else 0.0,
+        "final_critic_convergence": (
+            critic_convergence[-1] if critic_convergence else 0.0
+        ),
+        "cbf_activation_rate": (
+            sum(cbf_active) / len(cbf_active) if cbf_active else 0.0
+        ),
+        "steps": steps,
+        "figure": fig,
+    }
+
+
+def main() -> None:
+    """Run the demo with the diagnostic figure displayed and saved."""
+    out = run(steps=100, show=True)
+    print(f"final ||e|| = {out['final_error_norm']:.4f}")
+    print(f"final critic convergence = {out['final_critic_convergence']:.4f}")
+    print(f"CBF activation rate = {out['cbf_activation_rate']:.2%}")
+
+
+if __name__ == "__main__":
+    main()

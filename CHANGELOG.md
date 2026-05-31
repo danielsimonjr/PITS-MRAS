@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 7 — Examples** (`docs/ROADMAP.md` Phase 7): runnable closed-loop demos
+  replacing the example stubs:
+  - `examples/robotic_manipulator.py` — 2-DOF arm, sinusoidal joint reference,
+    4-panel diagnostic figure (‖e‖, v̂, CBF-activation flag, critic-convergence
+    ‖P̂−P_CARE‖/‖P_CARE‖). The §13 acceptance gate (100-step headless run generates
+    a figure, exit 0) passes.
+  - `examples/autonomous_vehicle.py` — lateral control with wind-gust
+    Δ(t)=0.5·sin(2πt/10); with-CBF vs without-CBF comparison.
+  - `examples/building_hvac.py` — thermal-zone control vs a proportional baseline.
+  - Each exposes `run(steps, show=False) -> dict` and is import-safe (all sim/plot
+    work under `run()`/`main()`; matplotlib forced to Agg); new `tests/test_examples.py`
+    (10) runs them headless. Independently reviewed (APPROVE).
+  - **Simplifications (flagged in-code):** toy linear surrogate dynamics, and the
+    examples run *inference only* on an untrained critic (no training loop), so the
+    critic-convergence panel is a diagnostic path, not a convergence claim.
+
 - **Phase 6 — Inference Engine** (`docs/ROADMAP.md` Phase 6): real torch
   implementations replacing the inference stubs:
   - `inference/realtime.py` — `RealtimeInferenceEngine`: thread-safe `@torch.no_grad`
@@ -184,11 +200,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- **Status:** Phases 1–6 (foundation, models, losses, controllers, training,
-  inference) are implemented and tested. Phases 7–9 (examples, full test suite /
-  coverage, CI finalization) remain. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 6: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 129 passed, 1 skipped (the Phase-2 IRL-convergence placeholder);
+- **Status:** Phases 1–7 (foundation, models, losses, controllers, training,
+  inference, examples) are implemented and tested. Phases 8–9 (full test suite /
+  ≥60% coverage, CI finalization) remain. Implementation proceeds per `docs/ROADMAP.md`.
+- Verified gates after Phase 7: `flake8 src tests examples` → 0; `mypy src` → 0;
+  `pytest` → 139 passed, 1 skipped (the Phase-2 IRL-convergence placeholder);
   `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
