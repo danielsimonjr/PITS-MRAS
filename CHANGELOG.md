@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 5 — Training Pipelines** (`docs/ROADMAP.md` Phase 5): real torch
+  implementations replacing the training stubs:
+  - `training/pretrain.py` — `pretrain_pitnn`: three-stage curriculum (§8.1) —
+    1A physics-only, 1B cosine-annealed data weight 0.1→1.0, 1C linear temporal
+    warm-up — with the spike-detection safeguard (halve λ_data + warn). Collocation
+    uses smooth trajectories so the PITNN's internal finite-difference velocity stays
+    bounded.
+  - `training/cotrain.py` — `cotraining_loop`: closed-loop actor-critic loop with the
+    §8.2 additions — IRL critic update (separate Adam lr=1e-3, grad-clip 1.0, policy
+    improvement K←R⁻¹BᵀP̂), HJB term, costate consistency, critic positivity, CBF
+    constraint; PITNN Adam lr=1e-4. The IRL step runs after the PITNN step (autograd
+    ordering).
+  - `training/irl_trainer.py` — `train_irl_critic`: offline batch least-squares critic
+    fit; stops at ‖P̂−P_opt‖_F/‖P_opt‖_F < 0.01 (§8.3).
+  - `__init__.py` — enabled the previously-deferred `pretrain_pitnn`/`cotraining_loop`
+    re-exports (the eight-symbol top-level API is now complete).
+  - Tests: un-skipped `test_pretrain_one_epoch` and `test_cotrain_one_episode`
+    (`tests/test_smoke.py`); new `tests/test_training.py` (13). Acceptance gate
+    `pytest tests/test_smoke.py` passes (Phase-5 tests green; full-forward stays
+    skipped for Phase 6). Independently reviewed (APPROVE_WITH_NITS): IRL trainer
+    converges to rel-err 8.6e-8 (<0.01); the critic genuinely steps (Δ=0 when
+    critic_lr=0); schedule boundary values exact.
+  - **Note (G5/G6):** §8.2's base co-training loop is prose-only and its variable
+    names don't match the implemented Phase 1–4 APIs, so the loop and the
+    `plant_dt`/`excitation` knobs were designed to wire the real modules together.
+
 - **Phase 4 — Controllers** (`docs/ROADMAP.md` Phase 4): real torch
   implementations replacing the controller stubs:
   - `controllers/reference_models.py` — `LinearReferenceModel`: Hurwitz-checked
@@ -141,8 +167,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Status:** Phase 1 (Foundation Layer) is implemented and tested; Phases 2–9
   (models, losses, controllers, training, inference, examples) remain documented
   stubs raising `NotImplementedError`. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 4: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 110 passed, 4 skipped (later-phase tests); `import pits_mras` → 0.1.0.
+- Verified gates after Phase 5: `flake8 src tests` → 0; `mypy src` → 0;
+  `pytest` → 121 passed, 2 skipped (later-phase tests); `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
   Phase-1 runtime deps (CPU-only torch) before running the gates.

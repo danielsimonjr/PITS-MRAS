@@ -1,0 +1,189 @@
+"""Focused tests for the Phase 5 training pipelines (§8).
+
+Covers the three deliverables:
+  * pretrain.py  — curriculum lambda schedules hit exact boundary values,
+  * irl_trainer.py — offline batch LS recovers a known P_opt,
+  * cotrain.py — one episode runs without NaN and steps the critic.
+"""
+
+from __future__ import annotations
+
+import math
+
+import numpy as np
+import torch
+
+from pits_mras.config import NetworkConfig, PhysicsConfig, PITSMRASConfig
+from pits_mras.controllers.mras import MRASController
+from pits_mras.controllers.reference_models import LinearReferenceModel
+from pits_mras.models import PITNN, QuadraticCritic
+from pits_mras.training.cotrain import cotraining_loop
+from pits_mras.training.irl_trainer import train_irl_critic
+from pits_mras.training.pretrain import (
+    data_weight_schedule,
+    pretrain_pitnn,
+    temporal_weight_schedule,
+)
+
+
+# --------------------------------------------------------------------------- #
+# Curriculum lambda schedules (pretrain.py, §8.1).
+# --------------------------------------------------------------------------- #
+def test_data_weight_stage1a_constant() -> None:
+    """Stage 1A (epoch <= stage1_epochs): lambda_data == 0.1."""
+    assert data_weight_schedule(1, 1000, 2000) == 0.1
+    assert data_weight_schedule(1000, 1000, 2000) == 0.1
+
+
+def test_data_weight_stage1b_cosine_endpoints() -> None:
+    """Cosine anneal 0.1 -> 1.0 across epochs 1001..3000."""
+    val_start = data_weight_schedule(1001, 1000, 2000)
+    assert 0.1 < val_start < 0.2
+    val_end = data_weight_schedule(3000, 1000, 2000)
+    assert math.isclose(val_end, 1.0, abs_tol=1e-6)
+    # Midpoint (epoch 2000): 0.1 + 0.9 * 0.5 = 0.55.
+    val_mid = data_weight_schedule(2000, 1000, 2000)
+    assert math.isclose(val_mid, 0.55, abs_tol=1e-6)
+
+
+def test_data_weight_stage1c_saturates() -> None:
+    """After stage 1B the data weight stays at 1.0."""
+    assert math.isclose(data_weight_schedule(4000, 1000, 2000), 1.0, abs_tol=1e-6)
+
+
+def test_temporal_weight_warmup() -> None:
+    """Stage 1C linear warm-up: 0 before epoch 3000, final value at 5000."""
+    assert temporal_weight_schedule(3000, 2000, 0.5, stage1_epochs=1000) == 0.0
+    assert temporal_weight_schedule(2999, 2000, 0.5, stage1_epochs=1000) == 0.0
+    val_mid = temporal_weight_schedule(4000, 2000, 0.5, stage1_epochs=1000)
+    assert math.isclose(val_mid, 0.25, abs_tol=1e-6)
+    val_end = temporal_weight_schedule(5000, 2000, 0.5, stage1_epochs=1000)
+    assert math.isclose(val_end, 0.5, abs_tol=1e-6)
+
+
+# --------------------------------------------------------------------------- #
+# Small fixtures.
+# --------------------------------------------------------------------------- #
+def _small_cfg() -> PITSMRASConfig:
+    cfg = PITSMRASConfig()
+    cfg.network = NetworkConfig(
+        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
+        attention_heads=2, embedding_dim=8,
+    )
+    cfg.physics = PhysicsConfig(
+        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+    )
+    return cfg
+
+
+def _small_pitnn(cfg: PITSMRASConfig) -> PITNN:
+    return PITNN(cfg.network, cfg.physics)
+
+
+def _make_ref_model() -> LinearReferenceModel:
+    A_m = np.array([[0.0, 1.0], [-1.0, -1.0]])
+    B_m = np.array([[0.0], [1.0]])
+    C_m = np.eye(2)
+    Q = np.eye(2)
+    R = np.eye(1)
+    return LinearReferenceModel(A_m, B_m, C_m, Q, R)
+
+
+def _make_controller(ref_model: LinearReferenceModel) -> MRASController:
+    return MRASController(
+        reference_model=ref_model,
+        state_dim=2,
+        control_dim=1,
+        ref_dim=1,
+        plant_dim=2,
+        use_safety_filter=True,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# pretrain_pitnn end-to-end (small).
+# --------------------------------------------------------------------------- #
+def test_pretrain_runs_multiple_epochs_finite() -> None:
+    cfg = _small_cfg()
+    pitnn = _small_pitnn(cfg)
+    history = pretrain_pitnn(pitnn, cfg, epochs=3, batch_size=8, seed=1)
+    assert len(history["total_loss"]) == 3
+    assert all(math.isfinite(v) for v in history["total_loss"])
+    assert all(math.isfinite(v) for v in history["physics_loss"])
+    assert history["lambda_data"][0] == 0.1  # epoch 1 -> Stage 1A
+
+
+def test_pretrain_reduces_data_loss() -> None:
+    """A short run should reduce the data-fit loss (learning happens)."""
+    cfg = _small_cfg()
+    pitnn = _small_pitnn(cfg)
+    history = pretrain_pitnn(pitnn, cfg, epochs=30, batch_size=16, seed=2, lr=1e-2)
+    assert history["data_loss"][-1] < history["data_loss"][0]
+
+
+# --------------------------------------------------------------------------- #
+# irl_trainer convergence on a known synthetic case (§8.3).
+# --------------------------------------------------------------------------- #
+def test_irl_trainer_recovers_p_opt() -> None:
+    """Offline batch LS recovers P_opt on consistent closed-loop data.
+
+    Trajectories come from the optimal closed loop e_dot = (A_m - B_m K_opt) e
+    with running cost e^T Q e + u^T R u and u = -K_opt e. For this data
+    V(e) = e^T P_opt e satisfies the IRL Bellman identity, so the LS fit must
+    recover P_opt to within the 1% tolerance.
+    """
+    ref_model = _make_ref_model()
+    critic = QuadraticCritic(state_dim=2)
+    critic.set_P(torch.eye(2) * 5.0)  # perturb away from P_opt
+
+    P_hat, converged, n_iters = train_irl_critic(
+        critic, ref_model,
+        n_trajectories=64, traj_len=40, window_size=5,
+        dt=0.01, max_iters=50, tol=0.01, seed=3,
+    )
+    P_opt = ref_model.P_opt
+    rel_err = torch.linalg.norm(P_hat - P_opt) / torch.linalg.norm(P_opt)
+    assert converged, f"did not converge; rel_err={rel_err.item():.4f}"
+    assert rel_err.item() < 0.01
+    assert n_iters >= 1
+    # The critic was actually updated to the fit.
+    assert torch.allclose(critic.extract_P(), P_hat, atol=1e-5)
+
+
+# --------------------------------------------------------------------------- #
+# cotrain one episode (§8.2).
+# --------------------------------------------------------------------------- #
+def test_cotrain_no_nan_and_critic_steps() -> None:
+    cfg = _small_cfg()
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    p_before = controller.critic.W_c.weight.detach().clone()
+    metrics = cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=2, n_steps=8, batch_size=4, irl_window=3, seed=4,
+    )
+    assert "irl_loss" in metrics
+    assert "total_loss" in metrics
+    for series in metrics.values():
+        if isinstance(series, list):
+            for v in series:
+                if isinstance(v, float):
+                    assert math.isfinite(v)
+    p_after = controller.critic.W_c.weight.detach()
+    assert not torch.allclose(p_before, p_after)
+
+
+def test_cotrain_hjb_disabled_path() -> None:
+    """lambda_hjb == 0 disables the HJB term but the loop still runs."""
+    cfg = _small_cfg()
+    cfg.losses.lambda_hjb = 0.0
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    metrics = cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=1, n_steps=8, batch_size=4, irl_window=3, seed=5,
+    )
+    assert all(math.isfinite(v) for v in metrics["total_loss"])
+    assert all(v == 0.0 for v in metrics["hjb_loss"])

@@ -1,7 +1,16 @@
 """Training subpackage: physics pretrain, IRL co-train, offline IRL trainer.
 
 Owning phase: Phase 5 (Training Pipelines) per ROADMAP.md / ARCHITECTURE.md
-§2.1. Empty (docstring-only) package init per ARCHITECTURE.md §2 ("no imports").
-
-TODO(phase-5): implement per docs/ARCHITECTURE.md §8.
+§8. Re-exports the three public training entry points now that the pipelines
+are implemented.
 """
+
+from pits_mras.training.cotrain import cotraining_loop
+from pits_mras.training.irl_trainer import train_irl_critic
+from pits_mras.training.pretrain import pretrain_pitnn
+
+__all__ = [
+    "pretrain_pitnn",
+    "cotraining_loop",
+    "train_irl_critic",
+]

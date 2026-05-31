@@ -9,21 +9,81 @@ This file provides:
     scaffold gates proving the package and the three ``examples/`` scripts import
     without error (complementing the exhaustive per-module check in
     ``test_imports.py``).
-  * the three verbatim §11.6 placeholders (skipped until implemented):
-    ``test_full_forward_pass_no_crash``, ``test_pretrain_one_epoch``,
-    ``test_cotrain_one_episode``.
+  * ``test_pretrain_one_epoch`` / ``test_cotrain_one_episode`` -- the Phase-5
+    acceptance gate (un-skipped): one tiny synthetic step produces finite
+    (non-NaN) losses.
+  * ``test_full_forward_pass_no_crash`` -- still skipped until Phase 6.
 """
 
 import importlib
 import importlib.util
+import math
 import pathlib
 
+import numpy as np
 import pytest
+import torch
+
+from pits_mras.config import NetworkConfig, PhysicsConfig, PITSMRASConfig
+from pits_mras.controllers.mras import MRASController
+from pits_mras.controllers.reference_models import LinearReferenceModel
+from pits_mras.models import PITNN
 
 _EXAMPLES_DIR = pathlib.Path(__file__).resolve().parent.parent / "examples"
 _EXAMPLE_SCRIPTS = ["robotic_manipulator", "autonomous_vehicle", "building_hvac"]
 
 
+# --------------------------------------------------------------------------- #
+# Shared tiny fixtures (state_dim = 2, control_dim = 1, output_dim = 2).
+# --------------------------------------------------------------------------- #
+def _make_config() -> PITSMRASConfig:
+    cfg = PITSMRASConfig()
+    cfg.network = NetworkConfig(
+        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
+        attention_heads=2, embedding_dim=8,
+    )
+    cfg.physics = PhysicsConfig(
+        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+    )
+    return cfg
+
+
+def _make_pitnn(cfg: PITSMRASConfig) -> PITNN:
+    return PITNN(cfg.network, cfg.physics)
+
+
+def _make_ref_model() -> LinearReferenceModel:
+    A_m = np.array([[0.0, 1.0], [-1.0, -1.0]])
+    B_m = np.array([[0.0], [1.0]])
+    C_m = np.eye(2)
+    Q = np.eye(2)
+    R = np.eye(1)
+    return LinearReferenceModel(A_m, B_m, C_m, Q, R)
+
+
+def _make_controller(ref_model: LinearReferenceModel) -> MRASController:
+    return MRASController(
+        reference_model=ref_model,
+        state_dim=2,
+        control_dim=1,
+        ref_dim=1,
+        plant_dim=2,
+        use_safety_filter=True,
+    )
+
+
+def _all_finite(series_dict: dict) -> None:
+    for key, series in series_dict.items():
+        if not isinstance(series, list):
+            continue
+        for value in series:
+            if isinstance(value, float):
+                assert math.isfinite(value), f"non-finite in {key!r}: {value!r}"
+
+
+# --------------------------------------------------------------------------- #
+# Phase-0 scaffold gates.
+# --------------------------------------------------------------------------- #
 def test_package_imports() -> None:
     """The top-level package imports and exposes its version."""
     pkg = importlib.import_module("pits_mras")
@@ -42,16 +102,44 @@ def test_example_script_imports(script_name: str) -> None:
     spec.loader.exec_module(module)
 
 
+# --------------------------------------------------------------------------- #
+# Phase-6 placeholder (stays skipped).
+# --------------------------------------------------------------------------- #
 @pytest.mark.skip(reason="phase 6 not implemented")
 def test_full_forward_pass_no_crash() -> None:
     """Run 10 steps of RealtimeInferenceEngine with no exceptions / NaN."""
 
 
-@pytest.mark.skip(reason="phase 5 not implemented")
+# --------------------------------------------------------------------------- #
+# Phase-5 acceptance gate (un-skipped).
+# --------------------------------------------------------------------------- #
 def test_pretrain_one_epoch() -> None:
     """One pretrain epoch produces finite (non-NaN) losses."""
+    from pits_mras.training import pretrain_pitnn
+
+    cfg = _make_config()
+    pitnn = _make_pitnn(cfg)
+    history = pretrain_pitnn(pitnn, cfg, epochs=1, batch_size=8, seed=0)
+    assert isinstance(history, dict)
+    assert len(history["total_loss"]) == 1
+    _all_finite(history)
 
 
-@pytest.mark.skip(reason="phase 5 not implemented")
 def test_cotrain_one_episode() -> None:
     """One co-training episode produces finite (non-NaN) losses."""
+    from pits_mras.training import cotraining_loop
+
+    cfg = _make_config()
+    pitnn = _make_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+
+    p_before = controller.critic.W_c.weight.detach().clone()
+    metrics = cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=1, n_steps=8, batch_size=4, irl_window=3, seed=0,
+    )
+    assert isinstance(metrics, dict)
+    _all_finite(metrics)
+    p_after = controller.critic.W_c.weight.detach()
+    assert not torch.allclose(p_before, p_after), "critic params did not change"

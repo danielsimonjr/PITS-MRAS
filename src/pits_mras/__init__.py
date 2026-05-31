@@ -10,13 +10,9 @@ model-free. The port-Hamiltonian decoder makes H_θ a storage/value function
 (passivity = L2-gain), and the costate λ=∇V is enforced architecturally.
 
 Top-level symbol re-exports (IP §4.1): the design plan lists eight public
-symbols. As of Phase 1, the six class symbols are importable (their modules
-ship stub classes), so they are re-exported here. The two *function* symbols
-``pretrain_pitnn`` (training/pretrain.py) and ``cotraining_loop``
-(training/cotrain.py) do NOT yet exist as importable names — those modules are
-docstring-only stubs — so re-exporting them now would break ``import
-pits_mras``. They are intentionally deferred (see TODO below) and will be added
-once Phase 5 lands.
+symbols. The six class symbols are re-exported here, and (since Phase 5 landed)
+so are the two *function* symbols ``pretrain_pitnn`` (training/pretrain.py) and
+``cotraining_loop`` (training/cotrain.py).
 """
 
 from pits_mras.controllers.mras import MRASController
@@ -26,9 +22,11 @@ from pits_mras.inference.realtime import RealtimeInferenceEngine
 from pits_mras.models.critic import QuadraticCritic
 from pits_mras.models.pitnn import PITNN
 
-# TODO(phase-5): re-export pretrain_pitnn (training/pretrain.py) and
-# cotraining_loop (training/cotrain.py) once those functions are implemented.
-# They are absent from the catalog below to keep ``import pits_mras`` working.
+# Phase 5 (DONE): the training pipelines are implemented, so the two function
+# symbols are now re-exported on the public package surface alongside the six
+# class symbols above. (Deferred since Phase 1 to keep ``import pits_mras``
+# working while the training modules were docstring-only stubs.)
+from pits_mras.training import cotraining_loop, pretrain_pitnn
 
 __version__ = "0.1.0"
 
@@ -39,4 +37,6 @@ __all__ = [
     "LinearReferenceModel",
     "CLFCBFSafetyFilter",
     "RealtimeInferenceEngine",
+    "pretrain_pitnn",
+    "cotraining_loop",
 ]
