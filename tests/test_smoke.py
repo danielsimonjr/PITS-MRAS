@@ -27,7 +27,7 @@ _EXAMPLE_SCRIPTS = ["robotic_manipulator", "autonomous_vehicle", "building_hvac"
 def test_package_imports() -> None:
     """The top-level package imports and exposes its version."""
     pkg = importlib.import_module("pits_mras")
-    assert pkg.__version__ == "1.0.0"
+    assert pkg.__version__ == "0.1.0"
 
 
 @pytest.mark.parametrize("script_name", _EXAMPLE_SCRIPTS)

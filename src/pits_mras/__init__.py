@@ -1,29 +1,42 @@
 """PITS-MRAS: Physics-Informed Time-Series Model-Reference Adaptive Systems.
 
-Top-level package. The canonical module layout is defined in
-``docs/ARCHITECTURE.md`` §2; phase ordering for filling in the stubs is in
-``ROADMAP.md``.
+A unified framework merging Physics-Informed Neural Networks (PINNs),
+Time-Series Deep Learning, and Model-Reference Adaptive Control (MRAS).
 
-Owning phase: Phase 1 (Foundation Layer) per ROADMAP.md (the plan calls the
-package-creation phase "Phase 1"; this scaffold task is its first step).
+Mathematical foundation: The MRAS Lyapunov function V(e)=eᵀPe is the LQR
+value function for the tracking-error system; policy iteration on the CARE
+(Kleinman 1968) is the formal backbone; IRL (Vrabie & Lewis 2009) makes it
+model-free. The port-Hamiltonian decoder makes H_θ a storage/value function
+(passivity = L2-gain), and the costate λ=∇V is enforced architecturally.
 
-NOTE on version: ``setup.py`` declares ``version="1.0.0"`` and the scaffold task
-mandates matching it, so ``__version__`` is "1.0.0" here. The design docs
-(ARCHITECTURE.md §2 / ROADMAP §Phase 1, citing IP §4.1) instead specify
-``__version__ = "0.1.0"`` together with a top-level re-export block importing
-``PITNN``, ``QuadraticCritic``, ``MRASController``, ``LinearReferenceModel``,
-``CLFCBFSafetyFilter``, ``pretrain_pitnn``, ``cotraining_loop``, and
-``RealtimeInferenceEngine``. That version mismatch (Gap G2 in ARCHITECTURE.md
-§8.3) is an ADR-level decision deferred to the user, and the eager re-export
-block is intentionally NOT reproduced yet because those symbols are unimplemented
-stubs -- importing them here would break the import smoke test. Both are wired up
-once Phases 2-6 land.
+Top-level symbol re-exports (IP §4.1): the design plan lists eight public
+symbols. As of Phase 1, the six class symbols are importable (their modules
+ship stub classes), so they are re-exported here. The two *function* symbols
+``pretrain_pitnn`` (training/pretrain.py) and ``cotraining_loop``
+(training/cotrain.py) do NOT yet exist as importable names — those modules are
+docstring-only stubs — so re-exporting them now would break ``import
+pits_mras``. They are intentionally deferred (see TODO below) and will be added
+once Phase 5 lands.
 """
 
-__version__ = "1.0.0"
+from pits_mras.controllers.mras import MRASController
+from pits_mras.controllers.reference_models import LinearReferenceModel
+from pits_mras.controllers.safety import CLFCBFSafetyFilter
+from pits_mras.inference.realtime import RealtimeInferenceEngine
+from pits_mras.models.critic import QuadraticCritic
+from pits_mras.models.pitnn import PITNN
 
-# Public API is intentionally empty during scaffolding (ARCHITECTURE.md §5 keeps
-# it minimal "until APIs stabilize"). Populated as later phases land.
-# TODO(phase-1): re-export the eight top-level symbols and reconcile __version__
-# with the design docs (Gap G2) once the modules are implemented.
-__all__: list[str] = []
+# TODO(phase-5): re-export pretrain_pitnn (training/pretrain.py) and
+# cotraining_loop (training/cotrain.py) once those functions are implemented.
+# They are absent from the catalog below to keep ``import pits_mras`` working.
+
+__version__ = "0.1.0"
+
+__all__ = [
+    "PITNN",
+    "QuadraticCritic",
+    "MRASController",
+    "LinearReferenceModel",
+    "CLFCBFSafetyFilter",
+    "RealtimeInferenceEngine",
+]

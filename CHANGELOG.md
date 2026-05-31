@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 1 — Foundation Layer** (`docs/ROADMAP.md` Phase 1): real implementations
+  replacing the stubs in `src/pits_mras/`:
+  - `config.py` — six dataclasses (`NetworkConfig`, `PhysicsConfig`, `MRASConfig`,
+    `SafetyConfig`, `LossConfig`, `TrainingConfig`) + master `PITSMRASConfig` with
+    `from_yaml`/`to_yaml`; field names and defaults per Implementation Plan §4.2.
+  - `utils/lyapunov.py` — `solve_lyapunov`, `kleinman_iteration`, `solve_care`,
+    `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis` (scipy-backed; the
+    P-matrix engine). Solves AᵀP+PA=−Q (transpose convention verified numerically).
+  - `utils/hamiltonian.py` — `make_skew_symmetric` (J=−Jᵀ), `make_positive_definite`
+    (R=LᵀL⪰0), `port_hamiltonian_energy_loss`, `hamiltonian_positivity_loss` (torch).
+  - `utils/pe_monitor.py` — `PEMonitor` (Gram min-eigenvalue persistence-of-excitation
+    check + probing-noise helper).
+  - New tests: `test_config.py`, `test_lyapunov_utils.py`, `test_hamiltonian_utils.py`,
+    `test_pe_monitor.py`; un-skipped `test_kleinman_converges_to_care` and
+    `test_quadratic_basis_reconstructs_P`.
+  - Acceptance gate (ROADMAP Phase 1) passes: `solve_lyapunov(-I, I) → 0.5·I`.
+
+### Changed
+
+- **Packaging reconciled (ROADMAP gap G2, resolved per plan):** `setup.py` distribution
+  `name` → `pits_mras`, `version` → `0.1.0`, `python_requires` → `>=3.10`.
+  `requirements.txt` replaced with the Phase-1 runtime set (`numpy`, `scipy`, `torch`,
+  `pyyaml`); `control` intentionally omitted (G3 — scipy provides the solvers).
+  `src/pits_mras/__init__.py` `__version__` → `0.1.0` and re-exports the six available
+  stub classes (`pretrain_pitnn`/`cotraining_loop` deferred to Phase 5 — not yet defined).
+
+### Added (foundation, prior)
+
 - **`docs/ARCHITECTURE.md`** — design/architecture blueprint distilled from the two
   design PDFs in `docs/` (the *Mathematical and Architectural Blueprint* and the
   *Complete Implementation Plan*). Documents the three-paradigm merger (PINN +
@@ -40,18 +68,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- This is a **foundation scaffold**: modules raise `NotImplementedError` or are
-  documented placeholders. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates on this scaffold: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 33 passed, 16 skipped; `import pits_mras` → version 1.0.0.
-- The CI install step is intentionally `pip install -e . --no-deps`: the scaffold
-  stubs import only the standard library, so the import smoke test passes without
-  the heavy ML stack. Switch to `pip install -e .[dev]` once modules begin importing
-  torch/numpy (Phase 2+).
-- **Deferred decision (ROADMAP gap G2):** `setup.py` is left unchanged
-  (`name="pits-mras"`, `version="1.0.0"`); the Implementation Plan instead specifies
-  `name="pits_mras"`, `version="0.1.0"` and a dependency overhaul. This packaging
-  reconciliation is an ADR-level decision left for the project owner.
+- **Status:** Phase 1 (Foundation Layer) is implemented and tested; Phases 2–9
+  (models, losses, controllers, training, inference, examples) remain documented
+  stubs raising `NotImplementedError`. Implementation proceeds per `docs/ROADMAP.md`.
+- Verified gates after Phase 1: `flake8 src tests` → 0; `mypy src` → 0;
+  `pytest` → 60 passed, 14 skipped (later-phase tests); `import pits_mras` → 0.1.0.
+- **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
+  workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
+  Phase-1 runtime deps (CPU-only torch) before running the gates.
 - **Python floor:** the Implementation Plan stated a 3.9 baseline, but the current
   mypy release dropped `python_version = 3.9` support and `torch>=2.0.0` requires
   3.10+, so the CI matrix and tool configs use **3.10/3.11/3.12**.

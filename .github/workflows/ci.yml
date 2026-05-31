@@ -24,14 +24,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install dev toolchain
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-          # Install the package itself WITHOUT its heavy ML runtime deps
-          # (torch/numpy/etc.). The Phase-0 scaffold imports only stdlib, so
-          # the import smoke test passes under --no-deps. Once modules begin
-          # importing the ML stack (Phase 2+), switch to `pip install -e .[dev]`.
+          # CPU-only torch wheel (avoids the multi-GB CUDA download) for the
+          # Phase-1 utils that import torch; numpy/scipy/pyyaml come from
+          # requirements.txt.
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
           pip install -e . --no-deps
 
       - name: Lint (flake8)
