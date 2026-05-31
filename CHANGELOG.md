@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 8 — Tests / coverage** (`docs/ROADMAP.md` Phase 8 / §11, §13): the full
+  test suite now runs with **no skips**, and `pytest --cov=pits_mras` reports **74%**
+  (above the §13 ≥60% gate).
+  - Implemented the last placeholder, `test_irl_critic_converges_to_lyapunov_P`
+    (Identity 1, fully realized): `train_irl_critic` fits the critic from model-free
+    trajectory data and the recovered P̂ matches the CARE `P_opt` to rel-err 0.4 %
+    (< the trainer's 1 % stop tolerance); the fitted critic's `extract_P()` matches too.
+  - Added targeted coverage tests for the lowest-covered modules: parallel-inference
+    engine start/stop + state updates, the IRL-trainer non-convergence path, and the
+    pre-training spike-safeguard + curriculum stage boundaries (`training/cotrain.py`
+    54→81 %, `training/pretrain.py` 58→82 %).
+
 - **Phase 7 — Examples** (`docs/ROADMAP.md` Phase 7): runnable closed-loop demos
   replacing the example stubs:
   - `examples/robotic_manipulator.py` — 2-DOF arm, sinusoidal joint reference,
@@ -200,11 +212,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- **Status:** Phases 1–7 (foundation, models, losses, controllers, training,
-  inference, examples) are implemented and tested. Phases 8–9 (full test suite /
-  ≥60% coverage, CI finalization) remain. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 7: `flake8 src tests examples` → 0; `mypy src` → 0;
-  `pytest` → 139 passed, 1 skipped (the Phase-2 IRL-convergence placeholder);
+- **Status:** Phases 1–8 (foundation, models, losses, controllers, training,
+  inference, examples, full test suite) are implemented and tested. Phase 9 (CI
+  finalization) remains. Implementation proceeds per `docs/ROADMAP.md`.
+- Verified gates after Phase 8: `flake8 src tests examples` → 0; `mypy src` → 0;
+  `pytest` → 146 passed, 0 skipped; coverage 74 % (≥60 % gate);
   `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the

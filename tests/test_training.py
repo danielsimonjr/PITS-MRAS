@@ -187,3 +187,60 @@ def test_cotrain_hjb_disabled_path() -> None:
     )
     assert all(math.isfinite(v) for v in metrics["total_loss"])
     assert all(v == 0.0 for v in metrics["hjb_loss"])
+
+
+# --------------------------------------------------------------------------- #
+# irl_trainer non-convergence branch (§8.3).
+# --------------------------------------------------------------------------- #
+def test_irl_trainer_non_convergence_exhausts_max_iters() -> None:
+    """An unreachable tolerance exits at ``max_iters`` with converged=False.
+
+    Exercises the loop's max-iters fall-through (the negative path of the
+    ``rel_err < tol`` break) which the convergent test never reaches.
+    """
+    ref_model = _make_ref_model()
+    critic = QuadraticCritic(state_dim=2)
+    P_hat, converged, n_iters = train_irl_critic(
+        critic, ref_model, tol=1e-12, max_iters=3, seed=0,
+    )
+    assert converged is False
+    assert n_iters == 3
+    assert P_hat.shape == (2, 2)
+    # Even without converging, the critic is updated to the last LS fit.
+    assert torch.allclose(critic.extract_P(), P_hat, atol=1e-5)
+
+
+# --------------------------------------------------------------------------- #
+# pretrain validation-guard and Stage-1C temporal branches (§8.1).
+# --------------------------------------------------------------------------- #
+def test_pretrain_spike_halves_data_weight() -> None:
+    """A physics spike above ``epsilon_tol`` halves ``lambda_data`` (§8.1 guard).
+
+    Forcing ``epsilon_tol`` below any achievable residual fires the safeguard
+    on every epoch, so the Stage-1A weight 0.1 is halved to 0.05.
+    """
+    cfg = _small_cfg()
+    pitnn = _small_pitnn(cfg)
+    history = pretrain_pitnn(
+        pitnn, cfg, epochs=2, batch_size=8, seed=1, epsilon_tol=1e-12,
+    )
+    assert all(math.isclose(v, 0.05, abs_tol=1e-9) for v in history["lambda_data"])
+
+
+def test_pretrain_stage1c_activates_temporal_term() -> None:
+    """In Stage 1C the temporal loss is weighted (``lambda_temp > 0`` branch).
+
+    With tiny stage boundaries the run crosses into Stage 1C, so the temporal
+    warm-up ramps above zero and the ``total += lambda_temp * l_temporal``
+    branch executes.
+    """
+    cfg = _small_cfg()
+    cfg.losses.lambda_temporal = 0.5
+    cfg.training.stage1_epochs = 1
+    cfg.training.stage2_epochs = 1
+    pitnn = _small_pitnn(cfg)
+    history = pretrain_pitnn(pitnn, cfg, epochs=4, batch_size=8, seed=2)
+    # Stage 1A/1B (epochs 1-2) -> 0; Stage 1C (epochs 3-4) -> ramps up.
+    assert history["lambda_temp"][0] == 0.0
+    assert history["lambda_temp"][-1] > 0.0
+    assert all(math.isfinite(v) for v in history["total_loss"])

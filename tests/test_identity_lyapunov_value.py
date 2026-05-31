@@ -11,9 +11,11 @@ against ``utils/lyapunov.py``; the Phase-2 critic test stays skipped.
 """
 
 import numpy as np
-import pytest
 import torch
 
+from pits_mras.controllers.reference_models import LinearReferenceModel
+from pits_mras.models.critic import QuadraticCritic
+from pits_mras.training.irl_trainer import train_irl_critic
 from pits_mras.utils.lyapunov import (
     kleinman_iteration,
     quadratic_basis,
@@ -35,9 +37,43 @@ def test_kleinman_converges_to_care() -> None:
     assert np.allclose(K_kleinman, K_care, atol=1e-6)
 
 
-@pytest.mark.skip(reason="phase 2 not implemented")
 def test_irl_critic_converges_to_lyapunov_P() -> None:
-    """The IRL critic learns P_hat -> the Lyapunov/LQR P."""
+    """The IRL critic learns P_hat -> the Lyapunov/LQR P (Identity 1).
+
+    Trains a :class:`QuadraticCritic` from synthetic optimal-closed-loop
+    trajectories via the Phase-5 integral-RL trainer and asserts the recovered
+    ``P_hat`` matches the CARE/LQR ``P_opt`` to within the trainer's own
+    relative-Frobenius stop criterion (``< 0.01``). Also checks that the
+    critic's in-place ``extract_P()`` agrees with ``P_opt``.
+    """
+    A_m = np.array([[0.0, 1.0], [-1.0, -1.0]])
+    B = np.array([[0.0], [1.0]])
+    C = np.eye(2)
+    Q = np.eye(2)
+    R = np.eye(1)
+
+    ref = LinearReferenceModel(A_m=A_m, B_m=B, C_m=C, Q=Q, R=R)
+    critic = QuadraticCritic(state_dim=2)
+
+    P_hat, converged, n_iters = train_irl_critic(critic, ref, tol=0.01, seed=0)
+
+    P_opt = torch.as_tensor(np.asarray(ref.P_opt.tolist()), dtype=P_hat.dtype)
+    rel_err = float(
+        torch.linalg.norm(P_hat - P_opt) / torch.linalg.norm(P_opt)
+    )
+
+    assert converged
+    assert n_iters >= 1
+    # The deepest Identity-1 claim: the learned value matrix IS the CARE P.
+    assert rel_err < 0.01
+
+    # The fitted P is written into the critic in place; it must agree too.
+    extracted = critic.extract_P()
+    extracted_rel = float(
+        torch.linalg.norm(extracted - P_opt) / torch.linalg.norm(P_opt)
+    )
+    assert extracted_rel < 0.01
+    assert torch.allclose(extracted, P_hat)
 
 
 def test_quadratic_basis_reconstructs_P() -> None:
