@@ -103,11 +103,28 @@ def test_example_script_imports(script_name: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Phase-6 placeholder (stays skipped).
+# Phase-6 acceptance gate (un-skipped).
 # --------------------------------------------------------------------------- #
-@pytest.mark.skip(reason="phase 6 not implemented")
 def test_full_forward_pass_no_crash() -> None:
     """Run 10 steps of RealtimeInferenceEngine with no exceptions / NaN."""
+    from pits_mras.inference.realtime import RealtimeInferenceEngine
+
+    cfg = _make_config()
+    pitnn = _make_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    controller.setup_safety_filter()
+
+    engine = RealtimeInferenceEngine(
+        pitnn, controller, ref_model, horizon=10, device="cpu"
+    )
+    x_p = torch.zeros(2)
+    r = torch.ones(1) * 0.1
+    for step in range(10):
+        out = engine.step(x_p, r, dt=0.01)
+        for key in ("u_safe", "e", "v_hat", "h_cbf", "f_hat"):
+            assert torch.isfinite(out[key]).all(), f"non-finite {key} at {step}"
+        assert isinstance(out["cbf_active"], bool)
 
 
 # --------------------------------------------------------------------------- #
