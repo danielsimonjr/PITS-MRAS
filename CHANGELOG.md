@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 6 — Inference Engine** (`docs/ROADMAP.md` Phase 6): real torch
+  implementations replacing the inference stubs:
+  - `inference/realtime.py` — `RealtimeInferenceEngine`: thread-safe `@torch.no_grad`
+    closed-loop `step()` (§9.1) — bounded `deque(maxlen=horizon)` history → PITNN
+    forward → reference-model step → tracking error e=x_p−x_m → controller → CBF
+    control; returns `{u_safe, e, v_hat, h_cbf, f_hat, cbf_active}`. The PITNN forward
+    is wrapped in `enable_grad` (its decoder needs autograd for ∇H) with the output
+    detached, so the no_grad/Lock contract holds and no graph leaks.
+  - `inference/parallel.py` — `ParallelInferenceEngine` reference skeleton +
+    `ControllerState` dataclass (§9.2): ControlThread / AdaptationThread /
+    MonitorThread with a `threading.Event` shutdown and a deepcopy→swap critic
+    double-buffer.
+  - Adapted to the real Phase 1–5 APIs (the §9 spec text predated them): controller
+    called as `forward(e, r, x_plant)`; CBF control read from key `u`, slack from
+    `slack`; `v_hat` computed via `controller.critic(e)`.
+  - Tests: un-skipped `test_full_forward_pass_no_crash` (`tests/test_smoke.py`); new
+    `tests/test_inference.py`. Two independent reviews (APPROVE_WITH_NITS, 0 blocking):
+    closed-loop semantics verified (e=x_p−x_m, deques bounded, finite over 12+ steps);
+    parallel engine starts/ticks/stops with no deadlock.
+
 - **Phase 5 — Training Pipelines** (`docs/ROADMAP.md` Phase 5): real torch
   implementations replacing the training stubs:
   - `training/pretrain.py` — `pretrain_pitnn`: three-stage curriculum (§8.1) —
@@ -164,11 +184,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- **Status:** Phase 1 (Foundation Layer) is implemented and tested; Phases 2–9
-  (models, losses, controllers, training, inference, examples) remain documented
-  stubs raising `NotImplementedError`. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 5: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 121 passed, 2 skipped (later-phase tests); `import pits_mras` → 0.1.0.
+- **Status:** Phases 1–6 (foundation, models, losses, controllers, training,
+  inference) are implemented and tested. Phases 7–9 (examples, full test suite /
+  coverage, CI finalization) remain. Implementation proceeds per `docs/ROADMAP.md`.
+- Verified gates after Phase 6: `flake8 src tests` → 0; `mypy src` → 0;
+  `pytest` → 129 passed, 1 skipped (the Phase-2 IRL-convergence placeholder);
+  `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
   Phase-1 runtime deps (CPU-only torch) before running the gates.
