@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 3 — Loss Functions** (`docs/ROADMAP.md` Phase 3): real torch
+  implementations replacing the loss stubs:
+  - `losses/physics.py` — `PhysicsLoss`: port-Hamiltonian energy balance
+    residual `dH/dt − (P_control − P_diss)` plus optional PDE/BC/symmetry
+    residuals, λ-weighted (Implementation Plan §6.1).
+  - `losses/temporal.py` — `MultiStepPredictionLoss`, `AttentionRegularizationLoss`,
+    `TemporalSmoothnessLoss`, `TemporalLoss` (§6.2; attention-weighted multi-step
+    prediction).
+  - `losses/stability.py` — `LyapunovConstraintLoss` (penalize V̇>0),
+    `ParameterBoundednessLoss`, `ControlEffortLoss` (uᵀRu), `MRASStabilityLoss`.
+  - `losses/irl.py` — `IRLBellmanAccumulator` + `IRLBellmanLoss`: the Integral-RL
+    Bellman residual δ_IRL = ∫(eᵀQe+uᵀRu)dτ − [V̂(t)−V̂(t−T)], L=½E[δ²] (§3.2).
+    Model-free: the drift matrix A does not appear (verified numerically — δ_IRL≈0
+    when V̂ is the true value function).
+  - `losses/hjb.py` — `HJBResidualLoss` (§3.5; u*=−R⁻¹Bᵀ∇V̂, default λ=0.01) +
+    `LyapunovDecreaseEnforcer`. Residual ≈0 at the LQR optimum (verified).
+  - `losses/__init__.py` — `TotalLoss` aggregator combining the sub-losses with
+    `LossConfig` weights, returning the total plus per-component logging scalars.
+  - New tests `tests/test_losses.py` (17); replaced the duplicate-class stub in
+    `tests/test_irl.py` with the two mandated tests (un-skipped). Acceptance gate
+    `pytest tests/test_irl.py tests/test_identity_costate.py` passes. Independently
+    reviewed (APPROVE_WITH_NITS): δ_IRL=2.9e-7 at true value, HJB residual=8.4e-13
+    at LQR optimum, A confirmed absent from the IRL loss.
+
 - **Phase 2 — Neural Network Models** (`docs/ROADMAP.md` Phase 2): real torch
   implementations replacing the model stubs:
   - `models/attention.py` — `PhysicsInformedAttention`: three-headed attention
@@ -96,8 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Status:** Phase 1 (Foundation Layer) is implemented and tested; Phases 2–9
   (models, losses, controllers, training, inference, examples) remain documented
   stubs raising `NotImplementedError`. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 2: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 73 passed, 10 skipped (later-phase tests); `import pits_mras` → 0.1.0.
+- Verified gates after Phase 3: `flake8 src tests` → 0; `mypy src` → 0;
+  `pytest` → 93 passed, 8 skipped (later-phase tests); `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
   Phase-1 runtime deps (CPU-only torch) before running the gates.
