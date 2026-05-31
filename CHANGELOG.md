@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 4 — Controllers** (`docs/ROADMAP.md` Phase 4): real torch
+  implementations replacing the controller stubs:
+  - `controllers/reference_models.py` — `LinearReferenceModel`: Hurwitz-checked
+    reference dynamics ẋ_m=A_m x_m+B_m r with forward-Euler `step` (§7.1).
+  - `controllers/safety.py` — `CLFCBFSafetyFilter`: closed-form single-constraint
+    CBF projection with h(e)=c−eᵀPe, L_f h=−2eᵀP A_m e, L_g h=−2eᵀPB (§3.4/§7.2);
+    plus `cbf_constraint_loss` soft penalty. Forward-invariance verified (eᵀPe stays
+    ≤ c over a 100-step closed-loop sim under destabilizing nominal control).
+  - `controllers/mras.py` — `MRASController`: actor-critic control u=−K_fb·e+K_ff·r
+    with optional CBF filtering; `lqr_warm_start(Q,R)` sets K_fb to the CARE gain and
+    warm-starts the critic P (§7.3).
+  - `models/critic.py` — added `set_P` (inverse of `extract_P`) so the critic can be
+    warm-started to the CARE solution; round-trip verified.
+  - Tests: un-skipped the three CBF gate tests (`test_cbf_projects_unsafe_control`,
+    `test_cbf_identity_when_safe`, `test_cbf_forward_invariance`) and
+    `test_optimal_control_equals_lqr_gain`; new `tests/test_controllers.py` (11).
+    Acceptance gate `pytest tests/test_safety.py tests/test_identity_costate.py`
+    passes (5/5). Independently reviewed (APPROVE): forward invariance holds
+    (max eᵀPe=0.9999≤1.0), K_fb matches the CARE gain to 1.7e-7, costate-derived
+    control equals −Ke to 1.4e-7.
+
 - **Phase 3 — Loss Functions** (`docs/ROADMAP.md` Phase 3): real torch
   implementations replacing the loss stubs:
   - `losses/physics.py` — `PhysicsLoss`: port-Hamiltonian energy balance
@@ -120,8 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Status:** Phase 1 (Foundation Layer) is implemented and tested; Phases 2–9
   (models, losses, controllers, training, inference, examples) remain documented
   stubs raising `NotImplementedError`. Implementation proceeds per `docs/ROADMAP.md`.
-- Verified gates after Phase 3: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 93 passed, 8 skipped (later-phase tests); `import pits_mras` → 0.1.0.
+- Verified gates after Phase 4: `flake8 src tests` → 0; `mypy src` → 0;
+  `pytest` → 109 passed, 5 skipped (later-phase tests); `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
   Phase-1 runtime deps (CPU-only torch) before running the gates.

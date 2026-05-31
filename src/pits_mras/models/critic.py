@@ -107,6 +107,39 @@ class QuadraticCritic(nn.Module):
                 idx += 1
         return P
 
+    def set_P(self, P: Tensor) -> None:
+        r"""Write a symmetric :math:`\hat P` into the ``W_c`` basis weights.
+
+        Inverse of :meth:`extract_P`: given the symmetric matrix ``P`` (so that
+        :math:`\hat V(e) = e^\top P e`), set the upper-triangular basis weights
+        ``W_c`` such that the diagonal coefficient of :math:`e_i^2` is
+        ``P[i, i]`` and the coefficient of the cross term :math:`e_i e_j`
+        (``i < j``) is ``P[i, j] + P[j, i]``. Used to warm-start the critic to
+        the LQR / CARE solution so the costate matches the optimum.
+
+        Args:
+            P: ``[state_dim, state_dim]`` matrix; symmetrized internally.
+        """
+        n = self.state_dim
+        if P.shape != (n, n):
+            raise ValueError(
+                f"set_P expects a [{n}, {n}] matrix, got {tuple(P.shape)}."
+            )
+        P = P.to(device=self.W_c.weight.device, dtype=self.W_c.weight.dtype)
+        with torch.no_grad():
+            w = torch.zeros(self.basis_dim, device=P.device, dtype=P.dtype)
+            idx = 0
+            for i in range(n):
+                for j in range(i, n):
+                    if i == j:
+                        w[idx] = P[i, i]
+                    else:
+                        # extract_P splits this weight in half across (i,j),(j,i);
+                        # the inverse recombines both off-diagonal entries.
+                        w[idx] = P[i, j] + P[j, i]
+                    idx += 1
+            self.W_c.weight.data.copy_(w.unsqueeze(0))
+
     def positivity_loss(self) -> Tensor:
         r"""Penalize if :math:`\hat P` is not positive definite.
 

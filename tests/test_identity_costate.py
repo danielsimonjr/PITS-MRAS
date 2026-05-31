@@ -11,15 +11,22 @@ Phase-2 status:
 - ``test_costate_equals_grad_V`` is UN-SKIPPED: the costate head's action IS the
   autodiff gradient of the critic by construction, so the identity holds with
   only Phase-2 code.
-- ``test_optimal_control_equals_lqr_gain`` stays SKIPPED: recovering the LQR gain
-  requires the reference model's CARE solution + critic warm-start that land in
-  Phase 4 (``controllers/mras.py``). It is left as a placeholder for that phase.
+
+Phase-4 status:
+- ``test_optimal_control_equals_lqr_gain`` is now UN-SKIPPED: after
+  ``MRASController.lqr_warm_start(Q, R)`` the controller's nominal feedback
+  ``u = -K_fb e`` equals the LQR optimal ``-K e`` (K from ``solve_care``), and
+  (because Phase 4 added ``QuadraticCritic.set_P``) the critic costate-derived
+  control ``-R^{-1} B^T (1/2 grad V) = -K e`` matches as well.
 """
 
-import pytest
+import numpy as np
 import torch
 
+from pits_mras.controllers.reference_models import LinearReferenceModel
+from pits_mras.controllers.mras import MRASController
 from pits_mras.models.critic import CostateHead, QuadraticCritic
+from pits_mras.utils.lyapunov import solve_care
 
 
 def test_costate_equals_grad_V() -> None:
@@ -48,6 +55,45 @@ def test_costate_equals_grad_V() -> None:
     assert torch.allclose(lam_head, 2.0 * (e @ P.T), atol=1e-5)
 
 
-@pytest.mark.skip(reason="phase 4: needs CARE solution + critic LQR warm-start (controllers/mras)")
 def test_optimal_control_equals_lqr_gain() -> None:
-    """u* = -R^-1 B^T grad V recovers the LQR gain in the linear limit."""
+    """u* = -R^-1 B^T grad V recovers the LQR gain in the linear limit.
+
+    After ``lqr_warm_start``, two things must hold numerically:
+      1. The MRAS nominal feedback ``u = -K_fb e`` equals ``-K e`` (CARE gain).
+      2. The critic costate control ``-R^{-1} B^T (1/2 grad V)`` equals ``-K e``.
+         With ``V = e^T P e`` and ``set_P(P)``, grad V = 2 P e, so the costate
+         (half-gradient) is ``P e`` and ``-R^{-1} B^T P e = -K e``.
+    """
+    A_m = np.array([[-1.0, 0.5], [0.0, -2.0]])
+    B_m = np.array([[1.0, 0.0], [0.0, 1.0]])
+    C_m = np.eye(2)
+    Q_np = np.eye(2)
+    R_np = np.eye(2)
+    rm = LinearReferenceModel(A_m, B_m, C_m, Q_np, R_np)
+    ctrl = MRASController(rm, state_dim=2, control_dim=2, ref_dim=2, plant_dim=2)
+
+    Q = torch.tensor(Q_np, dtype=torch.float32)
+    R = torch.tensor(R_np, dtype=torch.float32)
+    P_t, K_t = ctrl.lqr_warm_start(Q, R)
+
+    P_care, K_care = solve_care(A_m, B_m, Q_np, R_np)
+
+    # (1) K_fb == CARE gain.
+    assert np.allclose(ctrl.K_fb.numpy(), K_care, atol=1e-4)
+
+    e = torch.randn(7, 2)
+    u_fb = -e @ ctrl.K_fb.T
+    u_lqr = -e @ torch.tensor(K_care, dtype=torch.float32).T
+    assert torch.allclose(u_fb, u_lqr, atol=1e-4)
+
+    # (2) Critic was warm-started so extract_P == P_care.
+    P_hat = ctrl.critic.extract_P()
+    assert torch.allclose(P_hat, torch.tensor(P_care, dtype=torch.float32), atol=1e-4)
+
+    # Costate control: u* = -R^{-1} B^T * (1/2 grad V) = -R^{-1} B^T P e = -K e.
+    R_inv = rm.R_inv
+    B = rm.B_m
+    grad_V = ctrl.critic.gradient(e)  # 2 P e
+    costate = 0.5 * grad_V  # P e
+    u_costate = -(costate @ B) @ R_inv.T
+    assert torch.allclose(u_costate, u_lqr, atol=1e-4)
