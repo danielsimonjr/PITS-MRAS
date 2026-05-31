@@ -142,7 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (models, losses, controllers, training, inference, examples) remain documented
   stubs raising `NotImplementedError`. Implementation proceeds per `docs/ROADMAP.md`.
 - Verified gates after Phase 4: `flake8 src tests` → 0; `mypy src` → 0;
-  `pytest` → 109 passed, 5 skipped (later-phase tests); `import pits_mras` → 0.1.0.
+  `pytest` → 110 passed, 4 skipped (later-phase tests); `import pits_mras` → 0.1.0.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
   Phase-1 runtime deps (CPU-only torch) before running the gates.
