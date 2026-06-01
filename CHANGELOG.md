@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `examples/autonomous_vehicle.py`: the CBF comparison was vacuous — at the
+  default `safety_margin=10.0` the filter never engaged, so the with-CBF and
+  without-CBF curves were bit-identical. The gust is now modelled as a plant
+  disturbance (a wind gust is a disturbance, not a reference command) with the
+  target at lane-center, and the safety margin is tightened to 0.5, so the CBF
+  genuinely activates (~30 % of steps) and the two trajectories visibly diverge.
+  Added `test_autonomous_vehicle_cbf_actually_engages` to prevent regression.
+  Also removed 11 duplicate keys from the example's return dict and duplicate
+  assertions from its test.
+
 ## [0.2.0] - 2026-05-31
 
 First release with all nine ROADMAP phases implemented (the 0.1.0 baseline was a
