@@ -7,26 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### Note
 
-- `examples/robotic_manipulator.py`: the critic is now genuinely **trained** (via
-  the Phase-5 Integral-RL trainer) instead of run untrained. Panel (d) reports the
-  trained critic's recovery of the CARE solution P_CARE (~0.4 % rel-error, vs the
-  untrained ~80 %), a real demonstration of Identity 1, and the trained critic then
-  drives the closed-loop inference run. Added a regression test asserting
-  `critic_convergence < 0.05`.
-
-### Fixed
-
-- `examples/autonomous_vehicle.py`: the CBF comparison was vacuous — at the
-  default `safety_margin=10.0` the filter never engaged, so the with-CBF and
-  without-CBF curves were bit-identical. The gust is now modelled as a plant
-  disturbance (a wind gust is a disturbance, not a reference command) with the
-  target at lane-center, and the safety margin is tightened to 0.5, so the CBF
-  genuinely activates (~30 % of steps) and the two trajectories visibly diverge.
-  Added `test_autonomous_vehicle_cbf_actually_engages` to prevent regression.
-  Also removed 11 duplicate keys from the example's return dict and duplicate
-  assertions from its test.
+- Commits `034082a` and `3222c42` added CHANGELOG entries for example fixes
+  (autonomous_vehicle CBF, robotic_manipulator critic training) whose code edits
+  failed to save during a tool-channel outage — the entries described work the
+  source never received. Those unbacked entries have been removed here; the
+  example improvements remain genuine TODOs (see the v0.2.0 known-limitations note).
 
 ## [0.2.0] - 2026-05-31
 
@@ -253,9 +240,16 @@ scaffold). Highlights below.
 - **Status:** ALL 9 phases (foundation, models, losses, controllers, training,
   inference, examples, full test suite, CI/CD) are implemented and tested. The
   framework is built out per `docs/ROADMAP.md`.
-- Verified gates after Phase 9: `flake8 src tests examples` → 0; `mypy src` → 0;
+- Verified gates: `flake8 src tests examples` → 0; `mypy src` → 0;
   `pytest` → 139 passed, 0 skipped; coverage 98 % (≥60 % gate enforced in CI);
-  `import pits_mras` → 0.1.0.
+  `import pits_mras` → 0.2.0.
+- **Known limitations (genuine TODOs):** the `examples/` are toy/synthetic demos
+  on a linear surrogate plant. `autonomous_vehicle` runs the CBF at its default
+  margin where the filter does not engage, so the with-/without-CBF comparison is
+  currently not illustrative; `robotic_manipulator` runs the critic without
+  training, so its convergence panel is a static diagnostic. Improving both, and
+  building out the H∞ disturbance/adversary head (gap G1, Blueprint Connection 7),
+  remain future work.
 - **CI install:** still `pip install -e . --no-deps` plus the dev toolchain in the
   workflow. Phase 1 utils import numpy/scipy/torch, so CI now also installs the
   Phase-1 runtime deps (CPU-only torch) before running the gates.
