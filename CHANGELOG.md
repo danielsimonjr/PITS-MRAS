@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `examples/robotic_manipulator.py`: the critic is now genuinely **trained** (via
+  the Phase-5 Integral-RL trainer) instead of run untrained. Panel (d) reports the
+  trained critic's recovery of the CARE solution P_CARE (~0.4 % rel-error, vs the
+  untrained ~80 %), a real demonstration of Identity 1, and the trained critic then
+  drives the closed-loop inference run. Added a regression test asserting
+  `critic_convergence < 0.05`.
+
 ### Fixed
 
 - `examples/autonomous_vehicle.py`: the CBF comparison was vacuous — at the
