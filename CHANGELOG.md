@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-31
+
+First release with all nine ROADMAP phases implemented (the 0.1.0 baseline was a
+scaffold). Highlights below.
+
 ### Added
 
 - **Phase 9 — CI/CD finalization** (`docs/ROADMAP.md` Phase 9 / §12): the project
