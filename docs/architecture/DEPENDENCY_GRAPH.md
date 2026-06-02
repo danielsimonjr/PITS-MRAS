@@ -10,7 +10,7 @@ Comprehensive dependency graph of all Python modules, imports, exports, function
 
 The codebase is organized into the following modules:
 
-- **examples**: 3 files
+- **examples**: 4 files
 - **root**: 1 file
 - **src/pits_mras**: 2 files
 - **src/pits_mras/constraints**: 4 files
@@ -88,6 +88,34 @@ The codebase is organized into the following modules:
 
 ---
 
+### `examples/pcml_heat_diffusion.py` - Example: hard PCML on the 1-D heat equation with real coordinates.
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `matplotlib` | `(module)` |
+| `torch` | `(module)` |
+| `matplotlib.pyplot` | `(module)` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `math` | `(module)` |
+| `typing` | `Any` |
+
+**Internal Dependencies:**
+| Module | Imports | Type |
+|--------|---------|------|
+| `src/pits_mras/constraints/__init__.py` | `HeatConductionDAE` | Import |
+| `src/pits_mras/models/pcml.py` | `PCMLModule, SoftPCMLLoss` | Import |
+
+**Exports:**
+- Functions: `run`, `main`
+
+---
+
 ### `examples/robotic_manipulator.py` - Example: 2-DOF planar robotic manipulator (IP §10.1).
 
 **Third-party Dependencies:**
@@ -113,6 +141,7 @@ The codebase is organized into the following modules:
 | `src/pits_mras/controllers/reference_models.py` | `LinearReferenceModel` | Import |
 | `src/pits_mras/inference/realtime.py` | `RealtimeInferenceEngine` | Import |
 | `src/pits_mras/models/__init__.py` | `PITNN` | Import |
+| `src/pits_mras/training/irl_trainer.py` | `train_irl_critic_gd` | Import |
 
 **Exports:**
 - Functions: `run`, `main`
@@ -722,9 +751,10 @@ The codebase is organized into the following modules:
 |--------|---------|------|
 | `src/pits_mras/controllers/reference_models.py` | `LinearReferenceModel` | Import (TYPE_CHECKING) |
 | `src/pits_mras/models/critic.py` | `QuadraticCritic` | Import (TYPE_CHECKING) |
+| `src/pits_mras/losses/irl.py` | `IRLBellmanLoss` | Import |
 
 **Exports:**
-- Functions: `train_irl_critic`
+- Functions: `train_irl_critic_gd`, `train_irl_critic`
 
 ---
 
@@ -826,100 +856,101 @@ graph TD
     subgraph Examples
         N0[autonomous_vehicle]
         N1[building_hvac]
-        N2[robotic_manipulator]
+        N2[pcml_heat_diffusion]
+        N3[robotic_manipulator]
     end
 
     subgraph Root
-        N3[setup]
+        N4[setup]
     end
 
     subgraph Src / pits_mras
-        N4[__init__]
-        N5[config]
+        N5[__init__]
+        N6[config]
     end
 
     subgraph Src / pits_mras / constraints
-        N6[__init__]
-        N7[base]
-        N8[mechanical]
-        N9[thermal]
+        N7[__init__]
+        N8[base]
+        N9[mechanical]
+        N10[thermal]
     end
 
     subgraph Src / pits_mras / controllers
-        N10[__init__]
-        N11[mras]
-        N12[reference_models]
-        N13[safety]
+        N11[__init__]
+        N12[mras]
+        N13[reference_models]
+        N14[safety]
     end
 
     subgraph Src / pits_mras / inference
-        N14[__init__]
-        N15[parallel]
-        N16[realtime]
+        N15[__init__]
+        N16[parallel]
+        N17[realtime]
     end
 
     subgraph Src / pits_mras / losses
-        N17[__init__]
-        N18[hjb]
-        N19[irl]
-        N20[physics]
-        N21[stability]
-        N22[...1 more]
+        N18[__init__]
+        N19[hjb]
+        N20[irl]
+        N21[physics]
+        N22[stability]
+        N23[...1 more]
     end
 
     subgraph Src / pits_mras / models
-        N23[__init__]
-        N24[attention]
-        N25[critic]
-        N26[decoders]
-        N27[lagrangian_head]
-        N28[...2 more]
+        N24[__init__]
+        N25[attention]
+        N26[critic]
+        N27[decoders]
+        N28[lagrangian_head]
+        N29[...2 more]
     end
 
     subgraph Src / pits_mras / training
-        N29[__init__]
-        N30[cotrain]
-        N31[irl_trainer]
-        N32[pretrain]
+        N30[__init__]
+        N31[cotrain]
+        N32[irl_trainer]
+        N33[pretrain]
     end
 
     subgraph Src / pits_mras / utils
-        N33[__init__]
-        N34[hamiltonian]
-        N35[lyapunov]
-        N36[pe_monitor]
+        N34[__init__]
+        N35[hamiltonian]
+        N36[lyapunov]
+        N37[pe_monitor]
     end
 
-    N0 --> N5
-    N0 --> N11
+    N0 --> N6
     N0 --> N12
-    N0 --> N16
-    N0 --> N23
-    N1 --> N5
-    N1 --> N11
+    N0 --> N13
+    N0 --> N17
+    N0 --> N24
+    N1 --> N6
     N1 --> N12
-    N1 --> N16
-    N1 --> N23
-    N2 --> N5
-    N2 --> N11
-    N2 --> N12
-    N2 --> N16
-    N2 --> N23
-    N4 --> N6
-    N4 --> N11
-    N4 --> N12
-    N4 --> N13
-    N4 --> N16
-    N4 --> N25
-    N4 --> N27
-    N4 --> N29
-    N6 --> N7
-    N6 --> N8
-    N6 --> N9
-    N8 --> N7
-    N9 --> N7
-    N11 --> N12
-    N11 --> N13
+    N1 --> N13
+    N1 --> N17
+    N1 --> N24
+    N2 --> N7
+    N3 --> N6
+    N3 --> N12
+    N3 --> N13
+    N3 --> N17
+    N3 --> N24
+    N3 --> N32
+    N5 --> N7
+    N5 --> N12
+    N5 --> N13
+    N5 --> N14
+    N5 --> N17
+    N5 --> N26
+    N5 --> N28
+    N5 --> N30
+    N7 --> N8
+    N7 --> N9
+    N7 --> N10
+    N9 --> N8
+    N10 --> N8
 ```
 
 ---
@@ -928,15 +959,15 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 38 |
+| Total Python Files | 39 |
 | Total Modules | 10 |
-| Total Lines of Code | 4907 |
-| Total Public Exports | 111 |
+| Total Lines of Code | 5219 |
+| Total Public Exports | 114 |
 | Total Re-exports | 45 |
 | Total Classes | 44 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 21 |
+| Total Functions | 24 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 10 |

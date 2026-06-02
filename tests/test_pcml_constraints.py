@@ -109,21 +109,90 @@ def _zero_force(n: int):
     return fn
 
 
-def test_mechanical_spec_unconstrained() -> None:
-    n = 2
-    dae = MechanicalDAE(
+def _unit_jacobian(n: int, m: int):
+    """Constant holonomic Jacobian J(q) -> [batch, m, n]."""
+    base = torch.zeros(m, n)
+    for i in range(m):
+        base[i, i] = 1.0
+        if i + 1 < n:
+            base[i, i + 1] = -1.0
+
+    def fn(q: torch.Tensor) -> torch.Tensor:
+        return base.to(q.dtype).unsqueeze(0).expand(q.shape[0], m, n)
+
+    return fn
+
+
+def _mechanical(n: int, m: int, q_bounds=None) -> MechanicalDAE:
+    return MechanicalDAE(
         n_joints=n,
-        n_holonomic=0,
+        n_holonomic=m,
         inertia_fn=_diag_inertia(n),
         coriolis_fn=_zero_force(n),
         gravity_fn=_zero_force(n),
-        actuator_fn=lambda q: torch.eye(n).unsqueeze(0).expand(q.shape[0], n, n),
+        actuator_fn=lambda q: torch.zeros(q.shape[0], n, max(m, 1)),
+        constraint_fn=_unit_jacobian(n, m) if m > 0 else None,
+        q_bounds=q_bounds,
     )
+
+
+def test_mechanical_spec_unconstrained() -> None:
+    n = 2
+    dae = _mechanical(n, 0)
     s = dae.spec
-    # No holonomic constraints -> only the EOM differential, no equality.
-    assert s.n_differential == 1
+    # No holonomic constraints -> the EOM differential is n_joints-wide.
+    assert s.n_differential == n
     assert s.n_equality == 0
-    assert s.n_outputs == n
+    assert s.n_outputs == 2 * n  # y = [q, q_dot]
+
+
+def test_mechanical_spec_matches_residual_widths() -> None:
+    """ConstraintSpec counts MUST equal the actual residual vector widths.
+
+    The KKT projection sizes its system from the spec, so any mismatch (which
+    previously existed: the EOM residual is n_joints-wide but n_differential was
+    1) would malform the projection on mechanical systems.
+    """
+    n, m = 2, 1
+    b = 4
+    q = torch.randn(b, n)
+    q_dot = torch.randn(b, n)
+    y = torch.cat([q, q_dot], dim=-1)
+    t = torch.zeros(b, 1)
+    q_bounds = (torch.tensor([-1.0, -1.0]), torch.tensor([1.0, 1.0]))
+    for nm in (0, m):
+        dae = _mechanical(n, nm, q_bounds=q_bounds)
+        s = dae.spec
+        n_lam = nm
+        d = (
+            torch.cat([q_dot, torch.randn(b, n), torch.randn(b, n_lam)], dim=-1)
+            if nm > 0
+            else torch.cat([q_dot, torch.randn(b, n)], dim=-1)
+        )
+        assert dae.differential(q, t, y, d).shape[-1] == s.n_differential
+        assert dae.equality(q, t, y).shape[-1] == s.n_equality
+        assert dae.inequality(q, t, y).shape[-1] == s.n_inequality
+
+
+def test_mechanical_holonomic_differential_blocks() -> None:
+    """With m>0 the differential residual is [EOM(n), Psi(m), J q_dot(m)]."""
+    n, m = 2, 1
+    dae = _mechanical(n, m)
+    b = 5
+    q = torch.randn(b, n)
+    q_dot = torch.randn(b, n)
+    y = torch.cat([q, q_dot], dim=-1)
+    q_ddot = torch.randn(b, n)
+    lam = torch.randn(b, m)
+    d = torch.cat([q_dot, q_ddot, lam], dim=-1)
+    res = dae.differential(q, torch.zeros(b, 1), y, d)
+    assert res.shape == (b, n + 2 * m)
+    # The holonomic position block Psi = J q and velocity block J q_dot.
+    J = _unit_jacobian(n, m)(q)
+    psi = (J @ q.unsqueeze(-1)).squeeze(-1)
+    jqdot = (J @ q_dot.unsqueeze(-1)).squeeze(-1)
+    assert torch.allclose(res[:, n : n + m], psi, atol=1e-6)
+    assert torch.allclose(res[:, n + m : n + 2 * m], jqdot, atol=1e-6)
 
 
 def test_mechanical_eom_residual_free_motion() -> None:

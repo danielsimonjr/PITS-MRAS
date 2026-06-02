@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.3.0` · 38 source files · 10 modules · 4,907 LOC · 111 exports
-(45 re-exports) · 44 classes · 1 Protocol/ABC · 21 functions · 0 circular
+**Version `0.3.0` · 39 source files · 10 modules · 5,219 LOC · 114 exports
+(45 re-exports) · 44 classes · 1 Protocol/ABC · 24 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -85,7 +85,7 @@ the v0.2.0 behavior is unchanged unless PCML is explicitly wired in.
 
 ## 2. Module Map
 
-Ten modules, 38 files. One-line purposes are taken verbatim (abridged) from each
+Ten modules, 39 files. One-line purposes are taken verbatim (abridged) from each
 subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 | Module | Files | Purpose |
@@ -98,7 +98,7 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 | `src/pits_mras/models` | 7 | Physics-informed attention, port-Hamiltonian decoders, critic/costate heads, PCML/Lagrangian heads, and the top-level `PITNN`. |
 | `src/pits_mras/training` | 4 | Physics pre-training curriculum, IRL co-training loop, and the offline IRL critic trainer (IP §8). |
 | `src/pits_mras/utils` | 4 | Lyapunov/Riccati engine, port-Hamiltonian utilities, and the persistence-of-excitation monitor (IP §4.3–4.5). |
-| `examples` | 3 | Runnable end-to-end demos (CLI entry points): robotic manipulator, autonomous vehicle, building HVAC. |
+| `examples` | 4 | Runnable end-to-end demos (CLI entry points): robotic manipulator, autonomous vehicle, building HVAC, and a coordinate-bearing hard-PCML heat-diffusion demo. |
 | `root` | 1 | `setup.py` packaging entry point. |
 
 ### Notable files within each subpackage
@@ -121,9 +121,8 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 ## 3. Entry Points
 
-The graph lists **12 entry points**: the 3 example scripts (CLI), the package +
-6 subpackage `__init__.py` barrels, plus `config.py`/`__init__.py` at the root and
-`setup.py`.
+The graph lists **13 entry points**: the 4 example scripts (CLI), the package +
+6 subpackage `__init__.py` barrels, plus `__init__.py` at the root and `setup.py`.
 
 ### 3.1 Examples (CLI)
 
@@ -138,6 +137,7 @@ the public surface — `config` (`NetworkConfig`, `PhysicsConfig`,
 | `examples/robotic_manipulator.py` | 2-DOF planar robotic manipulator | IP §10.1 |
 | `examples/autonomous_vehicle.py` | Autonomous-vehicle lateral control | IP §10.2 |
 | `examples/building_hvac.py` | Building HVAC thermal-zone control | IP §10.3 |
+| `examples/pcml_heat_diffusion.py` | Hard PCML on the 1-D heat equation (real `(x,t,∂)`) | PCML / DAE-HardNet |
 
 Run an example directly with Python, e.g.:
 
@@ -171,15 +171,15 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 | Metric | Value |
 |---|---|
 | Version | `0.3.0` |
-| Total Python files | 38 |
+| Total Python files | 39 |
 | Modules | 10 |
-| Total lines of code | 4,907 |
-| Total exports | 111 |
+| Total lines of code | 5,219 |
+| Total exports | 114 |
 | Re-exports (barrel) | 45 |
 | Classes | 44 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
-| Functions | 21 |
+| Functions | 24 |
 | Constants | 0 |
 | Type-checking-only imports | 10 |
 | Runtime circular dependencies | 0 |

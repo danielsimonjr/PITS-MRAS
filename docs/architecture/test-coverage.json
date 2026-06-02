@@ -1,15 +1,16 @@
 {
   "metadata": {
     "generatedAt": "2026-06-02",
-    "totalSourceFiles": 38,
+    "totalSourceFiles": 39,
     "totalTestFiles": 21,
     "testedCount": 31,
-    "untestedCount": 7,
-    "coveragePercent": "81.6"
+    "untestedCount": 8,
+    "coveragePercent": "79.5"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
     "examples/building_hvac.py",
+    "examples/pcml_heat_diffusion.py",
     "examples/robotic_manipulator.py",
     "setup.py",
     "src/pits_mras/controllers/__init__.py",
@@ -52,6 +53,7 @@
   "coverageMap": {
     "examples/autonomous_vehicle.py": [],
     "examples/building_hvac.py": [],
+    "examples/pcml_heat_diffusion.py": [],
     "examples/robotic_manipulator.py": [],
     "setup.py": [],
     "src/pits_mras/__init__.py": [
@@ -263,23 +265,23 @@
       "src/pits_mras/utils/lyapunov.py"
     ],
     "tests/test_imports.py": [
-      "src/pits_mras/controllers/mras.py",
-      "src/pits_mras/training/irl_trainer.py",
-      "src/pits_mras/training/cotrain.py",
-      "src/pits_mras/inference/realtime.py",
-      "src/pits_mras/models/critic.py",
-      "src/pits_mras/constraints/thermal.py",
-      "src/pits_mras/models/pitnn.py",
-      "src/pits_mras/training/__init__.py",
       "src/pits_mras/constraints/mechanical.py",
-      "src/pits_mras/training/pretrain.py",
-      "src/pits_mras/__init__.py",
-      "src/pits_mras/constraints/__init__.py",
-      "src/pits_mras/models/lagrangian_head.py",
-      "src/pits_mras/controllers/reference_models.py",
       "src/pits_mras/models/pcml.py",
+      "src/pits_mras/inference/realtime.py",
+      "src/pits_mras/training/__init__.py",
+      "src/pits_mras/training/cotrain.py",
+      "src/pits_mras/constraints/thermal.py",
+      "src/pits_mras/controllers/safety.py",
+      "src/pits_mras/models/pitnn.py",
       "src/pits_mras/constraints/base.py",
-      "src/pits_mras/controllers/safety.py"
+      "src/pits_mras/training/irl_trainer.py",
+      "src/pits_mras/training/pretrain.py",
+      "src/pits_mras/models/lagrangian_head.py",
+      "src/pits_mras/controllers/mras.py",
+      "src/pits_mras/__init__.py",
+      "src/pits_mras/controllers/reference_models.py",
+      "src/pits_mras/constraints/__init__.py",
+      "src/pits_mras/models/critic.py"
     ],
     "tests/test_inference.py": [
       "src/pits_mras/config.py",
@@ -287,9 +289,9 @@
       "src/pits_mras/controllers/reference_models.py",
       "src/pits_mras/inference/parallel.py",
       "src/pits_mras/inference/realtime.py",
+      "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/decoders.py",
-      "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/__init__.py",
       "src/pits_mras/models/critic.py"
     ],
@@ -298,13 +300,13 @@
       "src/pits_mras/models/critic.py"
     ],
     "tests/test_losses.py": [
-      "src/pits_mras/losses/irl.py",
-      "src/pits_mras/config.py",
-      "src/pits_mras/losses/stability.py",
-      "src/pits_mras/losses/hjb.py",
       "src/pits_mras/losses/__init__.py",
-      "src/pits_mras/losses/physics.py",
+      "src/pits_mras/losses/stability.py",
       "src/pits_mras/losses/temporal.py",
+      "src/pits_mras/config.py",
+      "src/pits_mras/losses/irl.py",
+      "src/pits_mras/losses/physics.py",
+      "src/pits_mras/losses/hjb.py",
       "src/pits_mras/models/critic.py"
     ],
     "tests/test_lyapunov_utils.py": [
@@ -318,42 +320,42 @@
       "src/pits_mras/models/pitnn.py"
     ],
     "tests/test_pcml_constraints.py": [
-      "src/pits_mras/constraints/thermal.py",
-      "src/pits_mras/constraints/mechanical.py",
       "src/pits_mras/constraints/base.py",
+      "src/pits_mras/constraints/mechanical.py",
+      "src/pits_mras/constraints/thermal.py",
       "src/pits_mras/constraints/__init__.py"
     ],
     "tests/test_pcml_hard.py": [
-      "src/pits_mras/constraints/thermal.py",
-      "src/pits_mras/constraints/mechanical.py",
       "src/pits_mras/constraints/base.py",
+      "src/pits_mras/constraints/mechanical.py",
+      "src/pits_mras/constraints/thermal.py",
       "src/pits_mras/constraints/__init__.py",
       "src/pits_mras/models/pcml.py"
     ],
     "tests/test_pcml_integration.py": [
       "src/pits_mras/config.py",
-      "src/pits_mras/constraints/thermal.py",
-      "src/pits_mras/constraints/mechanical.py",
       "src/pits_mras/constraints/base.py",
+      "src/pits_mras/constraints/mechanical.py",
+      "src/pits_mras/constraints/thermal.py",
       "src/pits_mras/constraints/__init__.py",
       "src/pits_mras/controllers/mras.py",
       "src/pits_mras/controllers/reference_models.py",
       "src/pits_mras/inference/realtime.py",
-      "src/pits_mras/losses/irl.py",
-      "src/pits_mras/losses/stability.py",
-      "src/pits_mras/losses/hjb.py",
       "src/pits_mras/losses/__init__.py",
-      "src/pits_mras/losses/physics.py",
+      "src/pits_mras/losses/stability.py",
       "src/pits_mras/losses/temporal.py",
+      "src/pits_mras/losses/irl.py",
+      "src/pits_mras/losses/physics.py",
+      "src/pits_mras/losses/hjb.py",
       "src/pits_mras/models/lagrangian_head.py",
       "src/pits_mras/models/pcml.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/training/cotrain.py"
     ],
     "tests/test_pcml_soft.py": [
-      "src/pits_mras/constraints/thermal.py",
-      "src/pits_mras/constraints/mechanical.py",
       "src/pits_mras/constraints/base.py",
+      "src/pits_mras/constraints/mechanical.py",
+      "src/pits_mras/constraints/thermal.py",
       "src/pits_mras/constraints/__init__.py",
       "src/pits_mras/models/lagrangian_head.py",
       "src/pits_mras/models/pcml.py"
@@ -369,24 +371,24 @@
       "src/pits_mras/config.py",
       "src/pits_mras/controllers/mras.py",
       "src/pits_mras/controllers/reference_models.py",
+      "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/decoders.py",
-      "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/__init__.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/inference/realtime.py",
-      "src/pits_mras/training/irl_trainer.py",
       "src/pits_mras/training/__init__.py",
       "src/pits_mras/training/cotrain.py",
-      "src/pits_mras/training/pretrain.py"
+      "src/pits_mras/training/pretrain.py",
+      "src/pits_mras/training/irl_trainer.py"
     ],
     "tests/test_training.py": [
       "src/pits_mras/config.py",
       "src/pits_mras/controllers/mras.py",
       "src/pits_mras/controllers/reference_models.py",
+      "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/decoders.py",
-      "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/__init__.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/training/cotrain.py",

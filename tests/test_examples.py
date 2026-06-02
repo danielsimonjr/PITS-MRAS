@@ -77,3 +77,18 @@ def test_example_run_returns_steps_series(module_name: str) -> None:
     assert "error_norm" in out, f"{module_name}.run missing 'error_norm' series"
     assert isinstance(out["error_norm"], list)
     assert len(out["error_norm"]) == 10
+
+
+def test_pcml_heat_diffusion_hard_projection() -> None:
+    """The coordinate-bearing PCML demo: soft training reduces the heat-equation
+    violation, and the hard KKT projection drives it to ~0 (real x, t, autodiff
+    derivatives)."""
+    run = _import_run("pcml_heat_diffusion")
+    out = run(steps=30, show=False)
+    assert "figure" in out and isinstance(out["figure"], Figure)
+    _assert_finite_metrics(out)
+    # Soft training fits the data (data loss falls)...
+    assert out["data_loss"][-1] < out["data_loss"][0]
+    # ...and the hard KKT projection drives the heat-equation violation to ~0.
+    assert out["violation_after_projection"] < out["violation_before_projection"]
+    assert out["violation_after_projection"] < 1e-4

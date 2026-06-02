@@ -44,18 +44,36 @@ for the spec.
   wrote the 5 docs (OVERVIEW, ARCHITECTURE [moved+refreshed], COMPONENTS, API,
   DATAFLOW); README links updated.
 
-## Deferred / future (documented, low priority)
+## Resolved 2026-06-02 (former deferred items)
 
-- **Synthetic-loop PCML inputs are placeholders**: `cotrain`/`realtime` pass
-  zeros for the constraint inputs `x`/`t` and derivative variables `d`, because
-  the synthetic plant has no spatial/temporal coordinates. A real plant with
-  genuine `(x, t, ∂)` would make the loop-level PCML loss/projection physically
-  meaningful (the standalone `PCMLModule` is already fully exercised on real DAEs).
-- **2nd-order Taylor (`order=2`) + `MechanicalDAE` holonomic path** are
-  implemented but only lightly tested vs the unconstrained/`HeatConductionDAE`
-  cases.
-- Pre-existing v0.2.0 TODOs still open: vacuous AV-CBF demo margin, untrained
-  manipulator critic in examples, H∞ adversary head (gap G1).
+- [x] **#1 coordinate-bearing PCML**: added `examples/pcml_heat_diffusion.py` —
+  hard PCML on the 1-D heat equation with genuine `(x, t, ∂)` (autodiff
+  derivatives); soft training reduces the residual and the KKT projection drives
+  the violation to ~0. (The MRAS control loop has no spatial coordinates, so its
+  PCML hook's zero `x`/`t` are correct-by-domain, not a placeholder bug.)
+- [x] **#2 lightly-tested PCML paths**: added tests for `order=2` Taylor and the
+  holonomic `MechanicalDAE`. **Found + fixed a latent bug**: `MechanicalDAE`'s
+  `ConstraintSpec` counts didn't match the residual vector widths (EOM is
+  `n_joints`-wide; `n_differential` was 1), which would malform the KKT
+  projection on mechanical systems. Spec now reports true widths; KKT projection
+  on a holonomic `MechanicalDAE` verified (violation < 1e-3).
+- [x] **#3a AV-CBF non-vacuous**: lane-hold-under-gust scenario with a tight
+  ellipsoid; the CBF now engages (~11% under the gust) and bounds the departure
+  / safe-set violation, with a CBF-activation panel. Honestly framed as a
+  minimally-invasive backstop (the near-LQR-optimal nominal needs little help).
+- [x] **#3b manipulator critic training**: added `train_irl_critic_gd` (offline
+  gradient IRL fit, decoupled from control-loop stability); the demo perturbs
+  the critic and trains it back, so panel (d) is a real convergence curve
+  (rel-err → ~1e-3). Also added a `critic_convergence` metric to `cotraining_loop`.
+
+## v0.4.0 (next version) — major, deferred
+
+- **H∞ disturbance/adversary head (gap G1, Blueprint Connection 7).** A genuinely
+  major feature: a new adversary network head, a Game Algebraic Riccati Equation
+  (GARE) solver (`solve_gare`, not yet implemented), and the robust-control /
+  worst-case-disturbance loss + min-max training. The Blueprint describes it but
+  the Implementation Plan builds critic/costate/CBF as the three concrete heads;
+  H∞ is out of scope for v0.3.x and is scheduled for v0.4.0.
 
 ## Notes / decisions
 

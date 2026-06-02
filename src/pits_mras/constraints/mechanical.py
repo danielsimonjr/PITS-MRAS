@@ -66,16 +66,18 @@ class MechanicalDAE(PhysicsConstraints):
         self.q_bounds = q_bounds
         self.u_bounds = u_bounds
 
+        # Spec counts are the actual residual VECTOR WIDTHS (not equation
+        # groups), so the KKT projection sizes its system correctly. The EOM
+        # residual is n_joints-wide; the holonomic position/velocity blocks add
+        # 2 * n_holonomic; joint-limit inequalities are 2 * n_joints wide.
         constrained = n_holonomic > 0 and constraint_fn is not None
-        n_diff = 1 + (2 if constrained else 0)  # EOM (+ Psi=0, J q_dot=0)
-        n_ineq = (2 * n_joints if q_bounds is not None else 0) + (
-            2 * n_joints if u_bounds is not None else 0
-        )
+        n_diff = n_joints + (2 * n_holonomic if constrained else 0)
+        n_ineq = 2 * n_joints if q_bounds is not None else 0
         self._spec = ConstraintSpec(
             n_differential=n_diff,
             n_equality=0,
             n_inequality=n_ineq,
-            n_outputs=n_joints,
+            n_outputs=2 * n_joints,  # y = [q, q_dot]
         )
 
     @property
@@ -119,8 +121,9 @@ class MechanicalDAE(PhysicsConstraints):
     def inequality(self, x: Tensor, t: Tensor, y: Tensor) -> Tensor:
         """Joint-limit residual ``g = [q_min - q, q - q_max] <= 0`` -> ``[batch, 2n]``.
 
-        (Torque limits are counted in the spec but enforced on the applied
-        control externally, since ``u`` is not part of this signature.)
+        (Torque limits ``u_bounds`` are NOT part of this residual -- ``u`` is not
+        in the signature -- so they are not counted in the spec; enforce them on
+        the applied control externally.)
         """
         n = self.n_joints
         q = y[:, :n]

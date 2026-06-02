@@ -51,7 +51,7 @@
 ### 0.1 Module map (as built)
 
 The package lives under `src/pits_mras/` (src-layout). The dependency graph
-finds **38 first-party Python files across 10 modules**:
+finds **39 first-party Python files across 10 modules**:
 
 | Module | Files | Responsibility |
 |--------|-------|----------------|
@@ -63,7 +63,7 @@ finds **38 first-party Python files across 10 modules**:
 | `constraints` | 4 | `base.py` (`PhysicsConstraints` ABC), `mechanical.py`, `thermal.py` — PCML DAE systems |
 | `training` | 4 | `pretrain.py` (3-stage curriculum), `cotrain.py` (closed-loop actor-critic + IRL + PCML), `irl_trainer.py` |
 | `inference` | 3 | `realtime.py` (closed-loop engine), `parallel.py` (thread skeleton) |
-| `examples` | 3 | Runnable demos: robotic manipulator, autonomous vehicle, building HVAC |
+| `examples` | 4 | Runnable demos: robotic manipulator, autonomous vehicle, building HVAC, hard-PCML heat diffusion |
 | `root` | 1 | `setup.py` |
 
 ### 0.2 Layering and health
@@ -74,9 +74,9 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 38 files · 10 modules · ~4,907 LOC · 111
+Key statistics (graph-generated): 39 files · 10 modules · ~5,219 LOC · 114
 public exports (45 re-exported through barrels) · 44 classes · 1 ABC
-(`PhysicsConstraints`) · 21 functions · 10 `TYPE_CHECKING`-guarded imports.
+(`PhysicsConstraints`) · 24 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---
 

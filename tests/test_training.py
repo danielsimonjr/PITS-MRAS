@@ -174,6 +174,51 @@ def test_cotrain_no_nan_and_critic_steps() -> None:
     assert not torch.allclose(p_before, p_after)
 
 
+def test_cotrain_records_critic_convergence_and_it_decreases() -> None:
+    """cotrain reports a critic_convergence series; IRL drives P_hat toward P_opt.
+
+    Starting the critic well away from the CARE solution P_opt, the relative
+    Frobenius error ||P_hat - P_opt|| / ||P_opt|| recorded each step must end
+    below where it started (the IRL critic update is learning).
+    """
+    cfg = _small_cfg()
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    # Perturb the critic away from P_opt so convergence is observable.
+    controller.critic.set_P(torch.eye(controller.state_dim) * 5.0)
+    metrics = cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=3, n_steps=12, batch_size=8, irl_window=3,
+        critic_lr=5e-2, seed=7,
+    )
+    assert "critic_convergence" in metrics
+    conv = metrics["critic_convergence"]
+    assert len(conv) == 3 * 12
+    assert all(math.isfinite(v) for v in conv)
+    assert conv[-1] < conv[0]
+
+
+def test_train_irl_critic_gd_converges_from_perturbation() -> None:
+    """Offline gradient IRL fit drives a perturbed critic back to P_opt.
+
+    Unlike the in-loop co-training, this fits the critic on FIXED optimal-closed-
+    loop data (decoupled from control stability), so the convex IRL Bellman loss
+    converges reliably; the returned per-step relative-error history must end
+    well below where it started and close to zero.
+    """
+    from pits_mras.models.critic import QuadraticCritic
+    from pits_mras.training.irl_trainer import train_irl_critic_gd
+
+    ref_model = _make_ref_model()
+    critic = QuadraticCritic(state_dim=2)
+    critic.set_P(torch.eye(2) * 5.0)  # far from P_opt
+    history = train_irl_critic_gd(critic, ref_model, seed=0)
+    assert all(math.isfinite(v) for v in history)
+    assert history[-1] < history[0]
+    assert history[-1] < 0.05  # converges close to the CARE solution
+
+
 def test_cotrain_hjb_disabled_path() -> None:
     """lambda_hjb == 0 disables the HJB term but the loop still runs."""
     cfg = _small_cfg()

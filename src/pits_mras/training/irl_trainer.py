@@ -43,6 +43,71 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def train_irl_critic_gd(
+    critic: "QuadraticCritic",
+    ref_model: "LinearReferenceModel",
+    *,
+    n_trajectories: int = 64,
+    traj_len: int = 40,
+    window_size: int = 20,
+    dt: float = 0.01,
+    steps: int = 300,
+    lr: float = 0.1,
+    seed: int = 0,
+) -> list[float]:
+    """Offline *gradient-descent* IRL critic fit; returns the convergence history.
+
+    Companion to :func:`train_irl_critic` (batch least-squares, one-shot). This
+    variant takes ``steps`` Adam gradient steps on the convex IRL Bellman loss
+    over a FIXED batch of optimal-closed-loop windows (``u = -K_opt e``), so it
+    is decoupled from control-loop stability and converges monotonically from an
+    arbitrary starting ``P``. Useful for visualizing critic convergence (e.g. the
+    robotic-manipulator demo's panel (d)).
+
+    Args:
+        critic: quadratic critic to fit (updated in place).
+        ref_model: provides ``A_m, B_m, Q, R, K_opt, P_opt``.
+        n_trajectories, traj_len, window_size, dt: synthetic-data parameters.
+        steps: number of gradient steps.
+        lr: Adam learning rate for the critic.
+        seed: RNG seed for the synthetic data.
+
+    Returns:
+        Per-step relative Frobenius error ``||P_hat - P_opt|| / ||P_opt||``
+        (length ``steps``).
+    """
+    from pits_mras.losses.irl import IRLBellmanLoss
+
+    generator = torch.Generator().manual_seed(seed)
+    errors, _ = _generate_optimal_trajectories(
+        ref_model, n_trajectories, traj_len, dt, generator
+    )
+    n_windows = traj_len - window_size
+    if n_windows <= 0:
+        raise ValueError("traj_len must exceed window_size")
+    # Stack sliding windows along the batch axis: [n_traj * n_windows, W+1, n].
+    windows = [errors[:, t : t + window_size + 1, :] for t in range(n_windows)]
+    e_win = torch.cat(windows, dim=0)
+    u_win = -torch.einsum("ij,bwj->bwi", ref_model.K_opt, e_win)
+
+    irl = IRLBellmanLoss(ref_model.Q, ref_model.R)
+    optimizer = torch.optim.Adam(critic.parameters(), lr=lr)
+    p_opt = ref_model.P_opt
+    p_opt_norm = torch.linalg.norm(p_opt)
+
+    history: list[float] = []
+    for _ in range(steps):
+        optimizer.zero_grad()
+        loss = irl(critic, e_win, u_win, dt)["loss"]
+        loss.backward()
+        optimizer.step()
+        with torch.no_grad():
+            diff = torch.linalg.norm(critic.extract_P() - p_opt)
+            rel = diff / p_opt_norm if float(p_opt_norm) > 0.0 else diff
+        history.append(float(rel))
+    return history
+
+
 def _quadratic_features(e: Tensor, state_dim: int) -> Tensor:
     """Feature map phi(e) with ``e^T P e == phi(e) . p``.
 

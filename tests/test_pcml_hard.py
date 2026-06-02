@@ -8,7 +8,7 @@ the PCMLModule switches soft->hard at the eta threshold.
 
 import torch
 
-from pits_mras.constraints import HeatConductionDAE
+from pits_mras.constraints import HeatConductionDAE, MechanicalDAE
 from pits_mras.constraints.base import ConstraintSpec, PhysicsConstraints
 from pits_mras.models.pcml import KKTProjectionLayer, PCMLModule
 
@@ -77,6 +77,44 @@ def test_kkt_projection_reduces_heat_violation() -> None:
     v_after = dae.violation(x, t, y_t, d_t)
     assert v_after.item() < 1e-4
     assert v_after.item() < v_before.item()
+
+
+def test_kkt_projection_on_holonomic_mechanical_dae() -> None:
+    """The KKT projection is well-formed and reduces violation on a holonomic
+    MechanicalDAE (regression for the spec-width fix that makes n_c match the
+    EOM + Psi + J q_dot residual width)."""
+    n, m = 2, 1
+
+    def inertia(q):
+        return torch.eye(n).unsqueeze(0).expand(q.shape[0], n, n)
+
+    def zero_force(*args):
+        return torch.zeros(args[0].shape[0], n)
+
+    def jacobian(q):
+        return torch.tensor([[1.0, -1.0]]).unsqueeze(0).expand(q.shape[0], m, n)
+
+    dae = MechanicalDAE(
+        n_joints=n, n_holonomic=m, inertia_fn=inertia, coriolis_fn=zero_force,
+        gravity_fn=zero_force, actuator_fn=lambda q: torch.zeros(q.shape[0], n, m),
+        constraint_fn=jacobian,
+    )
+    # y = [q, q_dot] (2n), d = [q_dot, q_ddot, lambda] (2n + m).
+    n_out, n_der = 2 * n, 2 * n + m
+    proj = KKTProjectionLayer(dae, n_output=n_out, n_deriv=n_der, max_newton_iter=30)
+    b = 4
+    x = torch.zeros(b, 1)
+    t = torch.zeros(b, 1)
+    y_hat = torch.randn(b, n_out)
+    d_hat = torch.randn(b, n_der)
+    lam_hat = torch.zeros(b, dae.spec.n_differential + dae.spec.n_inequality)
+
+    v_before = dae.violation(x, t, y_hat, d_hat)
+    y_t, d_t, _ = proj(x, t, y_hat, d_hat, lam_hat)
+    v_after = dae.violation(x, t, y_t, d_t)
+    assert y_t.shape == (b, n_out) and d_t.shape == (b, n_der)
+    assert v_after.item() < v_before.item()
+    assert v_after.item() < 1e-3
 
 
 def test_kkt_projection_is_differentiable() -> None:

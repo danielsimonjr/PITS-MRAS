@@ -125,8 +125,8 @@ def cotraining_loop(
     Returns:
         Metrics dict mapping names to per-step lists: ``irl_loss``,
         ``hjb_loss``, ``costate_loss``, ``positivity_loss``, ``cbf_loss``,
-        ``total_loss``, ``running_cost`` (and ``pcml_loss`` when a
-        ``pcml_module`` is supplied).
+        ``total_loss``, ``running_cost``, ``critic_convergence`` (and ``pcml_loss``
+        when a ``pcml_module`` is supplied).
     """
     train_cfg = cfg.training
     loss_cfg = cfg.losses
@@ -150,6 +150,9 @@ def cotraining_loop(
     B_m = ref_model.B_m
     Q = ref_model.Q
     R = ref_model.R
+    # CARE reference for the critic-convergence metric.
+    p_opt = ref_model.P_opt
+    p_opt_norm = torch.linalg.norm(p_opt)
 
     # Set up the CBF filter from the critic if requested and not yet attached.
     use_cbf = (
@@ -176,6 +179,7 @@ def cotraining_loop(
         "cbf_loss": [],
         "total_loss": [],
         "running_cost": [],
+        "critic_convergence": [],
     }
     if pcml_module is not None:
         metrics["pcml_loss"] = []
@@ -302,6 +306,12 @@ def cotraining_loop(
             metrics["cbf_loss"].append(l_cbf_val)
             metrics["total_loss"].append(float(l_total.detach()))
             metrics["running_cost"].append(float(r_inst.detach().mean()))
+            # Critic convergence to the CARE solution (reflects the IRL update).
+            with torch.no_grad():
+                p_hat = controller.critic.extract_P()
+                diff = torch.linalg.norm(p_hat - p_opt)
+                conv = diff / p_opt_norm if float(p_opt_norm) > 0.0 else diff
+            metrics["critic_convergence"].append(float(conv))
             if pcml_module is not None:
                 metrics["pcml_loss"].append(l_pcml_val)
 

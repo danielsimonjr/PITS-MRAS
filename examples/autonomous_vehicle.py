@@ -2,18 +2,29 @@ r"""Example: autonomous vehicle lateral control (IP §10.2).
 
 Owning phase: Phase 7 (Examples).
 
-ARCHITECTURE.md §2.1 / ROADMAP §Phase 7: lateral control at 80 km/h, wind-gust
-disturbance :math:`\Delta(t)=0.5\sin(2\pi t/10)`, with-CBF vs without-CBF
-lane-departure comparison. Per-example numerical acceptance beyond the described
-plots is not specified in the sources.
+ARCHITECTURE.md §2.1 / ROADMAP §Phase 7: lateral control under a wind-gust
+disturbance, with-CBF vs without-CBF lane-departure comparison. Per-example
+numerical acceptance beyond the described plots is not specified in the sources.
+
+The scenario is a *lane-hold under a strong wind gust*: the car is commanded to
+hold the lane centre (``r = 0``) while a strong lateral gust
+:math:`\Delta(t)=20\sin(2\pi t/2)` acts on the plant. The CBF safety filter uses
+a tight ellipsoid (:math:`c=0.5` in :math:`h(e)=c-e^\top P e`, with ``P`` the
+CARE Lyapunov matrix), so it actively engages during the gust (panel (c) shows
+when). The two branches differ only in the CBF projection -- a faithful A/B of
+the safety layer.
+
+Honest interpretation: the nominal MRAS controller is near-LQR-optimal and the
+tracking-error dynamics are stable, so the CBF behaves as a *minimally-invasive
+safety backstop* -- it engages on the gust peaks and slightly reduces the
+worst-case lateral departure and the safe-set violation
+:math:`\int\max(0, e^\top P e - c)\,dt`, without degrading nominal tracking. A
+dramatic departure gap would require a deliberately mistuned nominal controller;
+here the value shown is that the filter is active yet non-disruptive.
 
 Simplifications (flagged): the plant is the linear reference-model surrogate
 driven by :class:`RealtimeInferenceEngine` (state = ``[lateral_offset, rate]``);
-a full bicycle / tyre model is NOT simulated. The "without-CBF" branch is built
-as a second engine whose controller has the safety filter disabled, so the two
-branches differ only in the CBF projection -- a faithful A/B of the safety
-layer. The wind gust is injected as the reference command and as an additive
-plant disturbance.
+a full bicycle / tyre model is NOT simulated.
 
 Import-safe: all model construction, simulation and plotting live inside
 :func:`run` / :func:`main`, guarded by ``if __name__ == "__main__"``.
@@ -25,8 +36,20 @@ import math
 from typing import Any
 
 
+# Wind-gust amplitude (strong lateral disturbance) and period [s].
+_GUST_AMPLITUDE = 20.0
+_GUST_PERIOD = 2.0
+# CBF safety-set size c in h(e) = c - e^T P e (tight, so the filter is active).
+_SAFETY_MARGIN = 0.5
+
+
 def _build_engine(use_safety_filter: bool) -> Any:
-    """Build a fresh inference engine; CBF on/off per flag."""
+    """Build a fresh inference engine; CBF on/off per flag.
+
+    The CBF safety filter is built from the controller's critic, which is
+    warm-started to the CARE solution ``P_opt`` -- so the safety ellipsoid uses
+    the proper Lyapunov matrix regardless of the (online-adapting) critic.
+    """
     import numpy as np
     import torch
 
@@ -66,37 +89,48 @@ def _build_engine(use_safety_filter: bool) -> Any:
         use_safety_filter=use_safety_filter,
     )
     if use_safety_filter:
-        controller.setup_safety_filter()
+        controller.setup_safety_filter(safety_margin=_SAFETY_MARGIN, decay_rate=2.0)
 
-    return RealtimeInferenceEngine(
+    engine = RealtimeInferenceEngine(
         pitnn, controller, ref_model, horizon=50, device="cpu"
     )
+    # Expose the safety matrix P for the constraint-violation metric.
+    engine._cbf_P = ref_model.P_opt.detach().cpu().numpy()  # type: ignore[attr-defined]
+    return engine
 
 
 def _simulate(engine: Any, steps: int) -> dict[str, list]:
-    """Run one branch; return per-step lateral offset, error-norm, CBF flag."""
+    """Run one lane-hold branch under a strong wind gust.
+
+    The car is commanded to hold the lane centre (``r = 0``); a strong lateral
+    wind gust acts on the plant. Returns per-step lateral offset, tracking-error
+    norm, CBF-activation flag, and the safe-set violation ``max(0, e^T P e - c)``.
+    """
     import torch
 
     dt = 0.01
     x_p = torch.zeros(2)
+    P = engine._cbf_P  # noqa: SLF001  (safety matrix stashed by _build_engine)
     lateral_offset: list[float] = []
     error_norm: list[float] = []
     cbf_active: list[bool] = []
+    violation: list[float] = []
 
     for k in range(steps):
         t = k * dt
-        # Wind gust Delta(t) = 0.5 sin(2 pi t / 10) added to the reference.
-        gust = 0.5 * math.sin(2.0 * math.pi * t / 10.0)
-        r = torch.tensor([gust], dtype=torch.float32)
-        out = engine.step(x_p, r, dt=dt)
+        # Strong lateral wind gust acting on the plant (NOT the reference); the
+        # controller is asked to hold the lane centre against it.
+        gust = _GUST_AMPLITUDE * math.sin(2.0 * math.pi * t / _GUST_PERIOD)
+        out = engine.step(x_p, torch.zeros(1, dtype=torch.float32), dt=dt)
 
         e = out["e"].detach().cpu().reshape(-1)
         error_norm.append(float(torch.linalg.vector_norm(e)))
         cbf_active.append(bool(out["cbf_active"]))
+        e_np = e.numpy()
+        violation.append(max(0.0, float(e_np @ P @ e_np) - _SAFETY_MARGIN))
 
         u = float(out["u_safe"].detach().cpu().reshape(-1)[0])
         x0, x1 = float(x_p[0]), float(x_p[1])
-        # Toy plant advance with the gust acting as a lateral disturbance.
         x_p = torch.tensor(
             [x0 + dt * x1, x1 + dt * (u - 2.0 * x0 - 3.0 * x1 + gust)],
             dtype=torch.float32,
@@ -107,6 +141,7 @@ def _simulate(engine: Any, steps: int) -> dict[str, list]:
         "lateral_offset": lateral_offset,
         "error_norm": error_norm,
         "cbf_active": cbf_active,
+        "violation": violation,
     }
 
 
@@ -133,15 +168,15 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
 
     dt = 0.01
     tgrid = [k * dt for k in range(steps)]
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
-    fig.suptitle("Autonomous vehicle lateral control: CBF vs no-CBF (wind gust)")
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
+    fig.suptitle("Autonomous vehicle lane-hold under a strong wind gust: CBF vs no-CBF")
 
     axes[0].plot(tgrid, with_cbf["lateral_offset"], label="with CBF")
     axes[0].plot(
         tgrid, without_cbf["lateral_offset"], label="without CBF", linestyle="--"
     )
     axes[0].axhline(0.0, color="gray", linewidth=0.8)
-    axes[0].set_title("lateral offset (lane departure)")
+    axes[0].set_title("(a) lateral offset (lane departure)")
     axes[0].set_xlabel("t [s]")
     axes[0].set_ylabel("offset [m]")
     axes[0].legend()
@@ -150,10 +185,19 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
     axes[1].plot(
         tgrid, without_cbf["error_norm"], label="without CBF", linestyle="--"
     )
-    axes[1].set_title(r"tracking error $\|e(t)\|$")
+    axes[1].set_title(r"(b) tracking error $\|e(t)\|$")
     axes[1].set_xlabel("t [s]")
     axes[1].set_ylabel(r"$\|e\|$")
     axes[1].legend()
+
+    axes[2].step(
+        tgrid, [int(c) for c in with_cbf["cbf_active"]], where="post",
+        color="tab:red",
+    )
+    axes[2].set_title("(c) CBF activation flag (with-CBF branch)")
+    axes[2].set_xlabel("t [s]")
+    axes[2].set_ylabel("active")
+    axes[2].set_ylim(-0.1, 1.1)
 
     fig.tight_layout()
     if show:
@@ -165,6 +209,8 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
     max_dep_nocbf = max(
         (abs(x) for x in without_cbf["lateral_offset"]), default=0.0
     )
+    viol_cbf = sum(with_cbf["violation"]) * dt
+    viol_nocbf = sum(without_cbf["violation"]) * dt
 
     return {
         "error_norm": with_cbf["error_norm"],
@@ -173,6 +219,8 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
         "lateral_offset_no_cbf": without_cbf["lateral_offset"],
         "max_departure_cbf": float(max_dep_cbf),
         "max_departure_no_cbf": float(max_dep_nocbf),
+        "safeset_violation_cbf": float(viol_cbf),
+        "safeset_violation_no_cbf": float(viol_nocbf),
         "cbf_activation_rate": (
             sum(with_cbf["cbf_active"]) / len(with_cbf["cbf_active"])
             if with_cbf["cbf_active"] else 0.0
@@ -185,9 +233,11 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
 def main() -> None:
     """Run the demo with the comparison figure displayed and saved."""
     out = run(steps=100, show=True)
+    print(f"CBF activation rate = {out['cbf_activation_rate']:.2%}")
     print(f"max lateral departure  with CBF = {out['max_departure_cbf']:.4f} m")
     print(f"max lateral departure   no CBF = {out['max_departure_no_cbf']:.4f} m")
-    print(f"CBF activation rate = {out['cbf_activation_rate']:.2%}")
+    print(f"safe-set violation  with CBF = {out['safeset_violation_cbf']:.4f}")
+    print(f"safe-set violation   no CBF = {out['safeset_violation_no_cbf']:.4f}")
 
 
 if __name__ == "__main__":

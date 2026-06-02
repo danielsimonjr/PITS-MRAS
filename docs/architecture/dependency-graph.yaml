@@ -2,9 +2,9 @@ metadata:
   name: pits_mras
   version: 0.3.0
   lastUpdated: '2026-06-02'
-  totalFiles: 38
+  totalFiles: 39
   totalModules: 10
-  totalExports: 111
+  totalExports: 114
 entryPoints:
 - file: examples/autonomous_vehicle.py
   type: cli
@@ -12,6 +12,9 @@ entryPoints:
 - file: examples/building_hvac.py
   type: cli
   description: 'Example: building HVAC thermal-zone control (IP §10.3).'
+- file: examples/pcml_heat_diffusion.py
+  type: cli
+  description: 'Example: hard PCML on the 1-D heat equation with real coordinates.'
 - file: examples/robotic_manipulator.py
   type: cli
   description: 'Example: 2-DOF planar robotic manipulator (IP §10.1).'
@@ -155,6 +158,47 @@ modules:
       functions:
       - run
       - main
+    examples/pcml_heat_diffusion.py:
+      description: 'Example: hard PCML on the 1-D heat equation with real coordinates.'
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: matplotlib
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: matplotlib.pyplot
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: math
+        imports:
+        - (module)
+      - module: typing
+        imports:
+        - Any
+      internalDependencies:
+      - file: src/pits_mras/constraints/__init__.py
+        module: pits_mras.constraints
+        imports:
+        - HeatConductionDAE
+      - file: src/pits_mras/models/pcml.py
+        module: pits_mras.models.pcml
+        imports:
+        - PCMLModule
+        - SoftPCMLLoss
+      exports:
+      - run
+      - main
+      functions:
+      - run
+      - main
     examples/robotic_manipulator.py:
       description: 'Example: 2-DOF planar robotic manipulator (IP §10.1).'
       externalDependencies:
@@ -203,6 +247,10 @@ modules:
         module: pits_mras.models
         imports:
         - PITNN
+      - file: src/pits_mras/training/irl_trainer.py
+        module: pits_mras.training.irl_trainer
+        imports:
+        - train_irl_critic_gd
       exports:
       - run
       - main
@@ -1177,9 +1225,15 @@ modules:
         imports:
         - QuadraticCritic
         typeOnly: true
+      - file: src/pits_mras/losses/irl.py
+        module: pits_mras.losses.irl
+        imports:
+        - IRLBellmanLoss
       exports:
+      - train_irl_critic_gd
       - train_irl_critic
       functions:
+      - train_irl_critic_gd
       - train_irl_critic
     src/pits_mras/training/pretrain.py:
       description: Physics-informed pre-training curriculum (IP §8.1, Algorithm 2).
@@ -1323,6 +1377,7 @@ dependencyGraph:
     files:
     - examples/autonomous_vehicle.py
     - examples/building_hvac.py
+    - examples/pcml_heat_diffusion.py
     - examples/robotic_manipulator.py
   - name: Root
     files:
@@ -1378,14 +1433,14 @@ dependencyGraph:
     - src/pits_mras/utils/lyapunov.py
     - src/pits_mras/utils/pe_monitor.py
 statistics:
-  totalPythonFiles: 38
+  totalPythonFiles: 39
   totalModules: 10
-  totalLinesOfCode: 4907
-  totalExports: 111
+  totalLinesOfCode: 5219
+  totalExports: 114
   totalClasses: 44
   totalInterfaces: 1
   totalEnums: 0
-  totalFunctions: 21
+  totalFunctions: 24
   totalTypeGuards: 0
   totalConstants: 0
   totalReExports: 45

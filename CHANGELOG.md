@@ -24,15 +24,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `dependency-summary.compact.json`, `TEST_COVERAGE.md`, `test-coverage.json`,
   `unused-analysis.md`) plus five hand-written, graph-grounded docs:
   `OVERVIEW.md`, `COMPONENTS.md`, `API.md`, `DATAFLOW.md`, and a refreshed
-  `ARCHITECTURE.md`. The graph reports 38 first-party files across 10 modules,
-  ~4,907 LOC, 111 exports (45 re-exported), **0 circular dependencies, 0 unused
+  `ARCHITECTURE.md`. The graph reports 39 first-party files across 10 modules,
+  ~5,219 LOC, 114 exports (45 re-exported), **0 circular dependencies, 0 unused
   files/exports**.
+- **`examples/pcml_heat_diffusion.py`** — coordinate-bearing hard-PCML demo: a
+  small MLP `T(x,t)` trained on the 1-D heat equation with genuine `(x, t, ∂)`
+  autodiff derivatives; soft PCML reduces the residual and the KKT projection
+  drives the point-wise violation to ~0.
+- **`train_irl_critic_gd`** (`training/irl_trainer.py`) — an offline
+  gradient-descent IRL critic fit on fixed optimal-closed-loop data (decoupled
+  from control-loop stability; converges reliably from an arbitrary `P`),
+  returning the convergence history.
+- **`critic_convergence`** metric in `cotraining_loop` (per-step
+  `‖P̂ − P_opt‖_F / ‖P_opt‖_F`).
+
+### Fixed
+
+- **`MechanicalDAE` `ConstraintSpec` widths** — the spec counted "equation
+  groups" (`n_differential = 1`) while the EOM residual is `n_joints`-wide, which
+  would malform the KKT projection on mechanical systems. The spec now reports
+  the true residual vector widths (`n_differential = n_joints + 2·n_holonomic`;
+  `n_inequality = 2·n_joints`; `n_outputs = 2·n_joints`), and the KKT projection
+  on a holonomic `MechanicalDAE` is verified (violation < 1e-3).
 
 ### Changed
 
 - Moved `docs/ARCHITECTURE.md` → `docs/architecture/ARCHITECTURE.md` and added a
   §0 "Implemented Architecture (v0.3.0)" graph-backed as-built summary; README
   documentation section now links the `docs/architecture/` set.
+- **Example fidelity:** the robotic-manipulator demo now genuinely trains the
+  critic (panel (d) is a real IRL convergence curve), and the autonomous-vehicle
+  demo's CBF comparison is non-vacuous (lane-hold under a strong gust with a tight
+  ellipsoid; the filter engages ~11% and bounds the departure / safe-set
+  violation), with an added CBF-activation panel and honest framing.
 
 ## [0.3.0] - 2026-06-02
 

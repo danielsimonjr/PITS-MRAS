@@ -88,6 +88,29 @@ def test_taylor_approx_converges_to_value_as_delta_small() -> None:
     assert torch.allclose(y_approx, backbone(inputs), atol=1e-2)
 
 
+def test_taylor_approx_order2_incorporates_second_derivatives() -> None:
+    """order=2 reads the second-derivative columns and applies the -½Δ²∂_ii term."""
+    torch.manual_seed(0)
+    input_dim = 2
+    backbone = torch.nn.Sequential(
+        torch.nn.Linear(input_dim, 16), torch.nn.Tanh(), torch.nn.Linear(16, 1)
+    )
+    inputs = torch.randn(6, input_dim)
+    # order=2 derivatives layout: [d_i (input_dim), d_ii (input_dim)].
+    derivs2 = torch.cat([torch.randn(6, input_dim), torch.randn(6, input_dim)], dim=-1)
+
+    layer2 = TaylorNeighborhoodApproximation(backbone, input_dim, delta=1e-3, order=2)
+    # As Δ -> 0 the approximation still -> backbone(inputs).
+    assert torch.allclose(layer2(inputs, derivs2), backbone(inputs), atol=1e-2)
+
+    # With a non-trivial Δ and large second derivatives, order=2 differs from
+    # order=1 -- confirming the -½Δ²∂_ii correction is actually used.
+    big = torch.cat([torch.zeros(6, input_dim), torch.full((6, input_dim), 10.0)], dim=-1)
+    l2 = TaylorNeighborhoodApproximation(backbone, input_dim, delta=0.1, order=2)
+    l1 = TaylorNeighborhoodApproximation(backbone, input_dim, delta=0.1, order=1)
+    assert not torch.allclose(l2(inputs, big), l1(inputs, big[:, :input_dim]))
+
+
 # --------------------------------------------------------------------------- #
 # LagrangianMultiplierHead (DAE-HardNet warm-start multipliers).
 # --------------------------------------------------------------------------- #
