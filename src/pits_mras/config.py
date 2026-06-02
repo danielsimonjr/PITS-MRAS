@@ -84,6 +84,7 @@ class LossConfig:
     lambda_hjb: float = 0.01  # HJB residual weight (tune carefully, see §3.5)
     lambda_costate: float = 0.1  # Costate consistency weight
     lambda_adjoint: float = 0.05  # Adjoint dynamics residual weight
+    lambda_pcml: float = 1.0  # PCML constraint loss weight (soft or hard)
     # Physics sub-weights
     lambda_energy: float = 1.0
     lambda_pde: float = 1.0
@@ -120,6 +121,36 @@ class TrainingConfig:
 
 
 @dataclass
+class PCMLConfig:
+    """Physics-Constrained ML module config (PCML Addendum §4).
+
+    Soft mode (Patel et al. 2022) and hard mode (DAE-HardNet) parameters, plus
+    the constraint-system selection used to build the :class:`PhysicsConstraints`.
+    """
+
+    # Soft mode (Patel et al. 2022) residual weights.
+    lambda_soft_diff: float = 1.0
+    lambda_soft_eq: float = 1.0
+    lambda_soft_ineq: float = 0.5
+    # Hard mode (DAE-HardNet) parameters.
+    omega: float = 1.0  # derivative-loss weight (Eq. 15)
+    eta: float = 0.01  # data-loss threshold to activate hard mode
+    delta: float = 0.01  # Taylor offset (recommended 1e-3 .. 0.1)
+    taylor_order: int = 1  # Taylor approximation order (1 or 2)
+    newton_step: float = 1.0  # KKT Newton step length
+    max_newton_iter: int = 10  # max Newton iterations per projection
+    pcml_projection_tolerance: float = 1e-5  # skip projection if violation < this
+    # Constraint-system selection.
+    constraint_type: str = "mechanical"  # "mechanical" | "thermal"
+    n_joints: int = 2
+    n_holonomic: int = 0
+    q_bounds: Optional[List[List[float]]] = None  # [q_min, q_max]
+    thermal_alpha: float = 1.0
+    T_min: float = 15.0
+    T_max: float = 35.0
+
+
+@dataclass
 class PITSMRASConfig:
     """Master configuration — the single object passed to all components."""
 
@@ -129,6 +160,7 @@ class PITSMRASConfig:
     safety: SafetyConfig = field(default_factory=SafetyConfig)
     losses: LossConfig = field(default_factory=LossConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
+    pcml: PCMLConfig = field(default_factory=PCMLConfig)
 
     @classmethod
     def from_yaml(cls, path: str) -> "PITSMRASConfig":

@@ -11,7 +11,7 @@ Implements Algorithm 1: input normalization + embedding -> causal
 - Physical plausibility: positive dissipation (:math:`R_\\theta = L^\\top L \\succeq 0`).
 """
 
-from typing import Dict
+from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
@@ -35,12 +35,21 @@ class PITNN(nn.Module):
     mu_x: Tensor
     sigma_x: Tensor
 
-    def __init__(self, net_cfg: NetworkConfig, phys_cfg: PhysicsConfig) -> None:
+    def __init__(
+        self,
+        net_cfg: NetworkConfig,
+        phys_cfg: PhysicsConfig,
+        lagrangian_head: Optional[nn.Module] = None,
+    ) -> None:
         super().__init__()
         self.input_dim = net_cfg.input_dim
         self.hidden_dim = net_cfg.hidden_dim
         self.output_dim = net_cfg.output_dim
         self.n_q = phys_cfg.n_generalized_coords
+        # Optional PCML Lagrangian-multiplier head (Addendum §2.4). When set, the
+        # forward pass emits ``lam_hat`` (KKT warm-start multipliers) for the
+        # PCML projection. ``None`` keeps the v0.2.0 output contract unchanged.
+        self.lagrangian_head = lagrangian_head
 
         # -- Input normalization (running statistics, non-trainable buffers) --
         self.register_buffer("mu_x", torch.zeros(net_cfg.input_dim))
@@ -134,7 +143,10 @@ class PITNN(nn.Module):
         # 6. Attention regularization.
         attn_reg = self.attention.attention_regularization_loss(alpha)
 
-        return {
+        # 7. Optional PCML Lagrangian multipliers (KKT warm start, Addendum §2.4).
+        lam_hat = self.lagrangian_head(context) if self.lagrangian_head is not None else None
+
+        out: Dict[str, Tensor] = {
             # Brief-mandated contract.
             "f": f_hat,
             "H": H_val,
@@ -148,3 +160,6 @@ class PITNN(nn.Module):
             "energy_loss": energy_loss,
             "attn_reg_loss": attn_reg,
         }
+        if lam_hat is not None:
+            out["lam_hat"] = lam_hat
+        return out

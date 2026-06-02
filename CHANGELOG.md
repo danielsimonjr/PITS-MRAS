@@ -36,6 +36,11 @@ built on top.
   (loss `MSE(ỹ,ȳ) + ω·MSE(d̃, AD(∂ỹ))` in hard mode). Verified against the
   closed-form linear-equality projection and a heat-equation violation drop to
   `< 1e-4`.
+- **PCML pipeline integration (opt-in, backward-compatible)**: `PCMLConfig` on
+  the master `PITSMRASConfig` (soft/hard params + constraint selection);
+  `LossConfig.lambda_pcml` and a `pcml` component in `TotalLoss`; an optional
+  `lagrangian_head` on `PITNN` that, when supplied, emits `lam_hat` (KKT
+  warm-start multipliers) without changing the default v0.2.0 output contract.
 
 ### Fixed
 

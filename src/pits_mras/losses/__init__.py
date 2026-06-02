@@ -55,6 +55,7 @@ _COMPONENTS = {
     "hjb": ("lambda_hjb", "loss/hjb"),
     "costate": ("lambda_costate", "loss/costate"),
     "data": ("lambda_data", "loss/data"),
+    "pcml": ("lambda_pcml", "loss/pcml"),
 }
 
 
@@ -62,7 +63,7 @@ class TotalLoss(nn.Module):
     """Weighted sum of the per-component scalar losses.
 
     ``forward`` takes a mapping from component name (any subset of
-    ``physics, temporal, stability, irl, hjb, costate, data``) to a scalar
+    ``physics, temporal, stability, irl, hjb, costate, data, pcml``) to a scalar
     loss tensor and returns ``{"loss": total, "loss/<name>": weighted, ...}``.
     Missing components are treated as zero.
     """
