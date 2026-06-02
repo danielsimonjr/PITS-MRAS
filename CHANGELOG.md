@@ -13,6 +13,15 @@ arXiv:2512.05881). This entry covers the pre-PCML audit remediation that makes
 v0.2.0 faithful to the Implementation Plan §3 identities before the new layer is
 built on top.
 
+### Added
+
+- **PCML constraints library** (`src/pits_mras/constraints/`, PCML Addendum §2.1):
+  the `PhysicsConstraints` ABC + `ConstraintSpec`, plus `MechanicalDAE`
+  (Euler-Lagrange equations of motion with optional holonomic constraints) and
+  `HeatConductionDAE` (1-D transient heat conduction). Each exposes the
+  differential / equality / inequality residuals that feed both the soft PCML
+  loss and the hard KKT projection, with a shared `violation` metric.
+
 ### Fixed
 
 - **Audit remediation — mathematical faithfulness to the §3 identities** (a
