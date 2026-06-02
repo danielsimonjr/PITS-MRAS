@@ -236,3 +236,37 @@ It represents a significant contribution to adaptive control research by:
 **Validation Method:** Comprehensive line-by-line review
 **Confidence Level:** 99%
 **Date:** October 12, 2025
+
+---
+
+## PCML Component (Added: v0.3.0)
+
+**Source:** Patel et al. (IFAC 2022) + Golder, Roy & Hasan (DAE-HardNet, arXiv:2512.05881).
+
+**What it does:** Upgrades physics enforcement from soft penalties (PINNs) to
+hard constraint satisfaction (KKT projection). Soft mode augments the loss with
+DAE residuals; hard mode projects the predicted dynamics onto the
+differential-algebraic constraint manifold to machine precision.
+
+**Two modes:**
+- **Soft PCML** (pre-training): augmented loss `λ_diff‖D‖² + λ_eq‖h‖² + λ_ineq‖ReLU(g)‖²`.
+- **Hard PCML** (co-training + inference): differentiable KKT projection →
+  point-wise constraint satisfaction, activated dynamically once the data loss
+  drops below `η` (with an inference bypass when the violation is already small).
+
+**Key identifiers:**
+- `pits_mras.constraints` — `PhysicsConstraints` ABC, `MechanicalDAE`, `HeatConductionDAE`.
+- `pits_mras.models.pcml` — `SoftPCMLLoss`, `TaylorNeighborhoodApproximation`,
+  `KKTProjectionLayer` (differentiable Newton on the KKT system with
+  Fischer-Burmeister complementarity; gradients via a one-step implicit-function
+  trick), and `PCMLModule` (soft/hard mode manager).
+- `pits_mras.models.lagrangian_head.LagrangianMultiplierHead` — KKT warm-start multipliers.
+
+**Integration (opt-in, backward-compatible):** `PCMLConfig` on the master config;
+a `pcml` term in `TotalLoss`; an optional `lagrangian_head` on `PITNN`; and
+`pcml_module` hooks on `cotraining_loop` and `RealtimeInferenceEngine`. All
+default off, so the v0.2.0 behavior is unchanged unless PCML is wired in.
+
+**Verification:** the KKT solve matches the closed-form linear-equality
+projection; the heat-equation constraint violation drops below 1e-4 after
+projection; the projection is differentiable end-to-end.

@@ -165,6 +165,12 @@ See [`examples/`](./examples/) for detailed tutorials.
 - **PDE residuals** minimize violations of governing equations
 - **Symmetry preservation** (e.g., translation/rotation invariance)
 - **Curriculum learning** balances physics vs data-driven objectives
+- **Physics-Constrained ML (PCML, v0.3.0)** upgrades soft physics penalties to
+  *hard* constraint satisfaction: a soft mode augments the loss with DAE
+  residuals (Patel et al. 2022), and a hard mode projects predictions onto the
+  differential-algebraic constraint manifold via a differentiable KKT-Newton
+  layer (DAE-HardNet, arXiv:2512.05881), activated dynamically once the data
+  loss is small. See `pits_mras.constraints` and `pits_mras.models.pcml`.
 
 ### 2. Temporal Reasoning
 

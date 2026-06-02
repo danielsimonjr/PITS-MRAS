@@ -15,11 +15,24 @@ so are the two *function* symbols ``pretrain_pitnn`` (training/pretrain.py) and
 ``cotraining_loop`` (training/cotrain.py).
 """
 
+from pits_mras.constraints import (
+    ConstraintSpec,
+    HeatConductionDAE,
+    MechanicalDAE,
+    PhysicsConstraints,
+)
 from pits_mras.controllers.mras import MRASController
 from pits_mras.controllers.reference_models import LinearReferenceModel
 from pits_mras.controllers.safety import CLFCBFSafetyFilter
 from pits_mras.inference.realtime import RealtimeInferenceEngine
 from pits_mras.models.critic import QuadraticCritic
+from pits_mras.models.lagrangian_head import LagrangianMultiplierHead
+from pits_mras.models.pcml import (
+    KKTProjectionLayer,
+    PCMLModule,
+    SoftPCMLLoss,
+    TaylorNeighborhoodApproximation,
+)
 from pits_mras.models.pitnn import PITNN
 
 # Phase 5 (DONE): the training pipelines are implemented, so the two function
@@ -28,7 +41,7 @@ from pits_mras.models.pitnn import PITNN
 # working while the training modules were docstring-only stubs.)
 from pits_mras.training import cotraining_loop, pretrain_pitnn
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "PITNN",
@@ -39,4 +52,14 @@ __all__ = [
     "RealtimeInferenceEngine",
     "pretrain_pitnn",
     "cotraining_loop",
+    # PCML (Physics-Constrained ML) -- constraints + soft/hard enforcement.
+    "PhysicsConstraints",
+    "ConstraintSpec",
+    "MechanicalDAE",
+    "HeatConductionDAE",
+    "SoftPCMLLoss",
+    "TaylorNeighborhoodApproximation",
+    "KKTProjectionLayer",
+    "PCMLModule",
+    "LagrangianMultiplierHead",
 ]

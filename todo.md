@@ -17,23 +17,35 @@ for the spec.
     `P_opt`); Identities 2 & 4 now live in the control loop.
   - #3 `mras_regressor`, `dpg_action_value_gradient`, `dpg_actor_step` (DPG actor).
 
-## In progress — PCML feature (TDD, faithful to DAE-HardNet)
+## Done — PCML feature (TDD, faithful to DAE-HardNet) — released v0.3.0
 
-- [ ] **Constraints library** `src/pits_mras/constraints/{base,mechanical,thermal}.py`
-  — `PhysicsConstraints` ABC + `ConstraintSpec`, `MechanicalDAE` (Euler-Lagrange,
-  optional holonomic), `HeatConductionDAE` (1-D heat eq).
-- [ ] **PCML core** `src/pits_mras/models/pcml.py` — `SoftPCMLLoss`,
+- [x] **Constraints library** `src/pits_mras/constraints/{base,mechanical,thermal}.py`
+  — `PhysicsConstraints` ABC + `ConstraintSpec`, `MechanicalDAE`, `HeatConductionDAE`.
+- [x] **PCML core** `src/pits_mras/models/pcml.py` — `SoftPCMLLoss`,
   `TaylorNeighborhoodApproximation`, `KKTProjectionLayer` (Fischer-Burmeister +
-  differentiable Newton), `PCMLModule` (soft/hard dynamic activation at `η`).
-- [ ] **Lagrangian head** `src/pits_mras/models/lagrangian_head.py` —
-  `LagrangianMultiplierHead` (Newton warm-start multipliers).
-- [ ] **Integration** — `PCMLConfig` in `config.py`; `lam_hat` output + head in
-  `pitnn.py`; `pcml` component(s) in `TotalLoss`; dynamic activation + mode switch
-  in `cotrain.py`; projection-bypass in `realtime.py`. PCML opt-in (backward compat).
-- [ ] **Tests** — `tests/test_pcml_soft.py`, `tests/test_pcml_hard.py`,
-  `tests/test_pcml_integration.py`.
-- [ ] **Docs** — PCML section in `docs/` architecture + `PITS-MRAS_FINAL_SUMMARY.md`;
-  README; version bump (target v0.3.0) at release.
+  differentiable Newton, implicit-function-theorem gradient), `PCMLModule`
+  (soft/hard dynamic activation at `η`).
+- [x] **Lagrangian head** `src/pits_mras/models/lagrangian_head.py`.
+- [x] **Integration** — `PCMLConfig`; `lam_hat` head on `pitnn.py`; `pcml`
+  component in `TotalLoss`; opt-in `pcml_module` hooks in `cotrain.py` (dynamic
+  activation) and `realtime.py` (projection bypass). All opt-in / backward-compat.
+- [x] **Tests** — `test_pcml_constraints.py`, `test_pcml_soft.py`,
+  `test_pcml_hard.py`, `test_pcml_integration.py` (full suite 174/174).
+- [x] **Docs + version** — PCML section in `FINAL_SUMMARY` + README; `__init__`
+  exports; bumped to v0.3.0.
+
+## Deferred / future (documented, low priority)
+
+- **Synthetic-loop PCML inputs are placeholders**: `cotrain`/`realtime` pass
+  zeros for the constraint inputs `x`/`t` and derivative variables `d`, because
+  the synthetic plant has no spatial/temporal coordinates. A real plant with
+  genuine `(x, t, ∂)` would make the loop-level PCML loss/projection physically
+  meaningful (the standalone `PCMLModule` is already fully exercised on real DAEs).
+- **2nd-order Taylor (`order=2`) + `MechanicalDAE` holonomic path** are
+  implemented but only lightly tested vs the unconstrained/`HeatConductionDAE`
+  cases.
+- Pre-existing v0.2.0 TODOs still open: vacuous AV-CBF demo margin, untrained
+  manipulator critic in examples, H∞ adversary head (gap G1).
 
 ## Notes / decisions
 

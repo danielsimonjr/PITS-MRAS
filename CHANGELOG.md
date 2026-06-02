@@ -7,11 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Work toward the **PCML** (Physics-Constrained Machine Learning) component
-(soft + hard physics-constraint enforcement; Patel et al. 2022 and DAE-HardNet,
-arXiv:2512.05881). This entry covers the pre-PCML audit remediation that makes
-v0.2.0 faithful to the Implementation Plan §3 identities before the new layer is
-built on top.
+## [0.3.0] - 2026-06-02
+
+The **PCML** (Physics-Constrained Machine Learning) component — soft + hard
+physics-constraint enforcement (Patel et al. 2022 and DAE-HardNet,
+arXiv:2512.05881) — plus the pre-PCML audit remediation that makes v0.2.0
+faithful to the Implementation Plan §3 identities before the new layer is built
+on top.
 
 ### Added
 
