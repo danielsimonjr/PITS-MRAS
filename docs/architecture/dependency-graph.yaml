@@ -1,0 +1,1396 @@
+metadata:
+  name: pits_mras
+  version: 0.3.0
+  lastUpdated: '2026-06-02'
+  totalFiles: 38
+  totalModules: 10
+  totalExports: 111
+entryPoints:
+- file: examples/autonomous_vehicle.py
+  type: cli
+  description: 'Example: autonomous vehicle lateral control (IP §10.2).'
+- file: examples/building_hvac.py
+  type: cli
+  description: 'Example: building HVAC thermal-zone control (IP §10.3).'
+- file: examples/robotic_manipulator.py
+  type: cli
+  description: 'Example: 2-DOF planar robotic manipulator (IP §10.1).'
+- file: setup.py
+  type: main
+  description: Entry Point
+- file: src/pits_mras/__init__.py
+  type: main
+  description: 'PITS-MRAS: Physics-Informed Time-Series Model-Reference Adaptive Systems.'
+- file: src/pits_mras/constraints/__init__.py
+  type: main
+  description: Physics constraint systems for PCML (PCML Addendum §2.1).
+- file: src/pits_mras/controllers/__init__.py
+  type: main
+  description: 'Controllers subpackage: reference models, CLF-CBF safety filter, MRAS actor.'
+- file: src/pits_mras/inference/__init__.py
+  type: main
+  description: 'Inference subpackage: real-time engine and parallel thread architecture.'
+- file: src/pits_mras/losses/__init__.py
+  type: main
+  description: Loss functions for PITS-MRAS (Phase 3).
+- file: src/pits_mras/models/__init__.py
+  type: main
+  description: 'Models subpackage: attention, port-Hamiltonian decoders, critic/costate, PITNN.'
+- file: src/pits_mras/training/__init__.py
+  type: main
+  description: 'Training subpackage: physics pretrain, IRL co-train, offline IRL trainer.'
+- file: src/pits_mras/utils/__init__.py
+  type: main
+  description: 'Utils subpackage: Lyapunov/Riccati engine, port-Hamiltonian, PE monitor.'
+modules:
+  examples:
+    examples/autonomous_vehicle.py:
+      description: 'Example: autonomous vehicle lateral control (IP §10.2).'
+      externalDependencies:
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: matplotlib
+        imports:
+        - (module)
+      - package: matplotlib.pyplot
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: math
+        imports:
+        - (module)
+      - module: typing
+        imports:
+        - Any
+      internalDependencies:
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - NetworkConfig
+        - PhysicsConfig
+        - PITSMRASConfig
+      - file: src/pits_mras/controllers/mras.py
+        module: pits_mras.controllers.mras
+        imports:
+        - MRASController
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+      - file: src/pits_mras/inference/realtime.py
+        module: pits_mras.inference.realtime
+        imports:
+        - RealtimeInferenceEngine
+      - file: src/pits_mras/models/__init__.py
+        module: pits_mras.models
+        imports:
+        - PITNN
+      exports:
+      - run
+      - main
+      functions:
+      - run
+      - main
+    examples/building_hvac.py:
+      description: 'Example: building HVAC thermal-zone control (IP §10.3).'
+      externalDependencies:
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: matplotlib
+        imports:
+        - (module)
+      - package: matplotlib.pyplot
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: math
+        imports:
+        - (module)
+      - module: typing
+        imports:
+        - Any
+      internalDependencies:
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - NetworkConfig
+        - PhysicsConfig
+        - PITSMRASConfig
+      - file: src/pits_mras/controllers/mras.py
+        module: pits_mras.controllers.mras
+        imports:
+        - MRASController
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+      - file: src/pits_mras/inference/realtime.py
+        module: pits_mras.inference.realtime
+        imports:
+        - RealtimeInferenceEngine
+      - file: src/pits_mras/models/__init__.py
+        module: pits_mras.models
+        imports:
+        - PITNN
+      exports:
+      - run
+      - main
+      functions:
+      - run
+      - main
+    examples/robotic_manipulator.py:
+      description: 'Example: 2-DOF planar robotic manipulator (IP §10.1).'
+      externalDependencies:
+      - package: matplotlib
+        imports:
+        - (module)
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: matplotlib.pyplot
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: math
+        imports:
+        - (module)
+      - module: typing
+        imports:
+        - Any
+      internalDependencies:
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - NetworkConfig
+        - PhysicsConfig
+        - PITSMRASConfig
+      - file: src/pits_mras/controllers/mras.py
+        module: pits_mras.controllers.mras
+        imports:
+        - MRASController
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+      - file: src/pits_mras/inference/realtime.py
+        module: pits_mras.inference.realtime
+        imports:
+        - RealtimeInferenceEngine
+      - file: src/pits_mras/models/__init__.py
+        module: pits_mras.models
+        imports:
+        - PITNN
+      exports:
+      - run
+      - main
+      functions:
+      - run
+      - main
+  root:
+    setup.py:
+      description: setup module
+      externalDependencies:
+      - package: setuptools
+        imports:
+        - find_packages
+        - setup
+      stdlibDependencies: []
+      internalDependencies: []
+      exports: []
+  src/pits_mras:
+    src/pits_mras/__init__.py:
+      description: 'PITS-MRAS: Physics-Informed Time-Series Model-Reference Adaptive Systems.'
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/constraints/__init__.py
+        module: pits_mras.constraints
+        imports:
+        - ConstraintSpec
+        - HeatConductionDAE
+        - MechanicalDAE
+        - PhysicsConstraints
+        reExport: true
+      - file: src/pits_mras/controllers/mras.py
+        module: pits_mras.controllers.mras
+        imports:
+        - MRASController
+        reExport: true
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+        reExport: true
+      - file: src/pits_mras/controllers/safety.py
+        module: pits_mras.controllers.safety
+        imports:
+        - CLFCBFSafetyFilter
+        reExport: true
+      - file: src/pits_mras/inference/realtime.py
+        module: pits_mras.inference.realtime
+        imports:
+        - RealtimeInferenceEngine
+        reExport: true
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - QuadraticCritic
+        reExport: true
+      - file: src/pits_mras/models/lagrangian_head.py
+        module: pits_mras.models.lagrangian_head
+        imports:
+        - LagrangianMultiplierHead
+        reExport: true
+      - file: src/pits_mras/models/pcml.py
+        module: pits_mras.models.pcml
+        imports:
+        - KKTProjectionLayer
+        - PCMLModule
+        - SoftPCMLLoss
+        - TaylorNeighborhoodApproximation
+        reExport: true
+      - file: src/pits_mras/models/pitnn.py
+        module: pits_mras.models.pitnn
+        imports:
+        - PITNN
+        reExport: true
+      - file: src/pits_mras/training/__init__.py
+        module: pits_mras.training
+        imports:
+        - cotraining_loop
+        - pretrain_pitnn
+        reExport: true
+      exports:
+      - PITNN
+      - QuadraticCritic
+      - MRASController
+      - LinearReferenceModel
+      - CLFCBFSafetyFilter
+      - RealtimeInferenceEngine
+      - pretrain_pitnn
+      - cotraining_loop
+      - ConstraintSpec
+      - HeatConductionDAE
+      - MechanicalDAE
+      - PhysicsConstraints
+      - LagrangianMultiplierHead
+      - KKTProjectionLayer
+      - PCMLModule
+      - SoftPCMLLoss
+      - TaylorNeighborhoodApproximation
+      reExported:
+      - ConstraintSpec
+      - HeatConductionDAE
+      - MechanicalDAE
+      - PhysicsConstraints
+      - MRASController
+      - LinearReferenceModel
+      - CLFCBFSafetyFilter
+      - RealtimeInferenceEngine
+      - QuadraticCritic
+      - LagrangianMultiplierHead
+      - KKTProjectionLayer
+      - PCMLModule
+      - SoftPCMLLoss
+      - TaylorNeighborhoodApproximation
+      - PITNN
+      - cotraining_loop
+      - pretrain_pitnn
+    src/pits_mras/config.py:
+      description: Centralized configuration for PITS-MRAS (IP §4.2).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: yaml
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: dataclasses
+        imports:
+        - (module)
+      - module: dataclasses
+        imports:
+        - dataclass
+        - field
+      - module: typing
+        imports:
+        - List
+        - Optional
+      internalDependencies: []
+      exports:
+      - NetworkConfig
+      - PhysicsConfig
+      - MRASConfig
+      - SafetyConfig
+      - LossConfig
+      - TrainingConfig
+      - PCMLConfig
+      - PITSMRASConfig
+      classes:
+      - NetworkConfig
+      - PhysicsConfig
+      - MRASConfig
+      - SafetyConfig
+      - LossConfig
+      - TrainingConfig
+      - PCMLConfig
+      - PITSMRASConfig
+  src/pits_mras/constraints:
+    src/pits_mras/constraints/__init__.py:
+      description: Physics constraint systems for PCML (PCML Addendum §2.1).
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/constraints/base.py
+        module: pits_mras.constraints.base
+        imports:
+        - ConstraintSpec
+        - PhysicsConstraints
+        reExport: true
+      - file: src/pits_mras/constraints/mechanical.py
+        module: pits_mras.constraints.mechanical
+        imports:
+        - MechanicalDAE
+        reExport: true
+      - file: src/pits_mras/constraints/thermal.py
+        module: pits_mras.constraints.thermal
+        imports:
+        - HeatConductionDAE
+        reExport: true
+      exports:
+      - ConstraintSpec
+      - PhysicsConstraints
+      - MechanicalDAE
+      - HeatConductionDAE
+      reExported:
+      - ConstraintSpec
+      - PhysicsConstraints
+      - MechanicalDAE
+      - HeatConductionDAE
+    src/pits_mras/constraints/base.py:
+      description: Base classes for physics constraint specifications (PCML Addendum §2.1).
+      externalDependencies:
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: abc
+        imports:
+        - ABC
+        - abstractmethod
+      - module: dataclasses
+        imports:
+        - dataclass
+      internalDependencies: []
+      exports:
+      - ConstraintSpec
+      - PhysicsConstraints
+      classes:
+      - ConstraintSpec
+      interfaces:
+      - PhysicsConstraints
+    src/pits_mras/constraints/mechanical.py:
+      description: 'Mechanical-system constraints: Euler-Lagrange DAEs (PCML Addendum §2.1).'
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: typing
+        imports:
+        - Callable
+        - Optional
+        - Tuple
+      internalDependencies:
+      - file: src/pits_mras/constraints/base.py
+        module: pits_mras.constraints.base
+        imports:
+        - ConstraintSpec
+        - PhysicsConstraints
+      exports:
+      - MechanicalDAE
+      classes:
+      - MechanicalDAE
+    src/pits_mras/constraints/thermal.py:
+      description: Thermal-system constraints for HVAC / heat conduction (PCML Addendum §2.1).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/constraints/base.py
+        module: pits_mras.constraints.base
+        imports:
+        - ConstraintSpec
+        - PhysicsConstraints
+      exports:
+      - HeatConductionDAE
+      classes:
+      - HeatConductionDAE
+  src/pits_mras/controllers:
+    src/pits_mras/controllers/__init__.py:
+      description: 'Controllers subpackage: reference models, CLF-CBF safety filter, MRAS actor.'
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies: []
+      exports: []
+    src/pits_mras/controllers/mras.py:
+      description: Actor-critic MRAS controller (IP §7.3). Identities 1, 2, 3, 4.
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: typing
+        imports:
+        - Dict
+        - Optional
+        - Tuple
+      internalDependencies:
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+      - file: src/pits_mras/controllers/safety.py
+        module: pits_mras.controllers.safety
+        imports:
+        - CLFCBFSafetyFilter
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - CostateHead
+        - QuadraticCritic
+      - file: src/pits_mras/utils/lyapunov.py
+        module: pits_mras.utils.lyapunov
+        imports:
+        - solve_care
+      exports:
+      - MRASController
+      classes:
+      - MRASController
+    src/pits_mras/controllers/reference_models.py:
+      description: Linear reference model (IP §7.1).
+      externalDependencies:
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/utils/lyapunov.py
+        module: pits_mras.utils.lyapunov
+        imports:
+        - check_hurwitz
+        - kleinman_iteration
+        - solve_lyapunov
+      exports:
+      - LinearReferenceModel
+      classes:
+      - LinearReferenceModel
+    src/pits_mras/controllers/safety.py:
+      description: CLF-CBF-QP safety filter (IP §7.2 / §3.4). NEW -- Identity 3.
+      externalDependencies:
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch.nn.functional
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: typing
+        imports:
+        - Tuple
+      internalDependencies: []
+      exports:
+      - CLFCBFSafetyFilter
+      classes:
+      - CLFCBFSafetyFilter
+  src/pits_mras/inference:
+    src/pits_mras/inference/__init__.py:
+      description: 'Inference subpackage: real-time engine and parallel thread architecture.'
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies: []
+      exports: []
+    src/pits_mras/inference/parallel.py:
+      description: Parallel thread architecture for deployment (IP §9.2).
+      externalDependencies:
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: copy
+        imports:
+        - (module)
+      - module: threading
+        imports:
+        - (module)
+      - module: time
+        imports:
+        - (module)
+      - module: dataclasses
+        imports:
+        - dataclass
+      - module: typing
+        imports:
+        - List
+        - Optional
+      internalDependencies:
+      - file: src/pits_mras/inference/realtime.py
+        module: pits_mras.inference.realtime
+        imports:
+        - RealtimeInferenceEngine
+      exports:
+      - ControllerState
+      - ParallelInferenceEngine
+      classes:
+      - ControllerState
+      - ParallelInferenceEngine
+    src/pits_mras/inference/realtime.py:
+      description: Real-time closed-loop inference engine (IP §9.1).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: threading
+        imports:
+        - (module)
+      - module: collections
+        imports:
+        - deque
+      - module: typing
+        imports:
+        - TYPE_CHECKING
+        - Any
+        - Deque
+        - Dict
+        - Optional
+      internalDependencies:
+      - file: src/pits_mras/controllers/mras.py
+        module: pits_mras.controllers.mras
+        imports:
+        - MRASController
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+      - file: src/pits_mras/models/pitnn.py
+        module: pits_mras.models.pitnn
+        imports:
+        - PITNN
+      - file: src/pits_mras/models/pcml.py
+        module: pits_mras.models.pcml
+        imports:
+        - PCMLModule
+        typeOnly: true
+      exports:
+      - RealtimeInferenceEngine
+      classes:
+      - RealtimeInferenceEngine
+  src/pits_mras/losses:
+    src/pits_mras/losses/__init__.py:
+      description: Loss functions for PITS-MRAS (Phase 3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      internalDependencies:
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - LossConfig
+        reExport: true
+      - file: src/pits_mras/losses/hjb.py
+        module: pits_mras.losses.hjb
+        imports:
+        - HJBResidualLoss
+        - LyapunovDecreaseEnforcer
+        reExport: true
+      - file: src/pits_mras/losses/irl.py
+        module: pits_mras.losses.irl
+        imports:
+        - IRLBellmanAccumulator
+        - IRLBellmanLoss
+        reExport: true
+      - file: src/pits_mras/losses/physics.py
+        module: pits_mras.losses.physics
+        imports:
+        - PhysicsLoss
+        reExport: true
+      - file: src/pits_mras/losses/stability.py
+        module: pits_mras.losses.stability
+        imports:
+        - ControlEffortLoss
+        - LyapunovConstraintLoss
+        - MRASStabilityLoss
+        - ParameterBoundednessLoss
+        reExport: true
+      - file: src/pits_mras/losses/temporal.py
+        module: pits_mras.losses.temporal
+        imports:
+        - AttentionRegularizationLoss
+        - MultiStepPredictionLoss
+        - TemporalLoss
+        - TemporalSmoothnessLoss
+        reExport: true
+      exports:
+      - TotalLoss
+      - PhysicsLoss
+      - TemporalLoss
+      - MultiStepPredictionLoss
+      - AttentionRegularizationLoss
+      - TemporalSmoothnessLoss
+      - LyapunovConstraintLoss
+      - ParameterBoundednessLoss
+      - ControlEffortLoss
+      - MRASStabilityLoss
+      - IRLBellmanAccumulator
+      - IRLBellmanLoss
+      - HJBResidualLoss
+      - LyapunovDecreaseEnforcer
+      - LossConfig
+      reExported:
+      - LossConfig
+      - HJBResidualLoss
+      - LyapunovDecreaseEnforcer
+      - IRLBellmanAccumulator
+      - IRLBellmanLoss
+      - PhysicsLoss
+      - ControlEffortLoss
+      - LyapunovConstraintLoss
+      - MRASStabilityLoss
+      - ParameterBoundednessLoss
+      - AttentionRegularizationLoss
+      - MultiStepPredictionLoss
+      - TemporalLoss
+      - TemporalSmoothnessLoss
+      classes:
+      - TotalLoss
+    src/pits_mras/losses/hjb.py:
+      description: HJB residual loss (Phase 3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      internalDependencies:
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - QuadraticCritic
+      exports:
+      - HJBResidualLoss
+      - LyapunovDecreaseEnforcer
+      classes:
+      - HJBResidualLoss
+      - LyapunovDecreaseEnforcer
+    src/pits_mras/losses/irl.py:
+      description: Inverse-RL Bellman residual loss (Phase 3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      internalDependencies:
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - QuadraticCritic
+      exports:
+      - IRLBellmanAccumulator
+      - IRLBellmanLoss
+      classes:
+      - IRLBellmanAccumulator
+      - IRLBellmanLoss
+    src/pits_mras/losses/physics.py:
+      description: Physics-informed loss (Phase 3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      internalDependencies: []
+      exports:
+      - PhysicsLoss
+      classes:
+      - PhysicsLoss
+    src/pits_mras/losses/stability.py:
+      description: Stability-constraint losses (Phase 3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: typing
+        imports:
+        - Iterable
+      internalDependencies: []
+      exports:
+      - LyapunovConstraintLoss
+      - ParameterBoundednessLoss
+      - ControlEffortLoss
+      - MRASStabilityLoss
+      classes:
+      - LyapunovConstraintLoss
+      - ParameterBoundednessLoss
+      - ControlEffortLoss
+      - MRASStabilityLoss
+    src/pits_mras/losses/temporal.py:
+      description: Temporal / multi-step prediction loss (Phase 3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      internalDependencies: []
+      exports:
+      - MultiStepPredictionLoss
+      - TemporalSmoothnessLoss
+      - AttentionRegularizationLoss
+      - TemporalLoss
+      classes:
+      - MultiStepPredictionLoss
+      - TemporalSmoothnessLoss
+      - AttentionRegularizationLoss
+      - TemporalLoss
+  src/pits_mras/models:
+    src/pits_mras/models/__init__.py:
+      description: 'Models subpackage: attention, port-Hamiltonian decoders, critic/costate, PITNN.'
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/models/attention.py
+        module: pits_mras.models.attention
+        imports:
+        - PhysicsInformedAttention
+        reExport: true
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - CostateHead
+        - QuadraticCritic
+        reExport: true
+      - file: src/pits_mras/models/decoders.py
+        module: pits_mras.models.decoders
+        imports:
+        - DissipationNet
+        - HamiltonianNet
+        - PortHamiltonianDecoder
+        reExport: true
+      - file: src/pits_mras/models/pitnn.py
+        module: pits_mras.models.pitnn
+        imports:
+        - PITNN
+        reExport: true
+      exports:
+      - PhysicsInformedAttention
+      - HamiltonianNet
+      - DissipationNet
+      - PortHamiltonianDecoder
+      - QuadraticCritic
+      - CostateHead
+      - PITNN
+      reExported:
+      - PhysicsInformedAttention
+      - CostateHead
+      - QuadraticCritic
+      - DissipationNet
+      - HamiltonianNet
+      - PortHamiltonianDecoder
+      - PITNN
+    src/pits_mras/models/attention.py:
+      description: Multi-head physics-informed attention (IP §5.1).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch.nn.functional
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: math
+        imports:
+        - (module)
+      internalDependencies: []
+      exports:
+      - PhysicsInformedAttention
+      classes:
+      - PhysicsInformedAttention
+    src/pits_mras/models/critic.py:
+      description: Critic / value network and costate head (IP §5.3). NEW -- Identity 1 & 2.
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/utils/lyapunov.py
+        module: pits_mras.utils.lyapunov
+        imports:
+        - quadratic_basis
+      exports:
+      - QuadraticCritic
+      - CostateHead
+      classes:
+      - QuadraticCritic
+      - CostateHead
+    src/pits_mras/models/decoders.py:
+      description: Port-Hamiltonian decoders (IP §5.2).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch.nn.functional
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/utils/hamiltonian.py
+        module: pits_mras.utils.hamiltonian
+        imports:
+        - hamiltonian_positivity_loss
+        - make_positive_definite
+        - make_skew_symmetric
+        - port_hamiltonian_energy_loss
+      exports:
+      - HamiltonianNet
+      - DissipationNet
+      - PortHamiltonianDecoder
+      classes:
+      - HamiltonianNet
+      - DissipationNet
+      - PortHamiltonianDecoder
+    src/pits_mras/models/lagrangian_head.py:
+      description: Lagrangian-multiplier head for the KKT projection (PCML Addendum §2.3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies: []
+      internalDependencies: []
+      exports:
+      - LagrangianMultiplierHead
+      classes:
+      - LagrangianMultiplierHead
+    src/pits_mras/models/pcml.py:
+      description: Physics-Constrained Machine Learning (PCML) module for PITS-MRAS.
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch.nn.functional
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: typing
+        imports:
+        - Dict
+        - List
+        - Optional
+        - Tuple
+      internalDependencies:
+      - file: src/pits_mras/constraints/base.py
+        module: pits_mras.constraints.base
+        imports:
+        - PhysicsConstraints
+      exports:
+      - SoftPCMLLoss
+      - TaylorNeighborhoodApproximation
+      - KKTProjectionLayer
+      - PCMLModule
+      classes:
+      - SoftPCMLLoss
+      - TaylorNeighborhoodApproximation
+      - KKTProjectionLayer
+      - PCMLModule
+    src/pits_mras/models/pitnn.py:
+      description: Top-level physics-informed time-series network -- PITNN (IP §5.4).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: typing
+        imports:
+        - Dict
+        - Optional
+      internalDependencies:
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - NetworkConfig
+        - PhysicsConfig
+      - file: src/pits_mras/models/attention.py
+        module: pits_mras.models.attention
+        imports:
+        - PhysicsInformedAttention
+      - file: src/pits_mras/models/decoders.py
+        module: pits_mras.models.decoders
+        imports:
+        - PortHamiltonianDecoder
+      exports:
+      - PITNN
+      classes:
+      - PITNN
+  src/pits_mras/training:
+    src/pits_mras/training/__init__.py:
+      description: 'Training subpackage: physics pretrain, IRL co-train, offline IRL trainer.'
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/training/cotrain.py
+        module: pits_mras.training.cotrain
+        imports:
+        - cotraining_loop
+        reExport: true
+      - file: src/pits_mras/training/irl_trainer.py
+        module: pits_mras.training.irl_trainer
+        imports:
+        - train_irl_critic
+        reExport: true
+      - file: src/pits_mras/training/pretrain.py
+        module: pits_mras.training.pretrain
+        imports:
+        - pretrain_pitnn
+        reExport: true
+      exports:
+      - pretrain_pitnn
+      - cotraining_loop
+      - train_irl_critic
+      reExported:
+      - cotraining_loop
+      - train_irl_critic
+      - pretrain_pitnn
+    src/pits_mras/training/cotrain.py:
+      description: Co-training pipeline with IRL critic updates (Algorithm 3 extended, §8.2).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: logging
+        imports:
+        - (module)
+      - module: collections
+        imports:
+        - deque
+      - module: typing
+        imports:
+        - TYPE_CHECKING
+        - Deque
+      internalDependencies:
+      - file: src/pits_mras/losses/hjb.py
+        module: pits_mras.losses.hjb
+        imports:
+        - HJBResidualLoss
+      - file: src/pits_mras/losses/irl.py
+        module: pits_mras.losses.irl
+        imports:
+        - IRLBellmanLoss
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - PITSMRASConfig
+        typeOnly: true
+      - file: src/pits_mras/controllers/mras.py
+        module: pits_mras.controllers.mras
+        imports:
+        - MRASController
+        typeOnly: true
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+        typeOnly: true
+      - file: src/pits_mras/models/__init__.py
+        module: pits_mras.models
+        imports:
+        - PITNN
+        typeOnly: true
+      - file: src/pits_mras/models/pcml.py
+        module: pits_mras.models.pcml
+        imports:
+        - PCMLModule
+        typeOnly: true
+      exports:
+      - cotraining_loop
+      functions:
+      - cotraining_loop
+    src/pits_mras/training/irl_trainer.py:
+      description: Offline IRL critic trainer (batch least-squares, §8.3).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: logging
+        imports:
+        - (module)
+      - module: typing
+        imports:
+        - TYPE_CHECKING
+      internalDependencies:
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+        typeOnly: true
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - QuadraticCritic
+        typeOnly: true
+      exports:
+      - train_irl_critic
+      functions:
+      - train_irl_critic
+    src/pits_mras/training/pretrain.py:
+      description: Physics-informed pre-training curriculum (IP §8.1, Algorithm 2).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: logging
+        imports:
+        - (module)
+      - module: math
+        imports:
+        - (module)
+      - module: typing
+        imports:
+        - TYPE_CHECKING
+        - Callable
+      internalDependencies:
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - PITSMRASConfig
+        typeOnly: true
+      - file: src/pits_mras/models/__init__.py
+        module: pits_mras.models
+        imports:
+        - PITNN
+        typeOnly: true
+      exports:
+      - data_weight_schedule
+      - temporal_weight_schedule
+      - pretrain_pitnn
+      functions:
+      - data_weight_schedule
+      - temporal_weight_schedule
+      - pretrain_pitnn
+  src/pits_mras/utils:
+    src/pits_mras/utils/__init__.py:
+      description: 'Utils subpackage: Lyapunov/Riccati engine, port-Hamiltonian, PE monitor.'
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies: []
+      exports: []
+    src/pits_mras/utils/hamiltonian.py:
+      description: Port-Hamiltonian utilities (IP §4.4).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn.functional
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies: []
+      internalDependencies: []
+      exports:
+      - make_skew_symmetric
+      - make_positive_definite
+      - port_hamiltonian_energy_loss
+      - hamiltonian_positivity_loss
+      functions:
+      - make_skew_symmetric
+      - make_positive_definite
+      - port_hamiltonian_energy_loss
+      - hamiltonian_positivity_loss
+    src/pits_mras/utils/lyapunov.py:
+      description: Lyapunov / Riccati engine (IP §4.3). "The mathematical engine for all P."
+      externalDependencies:
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: scipy.linalg
+        imports:
+        - solve_continuous_are
+        - solve_continuous_lyapunov
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: typing
+        imports:
+        - Optional
+        - Tuple
+      internalDependencies: []
+      exports:
+      - solve_lyapunov
+      - kleinman_iteration
+      - solve_care
+      - check_hurwitz
+      - lyapunov_derivative
+      - quadratic_basis
+      functions:
+      - solve_lyapunov
+      - kleinman_iteration
+      - solve_care
+      - check_hurwitz
+      - lyapunov_derivative
+      - quadratic_basis
+    src/pits_mras/utils/pe_monitor.py:
+      description: Persistence-of-excitation monitor (IP §4.5).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: collections
+        imports:
+        - deque
+      - module: typing
+        imports:
+        - Deque
+      internalDependencies: []
+      exports:
+      - PEMonitor
+      classes:
+      - PEMonitor
+dependencyGraph:
+  circularDependencies:
+    runtime: []
+    typeOnly: []
+    total: 0
+    runtimeCount: 0
+    typeOnlyCount: 0
+  layers:
+  - name: Examples
+    files:
+    - examples/autonomous_vehicle.py
+    - examples/building_hvac.py
+    - examples/robotic_manipulator.py
+  - name: Root
+    files:
+    - setup.py
+  - name: Src / pits_mras
+    files:
+    - src/pits_mras/__init__.py
+    - src/pits_mras/config.py
+  - name: Src / pits_mras / constraints
+    files:
+    - src/pits_mras/constraints/__init__.py
+    - src/pits_mras/constraints/base.py
+    - src/pits_mras/constraints/mechanical.py
+    - src/pits_mras/constraints/thermal.py
+  - name: Src / pits_mras / controllers
+    files:
+    - src/pits_mras/controllers/__init__.py
+    - src/pits_mras/controllers/mras.py
+    - src/pits_mras/controllers/reference_models.py
+    - src/pits_mras/controllers/safety.py
+  - name: Src / pits_mras / inference
+    files:
+    - src/pits_mras/inference/__init__.py
+    - src/pits_mras/inference/parallel.py
+    - src/pits_mras/inference/realtime.py
+  - name: Src / pits_mras / losses
+    files:
+    - src/pits_mras/losses/__init__.py
+    - src/pits_mras/losses/hjb.py
+    - src/pits_mras/losses/irl.py
+    - src/pits_mras/losses/physics.py
+    - src/pits_mras/losses/stability.py
+    - src/pits_mras/losses/temporal.py
+  - name: Src / pits_mras / models
+    files:
+    - src/pits_mras/models/__init__.py
+    - src/pits_mras/models/attention.py
+    - src/pits_mras/models/critic.py
+    - src/pits_mras/models/decoders.py
+    - src/pits_mras/models/lagrangian_head.py
+    - src/pits_mras/models/pcml.py
+    - src/pits_mras/models/pitnn.py
+  - name: Src / pits_mras / training
+    files:
+    - src/pits_mras/training/__init__.py
+    - src/pits_mras/training/cotrain.py
+    - src/pits_mras/training/irl_trainer.py
+    - src/pits_mras/training/pretrain.py
+  - name: Src / pits_mras / utils
+    files:
+    - src/pits_mras/utils/__init__.py
+    - src/pits_mras/utils/hamiltonian.py
+    - src/pits_mras/utils/lyapunov.py
+    - src/pits_mras/utils/pe_monitor.py
+statistics:
+  totalPythonFiles: 38
+  totalModules: 10
+  totalLinesOfCode: 4907
+  totalExports: 111
+  totalClasses: 44
+  totalInterfaces: 1
+  totalEnums: 0
+  totalFunctions: 21
+  totalTypeGuards: 0
+  totalConstants: 0
+  totalReExports: 45
+  totalTypeCheckingImports: 10
+  runtimeCircularDeps: 0
+  typeCheckingCircularDeps: 0
+  unusedFilesCount: 0
+  unusedExportsCount: 0

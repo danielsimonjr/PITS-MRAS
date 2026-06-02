@@ -45,6 +45,22 @@ Comprehensive technical documentation is available in the [`docs/`](./docs/) dir
 - **[Validation Report](./docs/PITS-MRAS_VALIDATION_REPORT.md)** - Comprehensive validation of mathematical correctness and implementation
 - **[Final Summary](./docs/PITS-MRAS_FINAL_SUMMARY.md)** - Executive summary and publication readiness assessment
 
+### Architecture docs (graph-backed)
+
+[`docs/architecture/`](./docs/architecture/) holds the trace/map/visualize
+documentation, generated and informed by the dependency-graph tool
+(`tools/create-dependency-graph/create_dependency_graph.py`):
+
+- **[OVERVIEW.md](./docs/architecture/OVERVIEW.md)** — orientation: the three-paradigm merger, module map, entry points, stats
+- **[ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md)** — full design blueprint + a §0 graph-backed as-built summary
+- **[COMPONENTS.md](./docs/architecture/COMPONENTS.md)** — per-module component breakdown
+- **[API.md](./docs/architecture/API.md)** — public API reference (signatures, config, usage)
+- **[DATAFLOW.md](./docs/architecture/DATAFLOW.md)** — runtime data flow (pre-train → co-train → inference)
+- **[DEPENDENCY_GRAPH.md](./docs/architecture/DEPENDENCY_GRAPH.md)** + `dependency-graph.{json,yaml}` — the import graph
+- **[TEST_COVERAGE.md](./docs/architecture/TEST_COVERAGE.md)** and **[unused-analysis.md](./docs/architecture/unused-analysis.md)**
+
+Regenerate with: `python tools/create-dependency-graph/create_dependency_graph.py --include-tests`
+
 ### Key Sections
 
 1. **Philosophical Foundation** - Three-paradigm integration rationale

@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`tools/` developer utilities** (ported/copied from the nanoclaw repo):
+  `chunking-for-files` and `compress-for-context` (generic TS text utilities,
+  as-is) plus **`create-dependency-graph`, rewritten as a standalone Python
+  tool** (`tools/create-dependency-graph/create_dependency_graph.py`). It parses
+  Python imports (relative + absolute intra-package, incl. parenthesized
+  multi-line), `__all__` + public top-level defs/classes/constants as exports,
+  `__init__.py` barrel re-exports, `TYPE_CHECKING`-guarded imports (the type-only
+  analog), real import cycles, unused files/exports, and test coverage — emitting
+  the report set under `docs/architecture/`. Runs on the repo's own Python (no
+  Node toolchain); 10 unit tests in `tools/create-dependency-graph/`.
+- **`docs/architecture/` graph-backed documentation.** Generated tool outputs
+  (`DEPENDENCY_GRAPH.md`, `dependency-graph.{json,yaml}`,
+  `dependency-summary.compact.json`, `TEST_COVERAGE.md`, `test-coverage.json`,
+  `unused-analysis.md`) plus five hand-written, graph-grounded docs:
+  `OVERVIEW.md`, `COMPONENTS.md`, `API.md`, `DATAFLOW.md`, and a refreshed
+  `ARCHITECTURE.md`. The graph reports 38 first-party files across 10 modules,
+  ~4,907 LOC, 111 exports (45 re-exported), **0 circular dependencies, 0 unused
+  files/exports**.
+
+### Changed
+
+- Moved `docs/ARCHITECTURE.md` → `docs/architecture/ARCHITECTURE.md` and added a
+  §0 "Implemented Architecture (v0.3.0)" graph-backed as-built summary; README
+  documentation section now links the `docs/architecture/` set.
+
 ## [0.3.0] - 2026-06-02
 
 The **PCML** (Physics-Constrained Machine Learning) component — soft + hard

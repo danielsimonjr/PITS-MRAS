@@ -32,6 +32,54 @@
 
 ---
 
+## 0. Implemented Architecture (v0.3.0) — graph-backed
+
+> **Status:** all nine ROADMAP phases are implemented and released as **v0.3.0**,
+> plus the **PCML** (Physics-Constrained Machine Learning) component. The
+> structure below is generated from the codebase by
+> `tools/create-dependency-graph/create_dependency_graph.py` and cross-checked
+> against the source; regenerate with `python tools/create-dependency-graph/create_dependency_graph.py --include-tests`.
+>
+> **Companion docs** (this folder, all graph-backed): [`OVERVIEW.md`](OVERVIEW.md)
+> (orientation), [`COMPONENTS.md`](COMPONENTS.md) (per-module breakdown),
+> [`API.md`](API.md) (public API reference), [`DATAFLOW.md`](DATAFLOW.md) (runtime
+> data flow), [`DEPENDENCY_GRAPH.md`](DEPENDENCY_GRAPH.md) (full import graph +
+> Mermaid), [`TEST_COVERAGE.md`](TEST_COVERAGE.md), and
+> [`unused-analysis.md`](unused-analysis.md). The sections below (§1+) are the
+> original design blueprint; this section is the as-built summary.
+
+### 0.1 Module map (as built)
+
+The package lives under `src/pits_mras/` (src-layout). The dependency graph
+finds **38 first-party Python files across 10 modules**:
+
+| Module | Files | Responsibility |
+|--------|-------|----------------|
+| `src/pits_mras` | 2 | Package root: `config.py` (8 dataclasses incl. `PCMLConfig`) + `__init__.py` (flat public API, 17 symbols) |
+| `utils` | 4 | Foundation math: `lyapunov.py` (Lyapunov/Riccati/Kleinman), `hamiltonian.py` (skew/PSD/energy), `pe_monitor.py` |
+| `models` | 7 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian), `critic.py` (critic + costate), `pcml.py` (soft+hard PCML), `lagrangian_head.py` |
+| `losses` | 6 | `physics.py`, `temporal.py`, `stability.py`, `irl.py`, `hjb.py` + `TotalLoss` aggregator |
+| `controllers` | 4 | `reference_models.py`, `safety.py` (CLF-CBF), `mras.py` (actor-critic MRAS controller) |
+| `constraints` | 4 | `base.py` (`PhysicsConstraints` ABC), `mechanical.py`, `thermal.py` — PCML DAE systems |
+| `training` | 4 | `pretrain.py` (3-stage curriculum), `cotrain.py` (closed-loop actor-critic + IRL + PCML), `irl_trainer.py` |
+| `inference` | 3 | `realtime.py` (closed-loop engine), `parallel.py` (thread skeleton) |
+| `examples` | 3 | Runnable demos: robotic manipulator, autonomous vehicle, building HVAC |
+| `root` | 1 | `setup.py` |
+
+### 0.2 Layering and health
+
+The runtime stack is layered foundation → models → losses → controllers /
+constraints → training → inference, composing at runtime as **PITNN → PCML
+projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter →
+plant**. The dependency graph reports **0 circular dependencies** and **0 unused
+files / exports**.
+
+Key statistics (graph-generated): 38 files · 10 modules · ~4,907 LOC · 111
+public exports (45 re-exported through barrels) · 44 classes · 1 ABC
+(`PhysicsConstraints`) · 21 functions · 10 `TYPE_CHECKING`-guarded imports.
+
+---
+
 ## 1. Overview & Goals
 
 ### 1.1 What PITS-MRAS Is — The Three-Paradigm Merger

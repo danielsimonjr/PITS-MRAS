@@ -34,6 +34,16 @@ for the spec.
 - [x] **Docs + version** — PCML section in `FINAL_SUMMARY` + README; `__init__`
   exports; bumped to v0.3.0.
 
+## Done — architecture tooling + docs (2026-06-02)
+
+- [x] Copied `tools/` from nanoclaw (chunking-for-files, compress-for-context as-is).
+- [x] Ported `create-dependency-graph` to a standalone **Python** tool
+  (`tools/create-dependency-graph/create_dependency_graph.py`, 10 unit tests);
+  parses Python imports/exports/barrels/`TYPE_CHECKING`/cycles/unused/coverage.
+- [x] Generated `docs/architecture/` reports (0 circular deps, 0 unused) and
+  wrote the 5 docs (OVERVIEW, ARCHITECTURE [moved+refreshed], COMPONENTS, API,
+  DATAFLOW); README links updated.
+
 ## Deferred / future (documented, low priority)
 
 - **Synthetic-loop PCML inputs are placeholders**: `cotrain`/`realtime` pass
