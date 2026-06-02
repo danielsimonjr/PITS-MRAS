@@ -122,6 +122,34 @@ def test_decoder_forward_shapes() -> None:
     assert energy_loss.shape == ()
 
 
+def test_port_hamiltonian_energy_residual_vanishes() -> None:
+    """The pH dissipation balance dH/dt = P_control - P_diss holds by construction.
+
+    Regression for the dissipation-channel fix (audit #4). With no control
+    (u=0) and no temporal correction (W_corr=0), the only contributions to
+    dH/dt are conservative (grad_H . J grad_H = 0 by skew-symmetry) and
+    dissipative. Because dissipation now acts on the momentum (p) block via the
+    velocity dH/dp and P_diss = (dH/dp)^T R (dH/dp), the dissipative part of
+    dH/dt is exactly -P_diss, so the energy residual ||dH/dt - P_control +
+    P_diss||^2 vanishes. Previously f_diss used the finite-difference q_dot
+    while P_diss used grad_H_q, so the residual could not vanish.
+    """
+    torch.manual_seed(0)
+    n_q = 2
+    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q)
+    with torch.no_grad():
+        dec.W_corr.weight.zero_()
+        dec.W_corr.bias.zero_()
+    batch = 16
+    q = torch.randn(batch, n_q)
+    p = torch.randn(batch, n_q)
+    q_dot = torch.randn(batch, n_q)  # irrelevant to the pH-consistent dissipation
+    u = torch.zeros(batch, n_q)
+    c_t = torch.randn(batch, 8)
+    _, _, _, energy_loss = dec(q, p, q_dot, u, c_t)
+    assert energy_loss.item() < 1e-6
+
+
 def test_decoder_backward_runs() -> None:
     """loss.backward() must run without an in-place-modification autograd error."""
     torch.manual_seed(0)
@@ -192,9 +220,13 @@ def test_costate_head_optimal_control_shape() -> None:
     lam, u = head(e)
     assert lam.shape == (5, n)
     assert u.shape == (5, m)
-    # u* = -R^-1 B^T lambda.
-    expected = -(lam @ B) @ R_inv.T
+    # u* = -½ R^-1 B^T lambda (half_grad=True default; V=eᵀPe -> u*=-Ke).
+    expected = -0.5 * (lam @ B) @ R_inv.T
     assert torch.allclose(u, expected, atol=1e-5)
+    # half_grad=False recovers the literal un-halved form.
+    head_full = CostateHead(critic, R_inv, B, half_grad=False)
+    _, u_full = head_full(e)
+    assert torch.allclose(u_full, -(lam @ B) @ R_inv.T, atol=1e-5)
 
 
 # --------------------------------------------------------------------------- #

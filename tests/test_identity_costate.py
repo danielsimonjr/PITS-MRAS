@@ -97,3 +97,35 @@ def test_optimal_control_equals_lqr_gain() -> None:
     costate = 0.5 * grad_V  # P e
     u_costate = -(costate @ B) @ R_inv.T
     assert torch.allclose(u_costate, u_lqr, atol=1e-4)
+
+
+def test_costate_head_u_opt_equals_lqr_gain() -> None:
+    """The ``CostateHead``'s OWN ``u_opt`` must equal the LQR optimal ``-Ke``.
+
+    Regression for the missing factor-of-½. With ``V = e^T P e`` the costate is
+    ``grad V = 2 P e``; the optimal control is ``u* = -½ R^{-1} B^T grad V =
+    -R^{-1} B^T P e = -K e`` (PMP: ∂H/∂u = 2Ru + B^T λ = 0). The head must apply
+    the same ½ convention as ``HJBResidualLoss(half_grad=True)`` -- prior to the
+    fix it returned ``-2 K e``. ``lambda_hat`` itself stays the true costate.
+    """
+    A_m = np.array([[-1.0, 0.5], [0.0, -2.0]])
+    B_m = np.array([[1.0, 0.0], [0.0, 1.0]])
+    C_m = np.eye(2)
+    Q_np = np.eye(2)
+    R_np = np.eye(2)
+    rm = LinearReferenceModel(A_m, B_m, C_m, Q_np, R_np)
+    ctrl = MRASController(rm, state_dim=2, control_dim=2, ref_dim=2, plant_dim=2)
+
+    Q = torch.tensor(Q_np, dtype=torch.float32)
+    R = torch.tensor(R_np, dtype=torch.float32)
+    ctrl.lqr_warm_start(Q, R)
+    _, K_care = solve_care(A_m, B_m, Q_np, R_np)
+
+    e = torch.randn(7, 2)
+    u_lqr = -e @ torch.tensor(K_care, dtype=torch.float32).T
+
+    lambda_hat, u_opt = ctrl.costate_head(e)
+    # lambda_hat is the true costate grad V = 2 P e (unchanged by the ½ fix).
+    assert torch.allclose(lambda_hat, ctrl.critic.gradient(e), atol=1e-5)
+    # u_opt applies the ½ and recovers the LQR gain (was -2Ke before the fix).
+    assert torch.allclose(u_opt, u_lqr, atol=1e-4)

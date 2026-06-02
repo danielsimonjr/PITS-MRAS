@@ -134,15 +134,21 @@ class RealtimeInferenceEngine:
                 )
             f_hat = pitnn_out["f_hat"].detach().squeeze(0)  # [output_dim]
 
-            # Controller forward (real signature: e, r, x_plant).
-            ctrl_out = self.controller(e.unsqueeze(0), r.unsqueeze(0), x_p.unsqueeze(0))
-            u_safe = ctrl_out["u"].squeeze(0)  # [control_dim]
+            # Controller forward (real signature: e, r, x_plant). The feedback
+            # is the costate-head optimal control, which uses an internal
+            # ``torch.autograd.grad`` (∇V̂); re-enable grad just for this call,
+            # then detach so no training graph escapes the ``no_grad`` step.
+            with torch.enable_grad():
+                ctrl_out = self.controller(
+                    e.unsqueeze(0), r.unsqueeze(0), x_p.unsqueeze(0)
+                )
+            u_safe = ctrl_out["u"].detach().squeeze(0)  # [control_dim]
 
             # CBF activation: the safety filter populates "slack" only when the
             # filter is set up; treat any non-trivial correction as active.
             if "slack" in ctrl_out:
                 cbf_active = bool((ctrl_out["slack"] > 1e-4).any().item())
-                h_cbf = ctrl_out["h_cbf"].squeeze()
+                h_cbf = ctrl_out["h_cbf"].detach().squeeze()
             else:
                 cbf_active = False
                 h_cbf = torch.zeros((), device=self.device)

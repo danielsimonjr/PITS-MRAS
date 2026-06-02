@@ -153,17 +153,35 @@ class QuadraticCritic(nn.Module):
 class CostateHead(nn.Module):
     r"""Costate / optimal-control head enforcing Identity 2 by construction.
 
-    Implements :math:`\hat\lambda(t) = \partial\hat V/\partial e` and
-    :math:`u^* = -R^{-1}B^\top\hat\lambda`. The action head is never an
-    independent network -- it IS the gradient of the critic.
+    Implements :math:`\hat\lambda(t) = \partial\hat V/\partial e` and the
+    optimal control :math:`u^* = -\tfrac12 R^{-1}B^\top\hat\lambda`. The action
+    head is never an independent network -- it IS the gradient of the critic.
+
+    FACTOR-OF-½ CONVENTION (shared with :class:`~pits_mras.losses.hjb.HJBResidualLoss`).
+    This critic stores :math:`\hat V = e^\top P e`, so the costate is
+    :math:`\hat\lambda = \nabla\hat V = 2 P e`. Pontryagin's minimum principle
+    (:math:`\partial H/\partial u = 2 R u + B^\top\lambda = 0`) then gives
+    :math:`u^* = -\tfrac12 R^{-1} B^\top\hat\lambda = -R^{-1}B^\top P e = -K e`,
+    the LQR gain that IP §3.3 (line 142) claims this equals. ``half_grad=True``
+    (default) applies the ½ so ``u_opt`` recovers ``-Ke``; ``half_grad=False``
+    recovers the literal un-halved §3.3 text (``-2Ke`` for this critic), for
+    callers that store :math:`\hat V = \tfrac12 e^\top P e` instead.
+    ``lambda_hat`` is always the true costate :math:`\nabla\hat V` (un-scaled).
     """
 
     R_inv: Tensor
     B_mat: Tensor
 
-    def __init__(self, critic: QuadraticCritic, R_inv: Tensor, B: Tensor) -> None:
+    def __init__(
+        self,
+        critic: QuadraticCritic,
+        R_inv: Tensor,
+        B: Tensor,
+        half_grad: bool = True,
+    ) -> None:
         super().__init__()
         self.critic = critic
+        self.half_grad = half_grad
         self.register_buffer("R_inv", R_inv)  # [control_dim, control_dim]
         self.register_buffer("B_mat", B)  # [state_dim, control_dim]
 
@@ -171,8 +189,10 @@ class CostateHead(nn.Module):
         r"""Return ``(lambda_hat, u_optimal)``.
 
         lambda_hat: ``[batch, state_dim]`` -- the costate :math:`\nabla\hat V`.
-        u_optimal: ``[batch, control_dim]`` -- :math:`u^* = -R^{-1}B^\top\hat\lambda`.
+        u_optimal: ``[batch, control_dim]`` -- :math:`u^* = -\tfrac12 R^{-1}B^\top\hat\lambda`
+        (the ½ omitted iff ``half_grad=False``; see the class docstring).
         """
         lambda_hat = self.critic.gradient(e)  # [batch, state_dim]
-        u_opt = -(lambda_hat @ self.B_mat) @ self.R_inv.T  # [batch, control_dim]
+        scale = 0.5 if self.half_grad else 1.0
+        u_opt = -scale * (lambda_hat @ self.B_mat) @ self.R_inv.T  # [batch, control_dim]
         return lambda_hat, u_opt

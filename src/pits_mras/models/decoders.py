@@ -10,11 +10,22 @@ Implements Connection 2 (port-Hamiltonian storage = value). Three modules:
   ``utils.hamiltonian.make_positive_definite``.
 - ``PortHamiltonianDecoder``: the full decoder enforcing §3.1::
 
-      f_hat = J(q) grad_H - R_theta(q) q_dot + B(x_p) u + W_corr c_t + b_corr
+      f_hat = J(q) grad_H - [0; R_theta(q) (dH/dp)] + B(x_p) u + W_corr c_t + b_corr
 
   with :math:`J = -J^\top` (skew-symmetric), :math:`R_\theta \succeq 0`,
   :math:`H_\theta > 0`. The Hamiltonian gradient is taken with autograd and
   ``create_graph=True`` so the decoder is differentiable end-to-end.
+
+  Dissipation is pH-consistent (audit #4): damping enters the momentum
+  (:math:`\dot p`) equation acting against the Hamiltonian velocity
+  :math:`\partial H/\partial p`, so :math:`f_{diss} = [0;\, -R_\theta\,
+  \partial H/\partial p]` and the dissipated power
+  :math:`P_{diss} = (\partial H/\partial p)^\top R_\theta (\partial H/\partial p)`
+  equals :math:`-\nabla H\cdot f_{diss}` exactly. The port-Hamiltonian energy
+  residual :math:`\|dH/dt - P_{control} + P_{diss}\|^2` therefore vanishes by
+  construction for the conservative + dissipative + control terms (only the
+  learned temporal correction ``f_corr`` contributes), which is the soft-loss
+  weakness the PCML hard-constraint layer is designed to supersede.
 """
 
 import torch
@@ -86,7 +97,11 @@ class PortHamiltonianDecoder(nn.Module):
 
     Given a context vector ``c_t`` and the current state ``x_p = [q; p]``::
 
-        f_hat = J(q) grad_H_theta - R_theta(q) q_dot + B(x_p) u + W_corr c_t
+        f_hat = J(q) grad_H_theta - [0; R_theta(q) (dH/dp)] + B(x_p) u + W_corr c_t
+
+    Dissipation enters the momentum (p) block via the velocity ``dH/dp`` (see
+    the module docstring), so it is pH-consistent and the energy residual
+    vanishes by construction.
     """
 
     J_canonical: Tensor
@@ -154,7 +169,7 @@ class PortHamiltonianDecoder(nn.Module):
         Returns ``(f_hat, H_val, P_diss, energy_loss)``:
             f_hat: ``[batch, 2*n_q]`` -- full dynamics prediction.
             H_val: ``[batch, 1]`` -- Hamiltonian energy (for monitoring).
-            P_diss: ``[batch]`` -- dissipated power ``grad_H_q^T R grad_H_q``.
+            P_diss: ``[batch]`` -- dissipated power ``(dH/dp)^T R (dH/dp) >= 0``.
             energy_loss: scalar -- port-Hamiltonian energy-residual loss.
         """
         qp = torch.cat([q, p], dim=-1).requires_grad_(True)  # [batch, 2*n_q]
@@ -173,11 +188,18 @@ class PortHamiltonianDecoder(nn.Module):
         # 3. Conservative dynamics: f_cons = J grad_H.
         f_cons = (J @ grad_H.unsqueeze(-1)).squeeze(-1)  # [batch, 2*n_q]
 
-        # 4. Dissipative dynamics: -R q_dot, acting on the velocity (q) part.
-        #    Built out-of-place via torch.cat (no in-place index assignment).
+        # 4. Dissipative dynamics (pH-consistent, audit #4). In canonical
+        #    coordinates the velocity is dH/dp, and Rayleigh damping enters the
+        #    momentum (p-dot) equation: p_dot += -R(q) . dH/dp. Using the
+        #    Hamiltonian velocity dH/dp (not the finite-difference q_dot) makes
+        #    the dissipated power P_diss = (dH/dp)^T R (dH/dp) equal exactly
+        #    -grad_H . f_diss, so the energy residual vanishes by construction.
+        #    q_dot is kept in the signature for backward compatibility but is
+        #    not used here. Built out-of-place via torch.cat.
         R_theta = self.L_net(q)  # [batch, n_q, n_q]
-        f_diss_q = -(R_theta @ q_dot.unsqueeze(-1)).squeeze(-1)  # [batch, n_q]
-        f_diss = torch.cat([f_diss_q, torch.zeros_like(p)], dim=-1)
+        grad_H_p = grad_H[:, self.n_q:]  # [batch, n_q] = dH/dp (the velocity)
+        f_diss_p = -(R_theta @ grad_H_p.unsqueeze(-1)).squeeze(-1)  # [batch, n_q]
+        f_diss = torch.cat([torch.zeros_like(q), f_diss_p], dim=-1)
 
         # 5. Control input: f_ctrl = B(x_p) u (MIMO-simplified per IP §5.2 / G8).
         B_val = self.B_net(torch.cat([q, p], dim=-1))  # [batch, 2*n_q]
@@ -190,12 +212,13 @@ class PortHamiltonianDecoder(nn.Module):
         # 7. Total dynamics (all out-of-place).
         f_hat = f_cons + f_diss + f_ctrl + f_corr  # [batch, 2*n_q]
 
-        # 8. Energy-loss terms for the physics loss L_physics.
+        # 8. Energy-loss terms for the physics loss L_physics. Dissipated power
+        #    uses the SAME velocity channel (dH/dp) as f_diss, so that
+        #    P_diss == -grad_H . f_diss and the residual cancels analytically.
         P_control = (B_val * u_scalar * grad_H).sum(dim=-1)  # [batch]
-        grad_H_q = grad_H[:, : self.n_q]  # [batch, n_q]
         P_diss = (
-            grad_H_q.unsqueeze(1) @ R_theta @ grad_H_q.unsqueeze(-1)
-        ).reshape(-1)  # [batch]
+            grad_H_p.unsqueeze(1) @ R_theta @ grad_H_p.unsqueeze(-1)
+        ).reshape(-1)  # [batch]  (dH/dp)^T R (dH/dp) >= 0
         # dH/dt ~= f_hat . grad_H (chain rule).
         dH_dt = (f_hat * grad_H).sum(dim=-1)  # [batch]
         energy_loss = port_hamiltonian_energy_loss(

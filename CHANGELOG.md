@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Work toward the **PCML** (Physics-Constrained Machine Learning) component
+(soft + hard physics-constraint enforcement; Patel et al. 2022 and DAE-HardNet,
+arXiv:2512.05881). This entry covers the pre-PCML audit remediation that makes
+v0.2.0 faithful to the Implementation Plan §3 identities before the new layer is
+built on top.
+
+### Fixed
+
+- **Audit remediation — mathematical faithfulness to the §3 identities** (a
+  four-part pre-PCML pass; baseline was 139/139 green, now 146/146):
+  - **Costate optimal control (Identity 2):** `CostateHead.u_opt` was missing the
+    ½ factor and returned `-2Ke` instead of the LQR gain `-Ke`. Added a
+    `half_grad=True` parameter mirroring `HJBResidualLoss`; `lambda_hat` remains
+    the true costate `∇V̂ = 2P̂e` (`models/critic.py`).
+  - **Port-Hamiltonian dissipation (§3.1):** the soft energy loss was internally
+    inconsistent (`f_diss` used the finite-difference `q̇` while `P_diss` used
+    `∇_qH`), so the passivity residual could not vanish. Dissipation now acts on
+    the momentum block via the Hamiltonian velocity `∂H/∂p`, with
+    `P_diss = (∂H/∂p)ᵀ R (∂H/∂p)`, so `‖dH/dt − P_control + P_diss‖²` vanishes by
+    construction (`models/decoders.py`). This is exactly the soft-constraint
+    weakness the forthcoming PCML hard-projection layer supersedes.
+  - **MRAS feedback wiring (Identities 2 & 4):** feedback now routes through the
+    costate head (`u_fb = -R⁻¹BᵀP̂e`) so the learned critic drives control; the
+    critic is warm-started to `P_opt` in `__init__`, so `u_fb = -K_opt e` at
+    initialization and adapts thereafter (previously a frozen `K_fb = K_opt`
+    buffer was used and the critic never reached the actuator). `forward` now
+    also returns `lambda_hat`/`v_hat`; `inference/realtime.py` wraps the
+    controller call in `enable_grad` and detaches its output
+    (`controllers/mras.py`, `inference/realtime.py`).
+  - **DPG actor (Identity 4):** added `mras_regressor` (`φ_c = [e, r, x_p]`),
+    `dpg_action_value_gradient` (`Ru + BᵀP̂e`, which vanishes at the optimal
+    control), and `dpg_actor_step` (the deterministic policy gradient on the
+    actor parameters `K_ff`/`compensator`, with the critic left to IRL)
+    (`controllers/mras.py`).
+
+### Changed
+
+- Warm-starting the MRAS critic to `P_opt` changes the CBF `P` built by
+  `setup_safety_filter` (via `extract_P`) and makes the `robotic_manipulator`
+  critic-convergence panel start near zero — the mathematically-correct intended
+  behavior, not a regression.
+
+### Documentation
+
+- Added the source design docs `docs/PITS-MRAS — Implementation Plan.md` and
+  `docs/PITS-MRAS — PCML Addendum.md` for in-repo reference.
+
 ### Note
 
 - Commits `034082a` and `3222c42` added CHANGELOG entries for example fixes
