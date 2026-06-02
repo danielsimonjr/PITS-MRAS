@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     from pits_mras.controllers.mras import MRASController
     from pits_mras.controllers.reference_models import LinearReferenceModel
     from pits_mras.models import PITNN
+    from pits_mras.models.pcml import PCMLModule
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,7 @@ def cotraining_loop(
     irl_window: int = 4,
     history_length: int = 8,
     seed: int | None = None,
+    pcml_module: "PCMLModule | None" = None,
 ) -> dict[str, list[float]]:
     """Closed-loop actor-critic co-training (Algorithm 3 extended, §8.2).
 
@@ -109,11 +111,22 @@ def cotraining_loop(
         irl_window: IRL integral-RL window length (in steps).
         history_length: length of the synthetic PITNN history window.
         seed: optional RNG seed.
+        pcml_module: optional :class:`~pits_mras.models.pcml.PCMLModule`. When
+            supplied, its constraint loss (soft, escalating to the hard KKT
+            projection once the data-fit loss drops below ``eta``) is added to
+            the PITNN objective weighted by ``cfg.losses.lambda_pcml``, and a
+            ``pcml_loss`` metric is recorded. Default ``None`` leaves the v0.2.0
+            loop unchanged. NOTE: the synthetic plant has no spatial/temporal
+            coordinates, so the constraint inputs ``x``/``t`` and the derivative
+            variables ``d`` are passed as zeros -- the constraint residual is
+            evaluated on the predicted dynamics ``f_hat`` (and the optional
+            ``lam_hat`` warm start), per the §3.1 mode-switch wiring.
 
     Returns:
         Metrics dict mapping names to per-step lists: ``irl_loss``,
         ``hjb_loss``, ``costate_loss``, ``positivity_loss``, ``cbf_loss``,
-        ``total_loss``, ``running_cost``.
+        ``total_loss``, ``running_cost`` (and ``pcml_loss`` when a
+        ``pcml_module`` is supplied).
     """
     train_cfg = cfg.training
     loss_cfg = cfg.losses
@@ -164,6 +177,8 @@ def cotraining_loop(
         "total_loss": [],
         "running_cost": [],
     }
+    if pcml_module is not None:
+        metrics["pcml_loss"] = []
 
     for episode in range(n_episodes):
         # Initialize synthetic plant / reference-model states and history.
@@ -204,6 +219,28 @@ def cotraining_loop(
             )
             l_phys = (pitnn_output["f_hat"][:, :state_dim] - f_target).pow(2).mean()
             l_total = loss_cfg.lambda_physics * l_phys
+
+            # ── PCML constraint loss (opt-in; §3.1 dynamic activation) ──
+            l_pcml_val = 0.0
+            if pcml_module is not None:
+                n_out = pcml_module.projection.n_y
+                n_der = pcml_module.n_deriv
+                zeros_xt = x_p.new_zeros(batch_size, 1)
+                y_hat_p = pitnn_output["f_hat"][:, :n_out]
+                d_hat_p = pitnn_output["f_hat"].new_zeros(batch_size, n_der)
+                lam_hat_p = pitnn_output.get(
+                    "lam_hat",
+                    pitnn_output["f_hat"].new_zeros(
+                        batch_size, pcml_module.projection.n_c + pcml_module.projection.n_g
+                    ),
+                )
+                pcml_module.update_activation(float(l_phys.detach()))
+                _, l_pcml, _ = pcml_module(
+                    zeros_xt, zeros_xt, y_hat_p, d_hat_p, lam_hat_p,
+                    y_true=f_target[:, :n_out],
+                )
+                l_total = l_total + loss_cfg.lambda_pcml * l_pcml
+                l_pcml_val = float(l_pcml.detach())
 
             # ── NEW: HJB residual update ──
             l_hjb_val = 0.0
@@ -265,6 +302,8 @@ def cotraining_loop(
             metrics["cbf_loss"].append(l_cbf_val)
             metrics["total_loss"].append(float(l_total.detach()))
             metrics["running_cost"].append(float(r_inst.detach().mean()))
+            if pcml_module is not None:
+                metrics["pcml_loss"].append(l_pcml_val)
 
             # ── Advance synthetic plant + reference model, slide history ──
             u_full = torch.zeros(batch_size, input_dim)

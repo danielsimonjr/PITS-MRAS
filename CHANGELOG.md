@@ -41,6 +41,13 @@ built on top.
   `LossConfig.lambda_pcml` and a `pcml` component in `TotalLoss`; an optional
   `lagrangian_head` on `PITNN` that, when supplied, emits `lam_hat` (KKT
   warm-start multipliers) without changing the default v0.2.0 output contract.
+- **PCML loop hooks (opt-in)**: `cotraining_loop` accepts a `pcml_module` that
+  adds the constraint loss (soft, escalating to the hard KKT projection at the
+  `eta` data-loss threshold — DAE-HardNet §3.1 dynamic activation) and records a
+  `pcml_loss` metric; `RealtimeInferenceEngine` accepts a `pcml_module` +
+  `pcml_projection_tolerance` to project `f_hat` onto the manifold at inference,
+  bypassing the projection when the violation is already below tolerance
+  (DAE-HardNet §4.8). Both default to `None` (v0.2.0 loops unchanged).
 
 ### Fixed
 

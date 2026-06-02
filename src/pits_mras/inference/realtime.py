@@ -39,7 +39,7 @@ apply_safety=True)`` returning ``{u_nom, u, h_cbf, slack}`` -- it neither takes 
 
 import threading
 from collections import deque
-from typing import Any, Deque, Dict, Optional
+from typing import TYPE_CHECKING, Any, Deque, Dict, Optional
 
 import torch
 from torch import Tensor
@@ -47,6 +47,9 @@ from torch import Tensor
 from pits_mras.controllers.mras import MRASController
 from pits_mras.controllers.reference_models import LinearReferenceModel
 from pits_mras.models.pitnn import PITNN
+
+if TYPE_CHECKING:
+    from pits_mras.models.pcml import PCMLModule
 
 
 class RealtimeInferenceEngine:
@@ -59,12 +62,20 @@ class RealtimeInferenceEngine:
         ref_model: LinearReferenceModel,
         horizon: int = 50,
         device: str = "cpu",
+        pcml_module: "Optional[PCMLModule]" = None,
+        pcml_projection_tolerance: float = 1e-5,
     ) -> None:
         self.pitnn = pitnn.eval()
         self.controller = controller.eval()
         self.ref_model = ref_model
         self.horizon = horizon
         self.device = torch.device(device)
+        # Optional PCML hard-projection of the predicted dynamics (DAE-HardNet
+        # §4.8 inference bypass): skip the projection when the constraint
+        # violation is already below ``pcml_projection_tolerance``. Default
+        # ``None`` leaves the v0.2.0 step unchanged.
+        self.pcml_module = pcml_module
+        self.pcml_projection_tolerance = pcml_projection_tolerance
 
         self._x_hist: Deque[Tensor] = deque(maxlen=horizon)
         self._u_hist: Deque[Tensor] = deque(maxlen=horizon)
@@ -134,6 +145,27 @@ class RealtimeInferenceEngine:
                 )
             f_hat = pitnn_out["f_hat"].detach().squeeze(0)  # [output_dim]
 
+            # Optional PCML hard projection of f_hat onto the constraint manifold
+            # (DAE-HardNet §4.8 bypass: skip when violation < tolerance). The
+            # synthetic loop has no spatial/temporal coords, so x/t and the
+            # derivative variables d are passed as zeros.
+            pcml_violation = 0.0
+            mod = self.pcml_module
+            if mod is not None and mod.mode == "hard":
+                n_out = mod.projection.n_y
+                n_der = mod.n_deriv
+                y_b = pitnn_out["f_hat"].detach()[:, :n_out]  # [1, n_out]
+                zeros_xt = y_b.new_zeros(1, 1)
+                d_b = y_b.new_zeros(1, n_der)
+                viol = mod.constraints.violation(zeros_xt, zeros_xt, y_b, d_b)
+                pcml_violation = float(viol)
+                if viol.item() >= self.pcml_projection_tolerance:
+                    lam_b = y_b.new_zeros(1, mod.projection.n_c + mod.projection.n_g)
+                    with torch.enable_grad():
+                        y_proj, _, _ = mod.projection(zeros_xt, zeros_xt, y_b, d_b, lam_b)
+                    f_hat = f_hat.clone()
+                    f_hat[:n_out] = y_proj.detach().squeeze(0)
+
             # Controller forward (real signature: e, r, x_plant). The feedback
             # is the costate-head optimal control, which uses an internal
             # ``torch.autograd.grad`` (∇V̂); re-enable grad just for this call,
@@ -168,4 +200,5 @@ class RealtimeInferenceEngine:
             "h_cbf": h_cbf,
             "f_hat": f_hat,
             "cbf_active": cbf_active,
+            "pcml_violation": pcml_violation,
         }
