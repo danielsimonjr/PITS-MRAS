@@ -27,6 +27,15 @@ built on top.
   `TaylorNeighborhoodApproximation` (DAE-HardNet §3 multi-point neighborhood
   that turns differential operators into algebraic variables), and
   `LagrangianMultiplierHead` (KKT warm-start multipliers; inequality duals ≥ 0).
+- **PCML hard path** (`src/pits_mras/models/pcml.py`): `KKTProjectionLayer` —
+  a differentiable projection onto the DAE constraint manifold
+  (`min ½‖y−ŷ‖² s.t. D=0, h=0, g≤0`) via a Newton solve on the KKT system with
+  Fischer-Burmeister complementarity; gradients flow through a single
+  implicit-function-theorem step (no unrolling). `PCMLModule` unifies the soft
+  and hard modes with DAE-HardNet dynamic activation at the `eta` threshold
+  (loss `MSE(ỹ,ȳ) + ω·MSE(d̃, AD(∂ỹ))` in hard mode). Verified against the
+  closed-form linear-equality projection and a heat-equation violation drop to
+  `< 1e-4`.
 
 ### Fixed
 
