@@ -21,6 +21,12 @@ built on top.
   `HeatConductionDAE` (1-D transient heat conduction). Each exposes the
   differential / equality / inequality residuals that feed both the soft PCML
   loss and the hard KKT projection, with a shared `violation` metric.
+- **PCML soft path + supporting layers** (`src/pits_mras/models/pcml.py`,
+  `src/pits_mras/models/lagrangian_head.py`): `SoftPCMLLoss` (Patel et al. 2022
+  augmented loss `λ_diff‖D‖² + λ_eq‖h‖² + λ_ineq‖ReLU(g)‖²`),
+  `TaylorNeighborhoodApproximation` (DAE-HardNet §3 multi-point neighborhood
+  that turns differential operators into algebraic variables), and
+  `LagrangianMultiplierHead` (KKT warm-start multipliers; inequality duals ≥ 0).
 
 ### Fixed
 
