@@ -1,0 +1,21 @@
+# Normalize line endings: store everything as LF in the repo, check out native.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# POSIX shell scripts stay LF even on Windows checkouts.
+*.sh text eol=lf
+
+# Binary / non-text assets — never normalize or diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.pyc binary
+*.npy binary
+*.npz binary
+*.pt binary
+*.pth binary
