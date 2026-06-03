@@ -213,3 +213,22 @@ def test_mras_lqr_warm_start_sets_K_fb() -> None:
     assert np.allclose(ctrl.K_fb.numpy(), K_care, atol=1e-4)
     assert np.allclose(K_t.numpy(), K_care, atol=1e-4)
     assert np.allclose(P_t.numpy(), P_care, atol=1e-4)
+
+
+def test_lqr_warm_start_rewarms_critic_to_a_different_cost() -> None:
+    """``lqr_warm_start`` is not redundant with the ``__init__`` warm-start: the
+    constructor seeds the critic to ``reference_model.P_opt`` (the ref model's own
+    Q, R), whereas ``lqr_warm_start(Q, R)`` re-solves CARE for a *caller-supplied*
+    cost and re-seeds the critic to that different P."""
+    rm = _make_ref_model()  # ref model uses Q = R = I
+    ctrl = MRASController(rm, 2, 2, 2, 2)
+    P_init = ctrl.critic.extract_P().numpy()
+    assert np.allclose(P_init, rm.P_opt.numpy(), atol=1e-4)
+
+    # A markedly different cost yields a different optimal P.
+    Q2 = torch.diag(torch.tensor([100.0, 100.0]))
+    R2 = torch.eye(2)
+    P_t, _ = ctrl.lqr_warm_start(Q2, R2)
+    assert not np.allclose(P_t.numpy(), rm.P_opt.numpy(), atol=1e-2)
+    # The live critic now reflects the re-warm-started cost, not the init default.
+    assert np.allclose(ctrl.critic.extract_P().numpy(), P_t.numpy(), atol=1e-4)

@@ -34,7 +34,12 @@ import math
 from typing import Any
 
 
-def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
+def run(
+    steps: int = 100,
+    show: bool = False,
+    critic_train_steps: int = 350,
+    critic_train_trajectories: int = 32,
+) -> dict[str, Any]:
     """Run the closed-loop 2-DOF manipulator demo and return diagnostics.
 
     Args:
@@ -42,6 +47,12 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
         show: when ``True`` display + save the figure interactively; otherwise
             the figure is built headlessly (Agg) and returned for the caller to
             save. The figure is always returned under the ``"figure"`` key.
+        critic_train_steps: gradient steps for the offline IRL critic fit
+            (panel (d)). The default fits a smooth full convergence curve; tests
+            pass a smaller budget to cut wall-clock (the fit is convex/monotone
+            and decoupled from loop stability, so a partial fit stays PD).
+        critic_train_trajectories: synthetic optimal trajectories for that fit;
+            governs the IRL batch size (and thus per-step cost).
 
     Returns:
         Dict with per-step series (``error_norm``, ``v_hat``, ``cbf_active``,
@@ -104,7 +115,12 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
     # genuine learning curve ``||P_hat - P_CARE||_F / ||P_CARE||_F`` per step.
     controller.critic.set_P(torch.eye(2, dtype=torch.float32) * 5.0)
     critic_convergence: list[float] = train_irl_critic_gd(
-        controller.critic, ref_model, n_trajectories=32, steps=350, lr=0.15, seed=0
+        controller.critic,
+        ref_model,
+        n_trajectories=critic_train_trajectories,
+        steps=critic_train_steps,
+        lr=0.15,
+        seed=0,
     )
 
     engine = RealtimeInferenceEngine(

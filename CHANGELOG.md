@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+A small **engineering-debt-resolution** release (the debt logged at the close of
+v0.3.1, see `todo.md`). No public-API changes; the full test suite stays green
+throughout. flake8 + mypy clean.
+
+### Fixed
+
+- **`QuadraticCritic.positivity_loss` is now differentiable (debt #1).** It
+  previously read `P` through the detached `extract_P()`, so the
+  `1e-3 * positivity` term in `cotraining_loop` contributed a constant with **zero
+  gradient** — the positive-definiteness regularizer never influenced training.
+  It now derives `P` from a non-detached `unpack_symmetric(W_c)` and returns
+  `relu(-λ_min(P))`, giving the term a real gradient path. New test seeds an
+  indefinite `P` and asserts the loss is differentiable and that training repairs
+  it back to PD.
+
+### Changed
+
+- **KKT projection surfaces convergence (debt #2).** When the differentiable
+  Newton solve in `KKTProjectionLayer.forward` exhausted `max_newton_iter`
+  without reaching `newton_tol`, it silently returned the final (non-stationary)
+  iterate and took the implicit-function gradient there. It now tracks
+  `last_converged: bool` and `last_residual: float`, and logs a warning on
+  non-convergence (non-breaking — output unchanged). New test checks the flag on
+  a generously- vs. a deliberately under-iterated projection.
+- **`MRASController.lqr_warm_start` docstring clarified (debt #7).** Documents
+  that it is *not* redundant with the constructor: `__init__` warm-starts the
+  critic to the reference model's own `P_opt`, whereas `lqr_warm_start(Q, R)`
+  re-solves CARE for a **caller-supplied** cost and re-seeds the critic to that
+  different `P`. Kept as a public convenience (no API change); a new
+  characterization test guards the non-redundancy.
+
+### Performance
+
+- **Cached upper-triangular index pairs (debt #5).** `quadratic_basis`,
+  `pack_symmetric`, and `unpack_symmetric` shared the same
+  `torch.triu_indices(n, n)` construction on every call (on the per-step
+  `extract_P` path). A new `@lru_cache`d `_triu_pairs(n, device)` helper returns
+  the cached read-only `(i, j)` index pair; output-identical.
+- **Lighter example-test critic fit (debt #6).** `examples/robotic_manipulator.py`
+  `run()` gained `critic_train_steps` / `critic_train_trajectories` parameters
+  (defaults preserve the standalone demo's full panel-(d) convergence curve); the
+  example tests pass a smaller budget. The offline IRL fit is convex/monotone and
+  decoupled from loop stability, so a partial fit stays PD. (The dominant residual
+  cost is one-time torch higher-order-op/functorch lazy-init, amortized across the
+  suite and outside the example's control.)
+
+### Repo hygiene
+
+- **Added `.gitattributes` (debt #4).** `* text=auto eol=lf` (+ `*.bat`/`*.cmd`
+  CRLF, `*.sh` LF, binary markers for images/`*.pt`/`*.npy`/…), matching the
+  sibling repos and ending the per-commit "LF will be replaced by CRLF" warnings
+  on Windows.
+
 ## [0.3.1] - 2026-06-03
 
 A behavior- and API-preserving **minimize / simplify / optimize** pass (design:

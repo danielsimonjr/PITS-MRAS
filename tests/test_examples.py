@@ -44,6 +44,18 @@ def _import_run(module_name: str) -> Any:
     return mod.run
 
 
+# Per-example light-fit overrides keep CI wall-clock low. The robotic-manipulator
+# demo's offline IRL critic fit dominates runtime; a small budget still exercises
+# the convex/monotone path while cutting ~20s to ~1s. Defaults preserve the
+# standalone demo's full convergence curve.
+_RUN_KWARGS: dict[str, dict[str, int]] = {
+    "robotic_manipulator": {
+        "critic_train_steps": 40,
+        "critic_train_trajectories": 8,
+    },
+}
+
+
 def _assert_finite_metrics(metrics: dict) -> None:
     """Every numeric / list-of-numeric metric value must be finite."""
     assert isinstance(metrics, dict)
@@ -62,7 +74,7 @@ def _assert_finite_metrics(metrics: dict) -> None:
 def test_example_run_headless(module_name: str) -> None:
     """``run`` executes headless, returns finite metrics and a Figure."""
     run = _import_run(module_name)
-    out = run(steps=12, show=False)
+    out = run(steps=12, show=False, **_RUN_KWARGS.get(module_name, {}))
     assert isinstance(out, dict)
     assert "figure" in out, f"{module_name}.run did not return a 'figure'"
     assert isinstance(out["figure"], Figure)
@@ -73,7 +85,7 @@ def test_example_run_headless(module_name: str) -> None:
 def test_example_run_returns_steps_series(module_name: str) -> None:
     """The returned metrics expose an ``error_norm`` series of requested length."""
     run = _import_run(module_name)
-    out = run(steps=10, show=False)
+    out = run(steps=10, show=False, **_RUN_KWARGS.get(module_name, {}))
     assert "error_norm" in out, f"{module_name}.run missing 'error_norm' series"
     assert isinstance(out["error_norm"], list)
     assert len(out["error_norm"]) == 10

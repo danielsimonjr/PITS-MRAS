@@ -132,11 +132,16 @@ class MRASController(nn.Module):
         return out
 
     def lqr_warm_start(self, Q: Tensor, R: Tensor) -> Tuple[Tensor, Tensor]:
-        r"""Warm-start so :math:`\hat P = P_{opt}` (LQR solution).
+        r"""Re-warm-start the critic to the LQR/CARE solution for a *given* cost.
 
-        Sets ``K_fb = K`` (CARE gain) and aligns the critic's ``P`` with the
-        CARE solution via ``critic.set_P``. Returns ``(P, K)`` as float32
-        tensors.
+        ``__init__`` already warm-starts the critic to ``reference_model.P_opt``
+        — the CARE solution for the reference model's *own* ``Q``/``R``. This
+        method is the public way to re-warm-start to a **different** cost: it
+        re-solves CARE for the caller-supplied ``Q``/``R``, sets ``K_fb = K``
+        (the new CARE gain) and aligns the critic's ``P`` via ``critic.set_P``.
+        With the construction-time ``Q``/``R`` it reproduces the initial
+        warm-start; with a different cost it does not (it is *not* redundant
+        with the constructor). Returns ``(P, K)`` as float32 tensors.
         """
         A = self.reference_model.A_m.detach().cpu().numpy()
         B = self.reference_model.B_m.detach().cpu().numpy()
