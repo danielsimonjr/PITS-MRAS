@@ -324,10 +324,14 @@ class KKTProjectionLayer(nn.Module):
         eye_N = torch.eye(self.N, device=y_hat.device, dtype=y_hat.dtype)
         z = self._init_z(x, t, y_hat, d_hat, lam_hat)
         yh = y_hat.detach()
+        converged = False
+        last_cj: Optional[Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]] = None
         for _ in range(self.max_newton_iter):
             c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z)
+            last_cj = (c, g, jc_y, jc_d, jg)
             Fv = self._assemble_F(yh, z, c, g, jc_y, jc_d, jg)
             if Fv.abs().max() < self.newton_tol:
+                converged = True
                 break
             J = self._assemble_J(z, jc_y, jc_d, jg)
             delta = torch.linalg.solve(
@@ -335,9 +339,16 @@ class KKTProjectionLayer(nn.Module):
             ).squeeze(-1)
             z = z - self.newton_step * delta
 
-        # Implicit-function one-step for differentiability w.r.t. y_hat.
+        # Implicit-function one-step for differentiability w.r.t. y_hat. When the
+        # Newton loop converged via the tolerance break, ``z`` is unchanged since
+        # the last ``_constraints_and_jac`` call (which detaches internally), so
+        # those values are exactly at ``z_star`` -- reuse them instead of
+        # recomputing (output-identical; saves one constraints+Jacobian build).
         z_star = z.detach()
-        c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z_star)
+        if converged and last_cj is not None:
+            c, g, jc_y, jc_d, jg = last_cj
+        else:
+            c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z_star)
         J = self._assemble_J(z_star, jc_y, jc_d, jg).detach()
         F_live = self._assemble_F(y_hat, z_star, c, g, jc_y, jc_d, jg)
         z_out = z_star - torch.linalg.solve(
