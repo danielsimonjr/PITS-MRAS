@@ -1,10 +1,10 @@
 metadata:
   name: pits_mras
-  version: 0.3.0
-  lastUpdated: '2026-06-02'
+  version: 0.3.1
+  lastUpdated: '2026-06-03'
   totalFiles: 39
   totalModules: 10
-  totalExports: 114
+  totalExports: 116
 entryPoints:
 - file: examples/autonomous_vehicle.py
   type: cli
@@ -976,7 +976,9 @@ modules:
       - file: src/pits_mras/utils/lyapunov.py
         module: pits_mras.utils.lyapunov
         imports:
+        - pack_symmetric
         - quadratic_basis
+        - unpack_symmetric
       exports:
       - QuadraticCritic
       - CostateHead
@@ -1215,6 +1217,11 @@ modules:
         imports:
         - TYPE_CHECKING
       internalDependencies:
+      - file: src/pits_mras/utils/lyapunov.py
+        module: pits_mras.utils.lyapunov
+        imports:
+        - quadratic_basis
+        - unpack_symmetric
       - file: src/pits_mras/controllers/reference_models.py
         module: pits_mras.controllers.reference_models
         imports:
@@ -1337,6 +1344,8 @@ modules:
       - check_hurwitz
       - lyapunov_derivative
       - quadratic_basis
+      - pack_symmetric
+      - unpack_symmetric
       functions:
       - solve_lyapunov
       - kleinman_iteration
@@ -1344,6 +1353,8 @@ modules:
       - check_hurwitz
       - lyapunov_derivative
       - quadratic_basis
+      - pack_symmetric
+      - unpack_symmetric
     src/pits_mras/utils/pe_monitor.py:
       description: Persistence-of-excitation monitor (IP §4.5).
       externalDependencies:
@@ -1435,12 +1446,12 @@ dependencyGraph:
 statistics:
   totalPythonFiles: 39
   totalModules: 10
-  totalLinesOfCode: 5219
-  totalExports: 114
+  totalLinesOfCode: 5195
+  totalExports: 116
   totalClasses: 44
   totalInterfaces: 1
   totalEnums: 0
-  totalFunctions: 24
+  totalFunctions: 26
   totalTypeGuards: 0
   totalConstants: 0
   totalReExports: 45

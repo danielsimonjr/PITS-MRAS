@@ -66,6 +66,23 @@ for the spec.
   the critic and trains it back, so panel (d) is a real convergence curve
   (rel-err → ~1e-3). Also added a `critic_convergence` metric to `cotraining_loop`.
 
+## Done — v0.3.1 (2026-06-03): minimize / simplify / optimize
+
+Behavior- and API-preserving pass (Approach 2; spec in
+`docs/superpowers/specs/2026-06-03-v0.3.1-simplification-design.md`):
+
+- [x] **A** — consolidated the quadratic-basis convention into
+  `utils/lyapunov.py` (`pack_symmetric`/`unpack_symmetric`); critic + IRL trainer
+  delegate (3 hand-rolled loops removed).
+- [x] **C** — dropped the redundant `f`/`H` keys from `PITNN.forward`.
+- [x] **D** — measured perf: reuse the converged Newton iterate in the KKT
+  projection one-step (output-identical, ~9% faster); D2 vectorization landed
+  with A; D3 dropped (sub-ms noise).
+- [x] Version → 0.3.1; dependency graph regenerated; `docs/architecture` stat
+  references synced; CHANGELOG `[0.3.1]`.
+- Deferred by design: **B** (remove 6 dead `LossConfig` fields) and **E**
+  (`parallel.py`) — both touch public surface / belong to v0.4.0.
+
 ## v0.4.0 (next version) — major, deferred
 
 - **H∞ disturbance/adversary head (gap G1, Blueprint Connection 7).** A genuinely

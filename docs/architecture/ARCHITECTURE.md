@@ -32,10 +32,11 @@
 
 ---
 
-## 0. Implemented Architecture (v0.3.0) — graph-backed
+## 0. Implemented Architecture (v0.3.1) — graph-backed
 
-> **Status:** all nine ROADMAP phases are implemented and released as **v0.3.0**,
-> plus the **PCML** (Physics-Constrained Machine Learning) component. The
+> **Status:** all nine ROADMAP phases are implemented (released **v0.3.0**) plus
+> the **PCML** (Physics-Constrained Machine Learning) component; **v0.3.1** is a
+> behavior-preserving simplification/optimization pass. The
 > structure below is generated from the codebase by
 > `tools/create-dependency-graph/create_dependency_graph.py` and cross-checked
 > against the source; regenerate with `python tools/create-dependency-graph/create_dependency_graph.py --include-tests`.
@@ -74,9 +75,9 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 39 files · 10 modules · ~5,219 LOC · 114
+Key statistics (graph-generated): 39 files · 10 modules · ~5,195 LOC · 116
 public exports (45 re-exported through barrels) · 44 classes · 1 ABC
-(`PhysicsConstraints`) · 24 functions · 10 `TYPE_CHECKING`-guarded imports.
+(`PhysicsConstraints`) · 26 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---
 

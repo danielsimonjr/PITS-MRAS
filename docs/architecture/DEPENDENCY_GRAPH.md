@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.3.0 | **Last Updated**: 2026-06-02
+**Version**: 0.3.1 | **Last Updated**: 2026-06-03
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -591,7 +591,7 @@ The codebase is organized into the following modules:
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
-| `src/pits_mras/utils/lyapunov.py` | `quadratic_basis` | Import |
+| `src/pits_mras/utils/lyapunov.py` | `pack_symmetric, quadratic_basis, unpack_symmetric` | Import |
 
 **Exports:**
 - Classes: `QuadraticCritic`, `CostateHead`
@@ -749,6 +749,7 @@ The codebase is organized into the following modules:
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
+| `src/pits_mras/utils/lyapunov.py` | `quadratic_basis, unpack_symmetric` | Import |
 | `src/pits_mras/controllers/reference_models.py` | `LinearReferenceModel` | Import (TYPE_CHECKING) |
 | `src/pits_mras/models/critic.py` | `QuadraticCritic` | Import (TYPE_CHECKING) |
 | `src/pits_mras/losses/irl.py` | `IRLBellmanLoss` | Import |
@@ -821,7 +822,7 @@ The codebase is organized into the following modules:
 | `typing` | `Optional, Tuple` |
 
 **Exports:**
-- Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis`
+- Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric`
 
 ---
 
@@ -961,13 +962,13 @@ graph TD
 |----------|-------|
 | Total Python Files | 39 |
 | Total Modules | 10 |
-| Total Lines of Code | 5219 |
-| Total Public Exports | 114 |
+| Total Lines of Code | 5195 |
+| Total Public Exports | 116 |
 | Total Re-exports | 45 |
 | Total Classes | 44 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 24 |
+| Total Functions | 26 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 10 |
@@ -976,4 +977,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-02  |  *Version*: 0.3.0
+*Last Updated*: 2026-06-03  |  *Version*: 0.3.1

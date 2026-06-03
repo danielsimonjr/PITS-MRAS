@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-03
+
+A behavior- and API-preserving **minimize / simplify / optimize** pass (design:
+`docs/superpowers/specs/2026-06-03-v0.3.1-simplification-design.md`), bundled with
+the architecture-tooling, graph-backed docs, and deferred-item resolution that had
+accumulated since v0.3.0. No public-API or `PITSMRASConfig` changes; the full test
+suite stays green throughout.
+
+### Simplified / optimized (v0.3.1 pass)
+
+- **Quadratic-basis consolidated (DRY).** The upper-triangular `eᵢeⱼ` basis
+  convention (`diag = P[i,i]`, off-diag `= P[i,j] + P[j,i]`) was independently
+  re-encoded in three files. `utils/lyapunov.py` is now the single source of
+  truth via new vectorized `pack_symmetric`/`unpack_symmetric` helpers (and a
+  last-axis-indexing `quadratic_basis`); `QuadraticCritic.extract_P`/`set_P` and
+  the IRL trainer delegate to them (three hand-rolled loops removed).
+  Behavior-identical (new equivalence tests; existing round-trip/convergence
+  tests stay green).
+- **PITNN `forward` dict slimmed.** Dropped the redundant `f`/`H` keys (exact
+  aliases of `f_hat`/`H_val`, consumed only by one test); the returned dict is
+  now `f_hat`/`H_val`/`context`/`alpha`/`h_enc`/`P_diss`/`energy_loss`/
+  `attn_reg_loss` (+ `lam_hat` when a Lagrangian head is attached).
+- **KKT projection perf.** When the Newton loop converges via its tolerance
+  break, the implicit-function one-step reuses the already-computed constraints
+  + Jacobian instead of recomputing them (output-identical; ~18.1 → 16.4 ms per
+  projection call).
+
 ### Added
 
 - **`tools/` developer utilities** (ported/copied from the nanoclaw repo):

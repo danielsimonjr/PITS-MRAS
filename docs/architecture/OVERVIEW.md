@@ -3,7 +3,7 @@
 > **Orientation document.** A grounded, high-level map of the `pits_mras`
 > codebase for someone reading it for the first time. Every count and module
 > claim here is taken from the generated dependency graph
-> (`docs/architecture/dependency-graph.json`, `lastUpdated: 2026-06-02`) and the
+> (`docs/architecture/dependency-graph.json`, `lastUpdated: 2026-06-03`) and the
 > subpackage docstrings in the source tree. For the deep design rationale and the
 > source-document citations, see `ARCHITECTURE.md` in this folder.
 
@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.3.0` · 39 source files · 10 modules · 5,219 LOC · 114 exports
-(45 re-exports) · 44 classes · 1 Protocol/ABC · 24 functions · 0 circular
+**Version `0.3.1` · 39 source files · 10 modules · 5,195 LOC · 116 exports
+(45 re-exports) · 44 classes · 1 Protocol/ABC · 26 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -105,7 +105,8 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 - **`utils/lyapunov.py`** — "the mathematical engine for all P": `solve_lyapunov`,
   `kleinman_iteration`, `solve_care`, `check_hurwitz`, `lyapunov_derivative`,
-  `quadratic_basis` (built on `scipy.linalg`).
+  `quadratic_basis`, and the canonical `pack_symmetric`/`unpack_symmetric`
+  basis helpers (built on `scipy.linalg`).
 - **`models/critic.py`** — `QuadraticCritic` (`V̂ = Wᵀφ(e)`) and `CostateHead`
   (`λ̂ = ∇V̂`, `u* = −R⁻¹Bᵀλ̂`); tagged "Identity 1 & 2."
 - **`models/pcml.py`** — `SoftPCMLLoss`, `TaylorNeighborhoodApproximation`,
@@ -170,16 +171,16 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.3.0` |
+| Version | `0.3.1` |
 | Total Python files | 39 |
 | Modules | 10 |
-| Total lines of code | 5,219 |
-| Total exports | 114 |
+| Total lines of code | 5,195 |
+| Total exports | 116 |
 | Re-exports (barrel) | 45 |
 | Classes | 44 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
-| Functions | 24 |
+| Functions | 26 |
 | Constants | 0 |
 | Type-checking-only imports | 10 |
 | Runtime circular dependencies | 0 |

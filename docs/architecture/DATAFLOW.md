@@ -1,6 +1,6 @@
 # PITS-MRAS — Data Flow
 
-**Version**: 0.3.0 | **Last Updated**: 2026-06-02
+**Version**: 0.3.1 | **Last Updated**: 2026-06-03
 
 This document traces how tensors move through the PITS-MRAS stack. Every shape,
 dict key, loss term, and control-flow branch below is grounded in the source
@@ -135,8 +135,8 @@ energy_loss scalar)`.
 
 | Key             | Shape / type        | Source                                  |
 |-----------------|---------------------|-----------------------------------------|
-| `f` = `f_hat`   | `[batch, 2*n_q]`    | decoder dynamics prediction             |
-| `H` = `H_val`   | `[batch, 1]`        | learned Hamiltonian energy              |
+| `f_hat`         | `[batch, 2*n_q]`    | decoder dynamics prediction             |
+| `H_val`         | `[batch, 1]`        | learned Hamiltonian energy              |
 | `context`       | `[batch, hidden_dim]`| attention context `c_t`                |
 | `alpha`         | `[batch, T]`        | combined attention weights              |
 | `h_enc`         | `[batch, T, hidden_dim]` | LSTM hidden states                 |

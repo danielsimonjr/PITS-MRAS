@@ -17,7 +17,7 @@ symbols, grouped by area:
 | **Training** | `pretrain_pitnn`, `cotraining_loop` |
 | **Inference** | `RealtimeInferenceEngine` |
 
-`__version__` is `"0.3.0"`.
+`__version__` is `"0.3.1"`.
 
 > Note on the configuration layer: `PITSMRASConfig` and its seven sub-config
 > dataclasses (`config.py`) are not in the package-level `__all__`, but they are
@@ -71,9 +71,10 @@ forward(
 ```
 
 Returns a dict with keys:
-`f`, `H`, `context`, `alpha`, `h_enc` (brief-mandated contract) plus
-`f_hat`, `H_val`, `P_diss`, `energy_loss`, `attn_reg_loss` (monitoring keys).
-When a `lagrangian_head` is attached, an additional `lam_hat` key is included.
+`f_hat`, `H_val`, `context`, `alpha`, `h_enc`, `P_diss`, `energy_loss`,
+`attn_reg_loss` (monitoring keys). When a `lagrangian_head` is attached, an
+additional `lam_hat` key is included. (The redundant `f`/`H` aliases of
+`f_hat`/`H_val` were removed in v0.3.1.)
 
 ```python
 update_normalization(x_data: Tensor) -> None   # update running mean/std buffers from a data batch
