@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "lastUpdated": "2026-06-03",
     "totalFiles": 39,
     "totalModules": 10,
@@ -1715,6 +1715,12 @@
         ],
         "stdlibDependencies": [
           {
+            "module": "logging",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
             "module": "typing",
             "imports": [
               "Dict",
@@ -2184,6 +2190,12 @@
         ],
         "stdlibDependencies": [
           {
+            "module": "functools",
+            "imports": [
+              "lru_cache"
+            ]
+          },
+          {
             "module": "typing",
             "imports": [
               "Optional",
@@ -2356,7 +2368,7 @@
   "statistics": {
     "totalPythonFiles": 39,
     "totalModules": 10,
-    "totalLinesOfCode": 5195,
+    "totalLinesOfCode": 5253,
     "totalExports": 116,
     "totalClasses": 44,
     "totalInterfaces": 1,

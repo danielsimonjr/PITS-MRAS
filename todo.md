@@ -83,10 +83,13 @@ Behavior- and API-preserving pass (Approach 2; spec in
 - Out of the safe pass: **B** (6 dead `LossConfig` fields) → logged as debt for
   v0.3.2; **E** (`parallel.py`) → v0.4.0 capability.
 
-## Done — engineering debt resolved (v0.3.2 sprint, 2026-06-03)
+## Done — released v0.3.2 (2026-06-03): engineering-debt-resolution
 
 The debt logged at the close of v0.3.1, all resolved via the dev-workflow (TDD,
-suite green throughout, flake8 + mypy clean). No public-API changes.
+suite green throughout, flake8 + mypy clean). No public-API changes. Version
+bumped to 0.3.2; dependency graph regenerated (39 files, 10 modules, 5,253 LOC,
+116 exports, 0 circular, 0 unused); `docs/architecture` stat/version markers
+synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
 
 ### Correctness / efficacy
 

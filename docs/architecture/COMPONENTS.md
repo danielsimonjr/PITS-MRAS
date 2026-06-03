@@ -3,7 +3,7 @@
 > A grounded, per-module component reference for the `pits_mras` package.
 > Every class/function name, responsibility, and dependency below is taken from
 > the actual source under `src/pits_mras/` and cross-checked against
-> `docs/architecture/dependency-graph.json` (v0.3.1, 39 files, 10 modules, 116
+> `docs/architecture/dependency-graph.json` (v0.3.2, 39 files, 10 modules, 116
 > exports, 0 circular dependencies). Module purposes quote the package
 > `__init__` and file docstrings; class/function responsibilities quote their
 > own docstrings. For the *why* (the ten RL/optimal-control identities and the
@@ -85,7 +85,7 @@ records **zero** runtime or type-only circular dependencies; every arrow points
   `inference`, and `models.PITNN`.
 
 The package root `src/pits_mras/__init__.py` re-exports a flat public API of 17
-symbols (`__version__ = "0.3.1"`): `PITNN`, `QuadraticCritic`, `MRASController`,
+symbols (`__version__ = "0.3.2"`): `PITNN`, `QuadraticCritic`, `MRASController`,
 `LinearReferenceModel`, `CLFCBFSafetyFilter`, `RealtimeInferenceEngine`,
 `pretrain_pitnn`, `cotraining_loop`, plus the PCML surface
 (`PhysicsConstraints`, `ConstraintSpec`, `MechanicalDAE`, `HeatConductionDAE`,
