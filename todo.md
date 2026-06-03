@@ -151,6 +151,41 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
   surrogates with a nonlinear rigid-body manipulator, a bicycle/tyre AV model,
   and an RC building-thermal network.
 
+## Carried-forward gaps / watch (discovered during the v0.3.2 sprint)
+
+Grounded deferrals — none breaks tests today; each is verified against the
+current source. Candidates for v0.4.0 or a later hardening pass.
+
+1. **KKT projection robustness — only the *signal* half of debt #2 was done.**
+   `KKTProjectionLayer.forward` (`src/pits_mras/models/pcml.py:337-357`) now
+   reports `last_converged` / `last_residual` and warns on non-convergence, but
+   it still takes **undamped full Newton steps** and, when Newton exhausts
+   `max_newton_iter`, returns the non-stationary iterate and takes the
+   implicit-function gradient there anyway. The debt note's other half — a
+   **damped / line-search / trust-region Newton** step to actually improve the
+   convergence rate — is unaddressed. Real refinement for v0.4.0.
+2. **No integration test that the positivity regularizer affects cotraining.**
+   Debt #1 made `QuadraticCritic.positivity_loss` differentiable and unit-tested
+   it (standalone Adam repairs a seeded indefinite `P`,
+   `tests/test_models.py:212`), but nothing verifies the `1e-3 * positivity` term
+   in `cotraining_loop` (`src/pits_mras/training/cotrain.py:264-265`) measurably
+   influences the learned `P` — and at weight `1e-3` it may be negligible.
+   Action: add a cotrain-level test (e.g. seed an indefinite critic, assert the
+   loop drives `λ_min(P)` upward) and tune the weight if the term is inert.
+3. **`_triu_pairs` cache hygiene for any future GPU port** (low priority).
+   `src/pits_mras/utils/lyapunov.py` caches `(i, j)` via
+   `@lru_cache(maxsize=None)` keyed on `str(device)`. Two latent issues, both
+   no-ops on the current CPU-only / CI setup: (a) `"cuda"` vs `"cuda:0"` string
+   forms would create duplicate cache entries; (b) the unbounded cache holds the
+   index tensors for the process lifetime. Revisit only if/when the project runs
+   on GPU.
+4. **Example-test framework warmup is unavoidable at the test level** (watch).
+   The ~15 s first-run cost in the example tests is torch higher-order-op /
+   functorch lazy-init (see resolved #6), amortized across the suite. If CI
+   wall-clock ever matters, the only real lever is framework-level (e.g. a
+   session-scoped warmup fixture or splitting the autograd-heavy tests), not
+   example-level — deliberately left alone for now.
+
 ## Notes / decisions
 
 - The KKT hard-projection layer is research-grade; implement faithfully to
