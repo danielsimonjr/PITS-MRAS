@@ -250,10 +250,12 @@ def test_pitnn_forward_returns_dict_with_shapes() -> None:
     e_curr = torch.randn(batch, net_cfg.output_dim)
     e_hist = torch.randn(batch, T, net_cfg.output_dim)
     out = model(x_hist, u_hist, x_p_curr, u_curr, e_curr, e_hist)
-    for key in ("f", "H", "context", "alpha", "h_enc"):
+    for key in ("f_hat", "H_val", "context", "alpha", "h_enc"):
         assert key in out, f"missing key {key}"
-    assert out["f"].shape == (batch, net_cfg.output_dim)
-    assert out["H"].shape == (batch, 1)
+    assert out["f_hat"].shape == (batch, net_cfg.output_dim)
+    assert out["H_val"].shape == (batch, 1)
     assert out["context"].shape == (batch, net_cfg.hidden_dim)
     assert out["alpha"].shape == (batch, T)
     assert out["h_enc"].shape == (batch, T, net_cfg.hidden_dim)
+    # The redundant brief-key aliases (== f_hat / H_val) were removed.
+    assert "f" not in out and "H" not in out

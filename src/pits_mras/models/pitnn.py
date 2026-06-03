@@ -109,9 +109,11 @@ class PITNN(nn.Module):
     ) -> Dict[str, Tensor]:
         """Forward pass (Algorithm 1).
 
-        Returns a dict containing the brief-mandated keys ``f``, ``H``,
-        ``context``, ``alpha``, ``h_enc`` plus the spec's monitoring keys
-        ``f_hat``, ``H_val``, ``P_diss``, ``energy_loss``, ``attn_reg_loss``.
+        Returns a dict with the dynamics prediction ``f_hat`` plus the
+        monitoring keys ``H_val``, ``context``, ``alpha``, ``h_enc``,
+        ``P_diss``, ``energy_loss``, ``attn_reg_loss`` (IP §5.4), and ``lam_hat``
+        when a Lagrangian head is attached. (The earlier redundant ``f``/``H``
+        aliases of ``f_hat``/``H_val`` were removed in v0.3.1.)
         """
         # 1. Normalize and embed.
         x_norm = self.normalize(x_hist)  # [batch, T, input_dim]
@@ -147,15 +149,11 @@ class PITNN(nn.Module):
         lam_hat = self.lagrangian_head(context) if self.lagrangian_head is not None else None
 
         out: Dict[str, Tensor] = {
-            # Brief-mandated contract.
-            "f": f_hat,
-            "H": H_val,
+            "f_hat": f_hat,  # dynamics prediction (consumed by training/inference)
+            "H_val": H_val,
             "context": context,
             "alpha": alpha,
             "h_enc": H_enc,
-            # Spec monitoring keys (IP §5.4).
-            "f_hat": f_hat,
-            "H_val": H_val,
             "P_diss": P_diss,
             "energy_loss": energy_loss,
             "attn_reg_loss": attn_reg,
