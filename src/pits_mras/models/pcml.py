@@ -22,6 +22,7 @@ References:
 - Golder, Roy & Hasan, *DAE-HardNet*, arXiv:2512.05881 (2025). [hard]
 """
 
+import logging
 from typing import Dict, List, Optional, Tuple
 
 import torch
@@ -30,6 +31,8 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from pits_mras.constraints.base import PhysicsConstraints
+
+logger = logging.getLogger(__name__)
 
 
 class SoftPCMLLoss(nn.Module):
@@ -185,6 +188,11 @@ class KKTProjectionLayer(nn.Module):
         self.oineq = self.oeq + self.n_c
         self.os = self.oineq + self.n_g
         self.N = self.os + self.n_g
+        # Convergence signal from the most recent forward (debt #2): callers /
+        # tests can inspect these instead of the projection silently returning a
+        # non-stationary iterate when Newton exhausts max_newton_iter.
+        self.last_converged: bool = False
+        self.last_residual: float = float("inf")
 
     def _constraints_and_jac(
         self, x: Tensor, t: Tensor, z: Tensor
@@ -326,11 +334,13 @@ class KKTProjectionLayer(nn.Module):
         yh = y_hat.detach()
         converged = False
         last_cj: Optional[Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]] = None
+        self.last_residual = float("inf")
         for _ in range(self.max_newton_iter):
             c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z)
             last_cj = (c, g, jc_y, jc_d, jg)
             Fv = self._assemble_F(yh, z, c, g, jc_y, jc_d, jg)
-            if Fv.abs().max() < self.newton_tol:
+            self.last_residual = float(Fv.abs().max())
+            if self.last_residual < self.newton_tol:
                 converged = True
                 break
             J = self._assemble_J(z, jc_y, jc_d, jg)
@@ -338,6 +348,15 @@ class KKTProjectionLayer(nn.Module):
                 J + self.reg * eye_N, Fv.unsqueeze(-1)
             ).squeeze(-1)
             z = z - self.newton_step * delta
+        self.last_converged = converged
+        if not converged:
+            logger.warning(
+                "KKT projection did not converge: residual=%.3e after %d Newton "
+                "iterations (the implicit-function gradient is taken at a "
+                "non-stationary point).",
+                self.last_residual,
+                self.max_newton_iter,
+            )
 
         # Implicit-function one-step for differentiability w.r.t. y_hat. When the
         # Newton loop converged via the tolerance break, ``z`` is unchanged since

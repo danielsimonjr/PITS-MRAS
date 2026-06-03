@@ -79,6 +79,29 @@ def test_kkt_projection_reduces_heat_violation() -> None:
     assert v_after.item() < v_before.item()
 
 
+def test_kkt_projection_reports_convergence() -> None:
+    """The projection surfaces a convergence signal (no longer silently returns
+    a non-stationary iterate when Newton exhausts max_iter)."""
+    dae = HeatConductionDAE(alpha=0.8, T_min=-50.0, T_max=50.0)
+    torch.manual_seed(0)
+    x = torch.zeros(4, 1)
+    t = torch.zeros(4, 1)
+    y_hat = torch.randn(4, 1)
+    d_hat = torch.randn(4, 4)
+    lam_hat = torch.zeros(4, 3)
+
+    ok = KKTProjectionLayer(dae, n_output=1, n_deriv=4, max_newton_iter=30)
+    ok(x, t, y_hat, d_hat, lam_hat)
+    assert ok.last_converged is True
+    assert ok.last_residual < ok.newton_tol
+
+    # A single Newton step from a generic start does not converge.
+    bad = KKTProjectionLayer(dae, n_output=1, n_deriv=4, max_newton_iter=1)
+    bad(x, t, y_hat, d_hat, lam_hat)
+    assert bad.last_converged is False
+    assert bad.last_residual >= bad.newton_tol
+
+
 def test_kkt_projection_on_holonomic_mechanical_dae() -> None:
     """The KKT projection is well-formed and reduces violation on a holonomic
     MechanicalDAE (regression for the spec-width fix that makes n_c match the
