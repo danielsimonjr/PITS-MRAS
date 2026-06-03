@@ -36,6 +36,8 @@ from typing import TYPE_CHECKING
 import torch
 from torch import Tensor
 
+from pits_mras.utils.lyapunov import quadratic_basis, unpack_symmetric
+
 if TYPE_CHECKING:
     from pits_mras.controllers.reference_models import LinearReferenceModel
     from pits_mras.models.critic import QuadraticCritic
@@ -108,51 +110,6 @@ def train_irl_critic_gd(
     return history
 
 
-def _quadratic_features(e: Tensor, state_dim: int) -> Tensor:
-    """Feature map phi(e) with ``e^T P e == phi(e) . p``.
-
-    ``p`` holds the upper-triangular coefficients in the
-    :class:`QuadraticCritic` basis: the diagonal coefficient of ``e_i^2`` is
-    ``P[i, i]`` and the coefficient of the cross term ``e_i e_j`` (i < j) is
-    ``P[i, j] + P[j, i]``. The matching feature for that cross term is therefore
-    ``e_i e_j`` (NOT doubled), so that ``(P[i,j] + P[j,i]) * e_i e_j`` reproduces
-    both symmetric off-diagonal contributions.
-
-    Args:
-        e: error states, shape ``[..., state_dim]``.
-        state_dim: dimension of the state.
-
-    Returns:
-        Feature tensor of shape ``[..., n_entries]`` where
-        ``n_entries = state_dim * (state_dim + 1) // 2``.
-    """
-    feats: list[Tensor] = []
-    for i in range(state_dim):
-        for j in range(i, state_dim):
-            feats.append(e[..., i] * e[..., j])
-    return torch.stack(feats, dim=-1)
-
-
-def _vec_to_P(p: Tensor, state_dim: int) -> Tensor:
-    """Reconstruct the symmetric matrix P from its basis-coefficient vector.
-
-    Inverse of the :class:`QuadraticCritic` basis: diagonal entries take the
-    coefficient directly; off-diagonal coefficients are split symmetrically
-    across ``P[i, j]`` and ``P[j, i]`` (matching :meth:`QuadraticCritic.set_P`).
-    """
-    P = torch.zeros(state_dim, state_dim, dtype=p.dtype, device=p.device)
-    idx = 0
-    for i in range(state_dim):
-        for j in range(i, state_dim):
-            if i == j:
-                P[i, j] = p[idx]
-            else:
-                P[i, j] = p[idx] / 2.0
-                P[j, i] = p[idx] / 2.0
-            idx += 1
-    return P
-
-
 def _generate_optimal_trajectories(
     ref_model: "LinearReferenceModel",
     n_trajectories: int,
@@ -194,7 +151,6 @@ def _build_least_squares_system(
     costs: Tensor,
     window_size: int,
     dt: float,
-    state_dim: int,
 ) -> tuple[Tensor, Tensor]:
     """Assemble the stacked IRL Bellman LS system ``Phi p = y``.
 
@@ -207,7 +163,7 @@ def _build_least_squares_system(
     if n_windows <= 0:
         raise ValueError("traj_len must exceed window_size")
 
-    phi = _quadratic_features(errors, state_dim)  # [n_traj, traj_len, n_entries]
+    phi = quadratic_basis(errors)  # [n_traj, traj_len, n_entries]
 
     # Cumulative trapezoidal integral of the running cost along time.
     cumulative = torch.zeros_like(costs)
@@ -268,7 +224,7 @@ def train_irl_critic(
     errors, costs = _generate_optimal_trajectories(
         ref_model, n_trajectories, traj_len, dt, generator
     )
-    Phi, y = _build_least_squares_system(errors, costs, window_size, dt, state_dim)
+    Phi, y = _build_least_squares_system(errors, costs, window_size, dt)
 
     P_opt = ref_model.P_opt
     p_opt_norm = torch.linalg.norm(P_opt)
@@ -281,7 +237,7 @@ def train_irl_critic(
         # Batch least-squares solve of Phi p = y (the system is linear in p).
         solution = torch.linalg.lstsq(Phi, y.unsqueeze(-1))
         p = solution.solution.squeeze(-1)
-        P_hat = _vec_to_P(p, state_dim)
+        P_hat = unpack_symmetric(p, state_dim)
         critic.set_P(P_hat)
         rel_err = torch.linalg.norm(P_hat - P_opt) / p_opt_norm
         logger.info("irl_trainer iter %d  rel_err=%.6g", n_iters, float(rel_err))

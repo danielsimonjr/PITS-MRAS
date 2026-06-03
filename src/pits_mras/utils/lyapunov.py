@@ -133,11 +133,45 @@ def quadratic_basis(e: Tensor) -> Tensor:
     :math:`\hat V = e^\top \hat P e` exactly. For ``e`` of shape [batch, n],
     returns :math:`\phi(e)` of shape [batch, n*(n+1)//2].
 
-    Ordering: ``[e1², e1·e2, e1·e3, ..., e2², e2·e3, ..., en²]``.
+    Ordering: ``[e1², e1·e2, e1·e3, ..., e2², e2·e3, ..., en²]`` (the row-major
+    upper-triangular order of :func:`torch.triu_indices`). Indexing is on the
+    last axis, so leading batch/time dims are supported: ``[..., n]`` ->
+    ``[..., n*(n+1)//2]``.
     """
-    _, n = e.shape
-    pairs = []
-    for i in range(n):
-        for j in range(i, n):
-            pairs.append(e[:, i] * e[:, j])
-    return torch.stack(pairs, dim=1)  # [batch, n*(n+1)//2]
+    n = e.shape[-1]
+    i, j = torch.triu_indices(n, n, device=e.device)
+    return e[..., i] * e[..., j]  # [..., n*(n+1)//2]
+
+
+def pack_symmetric(P: Tensor) -> Tensor:
+    r"""Pack a symmetric ``[n, n]`` matrix into its quadratic-basis coefficients.
+
+    The single source of truth for the basis convention shared by
+    :func:`quadratic_basis`, :class:`~pits_mras.models.critic.QuadraticCritic`
+    (``W_c``) and the IRL trainer: the diagonal coefficient of :math:`e_i^2` is
+    ``P[i, i]`` and the coefficient of the cross term :math:`e_i e_j` (``i < j``)
+    is ``P[i, j] + P[j, i]``, so that
+    :math:`e^\top P e = \phi(e)^\top \mathrm{pack}(P)`.
+
+    Returns a vector of shape ``[n*(n+1)//2]`` in the same row-major
+    upper-triangular order as :func:`quadratic_basis`.
+    """
+    n = P.shape[-1]
+    i, j = torch.triu_indices(n, n, device=P.device)
+    off = i != j
+    return P[i, j] + torch.where(off, P[j, i], torch.zeros_like(P[i, j]))
+
+
+def unpack_symmetric(vec: Tensor, n: int) -> Tensor:
+    r"""Inverse of :func:`pack_symmetric`: basis coefficients -> symmetric ``[n, n]``.
+
+    Diagonal entries take the coefficient directly; off-diagonal coefficients are
+    split symmetrically across ``P[i, j]`` and ``P[j, i]``.
+    """
+    i, j = torch.triu_indices(n, n, device=vec.device)
+    off = i != j
+    half = torch.where(off, vec / 2.0, vec)
+    P = torch.zeros(n, n, device=vec.device, dtype=vec.dtype)
+    P[i, j] = half
+    P[j, i] = half
+    return P

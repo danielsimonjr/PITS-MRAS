@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from pits_mras.utils.lyapunov import quadratic_basis
+from pits_mras.utils.lyapunov import pack_symmetric, quadratic_basis, unpack_symmetric
 
 
 class QuadraticCritic(nn.Module):
@@ -89,23 +89,10 @@ class QuadraticCritic(nn.Module):
         Returns shape ``[state_dim, state_dim]``. Diagonal entries get the
         ``e_i^2`` coefficient; off-diagonals split the ``e_i e_j`` coefficient
         symmetrically so that :math:`e^\top \hat P e = W_c^\top \phi(e)`.
-        Useful for monitoring IRL convergence to the CARE solution.
+        Useful for monitoring IRL convergence to the CARE solution. Delegates to
+        the canonical :func:`~pits_mras.utils.lyapunov.unpack_symmetric`.
         """
-        n = self.state_dim
-        P = torch.zeros(
-            n, n, device=self.W_c.weight.device, dtype=self.W_c.weight.dtype
-        )
-        w = self.W_c.weight.detach().squeeze(0)  # [basis_dim]
-        idx = 0
-        for i in range(n):
-            for j in range(i, n):
-                if i == j:
-                    P[i, j] = w[idx]
-                else:
-                    P[i, j] = w[idx] / 2.0
-                    P[j, i] = w[idx] / 2.0
-                idx += 1
-        return P
+        return unpack_symmetric(self.W_c.weight.detach().squeeze(0), self.state_dim)
 
     def set_P(self, P: Tensor) -> None:
         r"""Write a symmetric :math:`\hat P` into the ``W_c`` basis weights.
@@ -127,18 +114,8 @@ class QuadraticCritic(nn.Module):
             )
         P = P.to(device=self.W_c.weight.device, dtype=self.W_c.weight.dtype)
         with torch.no_grad():
-            w = torch.zeros(self.basis_dim, device=P.device, dtype=P.dtype)
-            idx = 0
-            for i in range(n):
-                for j in range(i, n):
-                    if i == j:
-                        w[idx] = P[i, i]
-                    else:
-                        # extract_P splits this weight in half across (i,j),(j,i);
-                        # the inverse recombines both off-diagonal entries.
-                        w[idx] = P[i, j] + P[j, i]
-                    idx += 1
-            self.W_c.weight.data.copy_(w.unsqueeze(0))
+            # Canonical packing (matches extract_P's unpack inverse).
+            self.W_c.weight.data.copy_(pack_symmetric(P).unsqueeze(0))
 
     def positivity_loss(self) -> Tensor:
         r"""Penalize if :math:`\hat P` is not positive definite.

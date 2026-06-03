@@ -13,8 +13,11 @@ import torch
 from pits_mras.utils.lyapunov import (
     check_hurwitz,
     lyapunov_derivative,
+    pack_symmetric,
+    quadratic_basis,
     solve_care,
     solve_lyapunov,
+    unpack_symmetric,
 )
 
 
@@ -87,3 +90,28 @@ def test_lyapunov_derivative_matches_formula() -> None:
     expected_t = torch.tensor(expected, dtype=torch.float64)
     assert v_dot.shape == (2,)
     assert torch.allclose(v_dot, expected_t, atol=1e-10)
+
+
+def test_pack_unpack_symmetric_round_trip() -> None:
+    """unpack_symmetric(pack_symmetric(P)) recovers a symmetric P."""
+    torch.manual_seed(0)
+    for n in (1, 2, 4):
+        a = torch.randn(n, n)
+        P = a + a.T  # symmetric
+        vec = pack_symmetric(P)
+        assert vec.shape == (n * (n + 1) // 2,)
+        P_back = unpack_symmetric(vec, n)
+        assert torch.allclose(P_back, P, atol=1e-6)
+        assert torch.allclose(P_back, P_back.T, atol=1e-6)
+
+
+def test_quadratic_form_equals_basis_dot_packed() -> None:
+    """e^T P e == quadratic_basis(e) . pack_symmetric(P) (the shared convention)."""
+    torch.manual_seed(1)
+    n = 3
+    a = torch.randn(n, n)
+    P = a + a.T
+    e = torch.randn(5, n)
+    quad = torch.einsum("bi,ij,bj->b", e, P, e)
+    via_basis = quadratic_basis(e) @ pack_symmetric(P)
+    assert torch.allclose(quad, via_basis, atol=1e-5)
