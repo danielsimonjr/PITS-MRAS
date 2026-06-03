@@ -121,8 +121,13 @@ class QuadraticCritic(nn.Module):
         r"""Penalize if :math:`\hat P` is not positive definite.
 
         Loss :math:`= \mathrm{ReLU}(-\lambda_{\min}(\hat P))` (scalar).
+
+        Uses a *differentiable* reconstruction of :math:`\hat P` directly from
+        the live ``W_c`` weights (NOT :meth:`extract_P`, which detaches for
+        monitoring), so the term contributes a real gradient when added to a
+        training objective.
         """
-        P = self.extract_P()
+        P = unpack_symmetric(self.W_c.weight.squeeze(0), self.state_dim)
         eigvals = torch.linalg.eigvalsh(P)
         return torch.relu(-eigvals.min())
 

@@ -108,17 +108,6 @@ causing test failures; each is grounded below.
    warning); consider a damped / line-search Newton step for robustness; test
    the flag on a deliberately under-iterated projection.
 
-### Clarity / API
-
-3. **Dead `LossConfig` fields** (6, verified unconsumed in `src/`):
-   `lambda_adjoint`, `alpha_attn`, `alpha_smooth`, `mu_lyap`, `beta_param`,
-   `lambda_delta_u`. *Resolve by EITHER* wiring them into the corresponding
-   sub-losses (adjoint-dynamics residual, attention entropy/smoothness,
-   Lyapunov-decay rate `mu`, parameter-boundedness `beta`, control-rate penalty)
-   *OR* removing them. Removing is a public-config change (`PITSMRASConfig` /
-   `from_yaml`) — strictly a minor bump; since they are no-ops the plan should
-   decide wire-vs-remove and confirm v0.3.2 vs v0.4.0 placement.
-
 ### Repo hygiene
 
 4. **No `.gitattributes`** → every Windows commit warns "LF will be replaced by
@@ -140,6 +129,13 @@ causing test failures; each is grounded below.
 
 ## v0.4.0 (next version) — features / refinements / new capacities
 
+- **Dead `LossConfig` fields → wire-or-remove** (bumped from v0.3.2 debt): the 6
+  unconsumed fields `lambda_adjoint`, `alpha_attn`, `alpha_smooth`, `mu_lyap`,
+  `beta_param`, `lambda_delta_u`. Decide per field: **wire** into the
+  corresponding sub-loss (adjoint-dynamics residual, attention entropy /
+  smoothness, Lyapunov-decay rate, parameter-boundedness, control-rate penalty)
+  — a capability addition — or **remove** (a public `PITSMRASConfig`/`from_yaml`
+  change, hence a minor bump). Belongs with the feature work.
 - **H∞ disturbance/adversary head (gap G1, Blueprint Connection 7).** A new
   adversary network head, a Game Algebraic Riccati Equation (GARE) solver
   (`solve_gare`, not yet implemented), and the robust-control / worst-case

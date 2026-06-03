@@ -209,6 +209,34 @@ def test_critic_positivity_loss_zero_at_init() -> None:
     assert loss.item() <= 1e-5  # P ~ I at init -> positive definite -> ~0
 
 
+def test_critic_positivity_loss_is_differentiable_and_trainable() -> None:
+    """positivity_loss must contribute a REAL gradient (regression for the
+    detached no-op): a seeded indefinite P gives a positive, differentiable loss
+    whose gradient descent restores positive-definiteness."""
+    torch.manual_seed(0)
+    critic = QuadraticCritic(state_dim=2)
+    critic.set_P(torch.tensor([[1.0, 0.0], [0.0, -2.0]]))  # indefinite (min eig -2)
+    lp = critic.positivity_loss()
+    assert lp.requires_grad and lp.grad_fn is not None
+    assert lp.item() > 0.0
+    # A real, non-zero gradient flows to W_c while P is indefinite (the no-op bug
+    # produced None / zero here).
+    lp.backward()
+    assert critic.W_c.weight.grad is not None
+    assert critic.W_c.weight.grad.abs().sum() > 0.0
+    # Gradient descent on the term restores positive-definiteness (loss -> ~0,
+    # so the gradient legitimately vanishes once P is PD).
+    opt = torch.optim.Adam(critic.parameters(), lr=0.1)
+    first = critic.positivity_loss().item()
+    for _ in range(150):
+        opt.zero_grad()
+        loss = critic.positivity_loss()
+        loss.backward()
+        opt.step()
+    assert critic.positivity_loss().item() < first
+    assert critic.positivity_loss().item() < 1e-4  # P is positive-definite now
+
+
 def test_costate_head_optimal_control_shape() -> None:
     torch.manual_seed(0)
     n, m = 4, 2
