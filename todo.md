@@ -80,17 +80,77 @@ Behavior- and API-preserving pass (Approach 2; spec in
   with A; D3 dropped (sub-ms noise).
 - [x] Version → 0.3.1; dependency graph regenerated; `docs/architecture` stat
   references synced; CHANGELOG `[0.3.1]`.
-- Deferred by design: **B** (remove 6 dead `LossConfig` fields) and **E**
-  (`parallel.py`) — both touch public surface / belong to v0.4.0.
+- Out of the safe pass: **B** (6 dead `LossConfig` fields) → logged as debt for
+  v0.3.2; **E** (`parallel.py`) → v0.4.0 capability.
 
-## v0.4.0 (next version) — major, deferred
+## Engineering debt (target v0.3.2 — a debt-resolution release)
 
-- **H∞ disturbance/adversary head (gap G1, Blueprint Connection 7).** A genuinely
-  major feature: a new adversary network head, a Game Algebraic Riccati Equation
-  (GARE) solver (`solve_gare`, not yet implemented), and the robust-control /
-  worst-case-disturbance loss + min-max training. The Blueprint describes it but
-  the Implementation Plan builds critic/costate/CBF as the three concrete heads;
-  H∞ is out of scope for v0.3.x and is scheduled for v0.4.0.
+Discovered / pre-existing issues to plan + resolve in v0.3.2. None is currently
+causing test failures; each is grounded below.
+
+### Correctness / efficacy
+
+1. **`positivity_loss` is a gradient no-op** (verified 2026-06-03).
+   `QuadraticCritic.extract_P()` calls `.detach()`, so `positivity_loss()` has
+   `requires_grad=False` / no `grad_fn`; the `1e-3 * positivity` term in
+   `cotraining_loop` adds a constant with **zero gradient** — the
+   positive-definiteness regularizer never actually influences training (P̂
+   positivity is currently held only by the warm-start + IRL fit). *Fix:* give
+   the term a differentiable path (e.g. eigenvalues of a non-detached
+   `unpack_symmetric(W_c)`, or a differentiable `relu(eps - λ_min)` surrogate);
+   add a test asserting a non-zero gradient and that training repairs a seeded
+   indefinite `P`.
+2. **KKT projection silent non-convergence.** When Newton exhausts
+   `max_newton_iter` without hitting `newton_tol`,
+   `KKTProjectionLayer.forward` still returns the final iterate and takes the
+   implicit-function gradient at a **non-stationary** point (approximate), with
+   no signal. *Fix:* surface a convergence flag / max-residual (return or
+   warning); consider a damped / line-search Newton step for robustness; test
+   the flag on a deliberately under-iterated projection.
+
+### Clarity / API
+
+3. **Dead `LossConfig` fields** (6, verified unconsumed in `src/`):
+   `lambda_adjoint`, `alpha_attn`, `alpha_smooth`, `mu_lyap`, `beta_param`,
+   `lambda_delta_u`. *Resolve by EITHER* wiring them into the corresponding
+   sub-losses (adjoint-dynamics residual, attention entropy/smoothness,
+   Lyapunov-decay rate `mu`, parameter-boundedness `beta`, control-rate penalty)
+   *OR* removing them. Removing is a public-config change (`PITSMRASConfig` /
+   `from_yaml`) — strictly a minor bump; since they are no-ops the plan should
+   decide wire-vs-remove and confirm v0.3.2 vs v0.4.0 placement.
+
+### Repo hygiene
+
+4. **No `.gitattributes`** → every Windows commit warns "LF will be replaced by
+   CRLF" and risks mixed line endings. Add `* text=auto eol=lf` (+ `*.bat` /
+   `*.cmd eol=crlf`, `*.sh eol=lf`), matching the sibling repos.
+
+### Low priority / watch
+
+5. **Tiny-matrix basis ops** — `pack/unpack_symmetric` via `torch.triu_indices`
+   is ~100 µs slower than a 3-element loop at `n=2` (overhead-bound; a clear win
+   for `n≥3`). Negligible vs a training step; revisit (cache the indices) only if
+   profiling ever flags the per-step `extract_P` path.
+6. **Slow example integration tests** — the example `run()` tests are heavy
+   (manipulator critic training + KKT autograd). Fine now; candidate for `pytest`
+   markers / smaller step budgets if CI wall-clock becomes a concern.
+7. **Redundant `lqr_warm_start`** — `MRASController.__init__` already warm-starts
+   the critic to `P_opt`; `lqr_warm_start` re-solves CARE and is not called by
+   the loops. Decide: keep as a public convenience or drop (API change).
+
+## v0.4.0 (next version) — features / refinements / new capacities
+
+- **H∞ disturbance/adversary head (gap G1, Blueprint Connection 7).** A new
+  adversary network head, a Game Algebraic Riccati Equation (GARE) solver
+  (`solve_gare`, not yet implemented), and the robust-control / worst-case
+  min-max training loop. The Blueprint describes it; the Implementation Plan
+  built critic/costate/CBF as the three concrete heads. Major capability.
+- **Complete `ParallelInferenceEngine`** (`inference/parallel.py`) from the
+  honest threaded skeleton to a hardened multi-rate (1 kHz / 100 Hz / 10 Hz)
+  deployment with the double-buffered critic swap.
+- **Higher-fidelity example plants** — replace the linear reference-model
+  surrogates with a nonlinear rigid-body manipulator, a bicycle/tyre AV model,
+  and an RC building-thermal network.
 
 ## Notes / decisions
 
