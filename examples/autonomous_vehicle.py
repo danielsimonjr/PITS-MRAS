@@ -106,7 +106,13 @@ def _simulate(engine: Any, steps: int) -> dict[str, list]:
     wind gust acts on the plant. Returns per-step lateral offset, tracking-error
     norm, CBF-activation flag, and the safe-set violation ``max(0, e^T P e - c)``.
     """
+    import pathlib
+    import sys
+
     import torch
+
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from plants import lateral_tyre_step  # noqa: E402  (sibling examples module)
 
     dt = 0.01
     x_p = torch.zeros(2)
@@ -128,14 +134,16 @@ def _simulate(engine: Any, steps: int) -> dict[str, list]:
         cbf_active.append(bool(out["cbf_active"]))
         e_np = e.numpy()
         violation.append(max(0.0, float(e_np @ P @ e_np) - _SAFETY_MARGIN))
-
-        u = float(out["u_safe"].detach().cpu().reshape(-1)[0])
-        x0, x1 = float(x_p[0]), float(x_p[1])
-        x_p = torch.tensor(
-            [x0 + dt * x1, x1 + dt * (u - 2.0 * x0 - 3.0 * x1 + gust)],
-            dtype=torch.float32,
-        )
+        # Record the lateral offset at the CURRENT time (before the plant step),
+        # so all series align on the same tgrid.
         lateral_offset.append(float(x_p[0]))
+
+        # Nonlinear single-track lateral plant with tyre-force saturation
+        # (tanh); linearizes to the reference model near the lane centre.
+        u = float(out["u_safe"].detach().cpu().reshape(-1)[0])
+        x_p = lateral_tyre_step(
+            x_p, u, dt, tyre_stiffness=2.0, damping=3.0, gust=gust
+        )
 
     return {
         "lateral_offset": lateral_offset,

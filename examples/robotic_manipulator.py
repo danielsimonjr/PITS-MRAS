@@ -63,6 +63,9 @@ def run(
 
     if not show:
         matplotlib.use("Agg")
+    import pathlib
+    import sys
+
     import numpy as np
     import torch
 
@@ -72,6 +75,9 @@ def run(
     from pits_mras.inference.realtime import RealtimeInferenceEngine
     from pits_mras.models import PITNN
     from pits_mras.training.irl_trainer import train_irl_critic_gd
+
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from plants import pendulum_step  # noqa: E402  (sibling examples module)
 
     torch.manual_seed(0)
     np.random.seed(0)
@@ -147,13 +153,10 @@ def run(
         v_hat.append(float(out["v_hat"].detach().reshape(-1)[0]))
         cbf_active.append(bool(out["cbf_active"]))
 
-        # Advance the toy plant under the applied safe control (surrogate).
+        # Advance the nonlinear pendulum plant (sin-gravity joint) under the
+        # applied safe control. Linearizes to the reference model near theta=0.
         u = float(out["u_safe"].detach().cpu().reshape(-1)[0])
-        x0, x1 = float(x_p[0]), float(x_p[1])
-        x_p = torch.tensor(
-            [x0 + dt * x1, x1 + dt * (u - 4.0 * x0 - 4.0 * x1)],
-            dtype=torch.float32,
-        )
+        x_p = pendulum_step(x_p, u, dt, g_over_l=4.0, damping=4.0)
 
     # ---- Diagnostic figure: 4 panels. ---------------------------------------
     import matplotlib.pyplot as plt

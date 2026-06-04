@@ -32,10 +32,22 @@ def _setpoint(t: float) -> float:
 
 
 def _zone_step(x0: float, x1: float, u: float, dt: float) -> tuple[float, float]:
-    """One forward-Euler step of the toy 2nd-order thermal zone."""
-    nx0 = x0 + dt * x1
-    nx1 = x1 + dt * (u - 3.0 * x0 - 2.0 * x1)
-    return nx0, nx1
+    """One step of the 2-node RC building-thermal network (zone + thermal mass)
+    with a saturated heater. ``x0`` = zone temp, ``x1`` = thermal-mass temp
+    (deviations from ambient). Delegates to :func:`examples.plants.rc_thermal_step`.
+    """
+    import pathlib
+    import sys
+
+    import torch
+
+    _dir = str(pathlib.Path(__file__).resolve().parent)
+    if _dir not in sys.path:
+        sys.path.insert(0, _dir)
+    from plants import rc_thermal_step  # noqa: E402  (sibling examples module)
+
+    nxt = rc_thermal_step(torch.tensor([x0, x1], dtype=torch.float32), u, dt)
+    return float(nxt[0]), float(nxt[1])
 
 
 def _run_pits(steps: int) -> dict[str, list]:
@@ -52,8 +64,11 @@ def _run_pits(steps: int) -> dict[str, list]:
     torch.manual_seed(0)
     np.random.seed(0)
 
-    a_m = np.array([[0.0, 1.0], [-3.0, -2.0]])
-    b_m = np.array([[0.0], [1.0]])
+    # Reference model = the 2-node RC network's linearization (zone, mass), so
+    # the LQR tracks the zone temperature. A_rc = [[-(a_zm+a_za), a_zm],
+    # [a_mz, -a_mz]], B = [[heater_gain], [0]] with the rc_thermal_step defaults.
+    a_m = np.array([[-3.0, 2.0], [1.0, -1.0]])
+    b_m = np.array([[3.0], [0.0]])
     c_m = np.eye(2)
     q_mat = np.eye(2)
     r_mat = np.eye(1)
