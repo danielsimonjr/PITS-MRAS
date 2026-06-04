@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-04
+
+Second v0.4.x sub-project + the README/doc sweep. Behavior-preserving;
+suite green; flake8 + mypy clean.
+
+### Removed
+
+- **6 unconsumed `LossConfig` weight fields** — `lambda_adjoint`, `alpha_attn`,
+  `alpha_smooth`, `mu_lyap`, `beta_param`, `lambda_delta_u` had zero usages
+  outside `config.py` (dead knobs that misled users into thinking they
+  controlled training). Removed (behavior-preserving — they did nothing). The
+  corresponding sub-loss classes (`AttentionRegularizationLoss`,
+  `TemporalSmoothnessLoss`, `ParameterBoundednessLoss`, `ControlEffortLoss`,
+  `LyapunovConstraintLoss`) already expose their own weights;`lambda_adjoint`
+  had no implemented loss. YAML-backward-compatible (`from_yaml` ignores unknown
+  keys).
+
 ### Documentation
 
 - **README brought in line with v0.4.0.** Replaced the stale "implementation in

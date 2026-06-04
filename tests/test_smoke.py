@@ -87,7 +87,7 @@ def _all_finite(series_dict: dict) -> None:
 def test_package_imports() -> None:
     """The top-level package imports and exposes its version."""
     pkg = importlib.import_module("pits_mras")
-    assert pkg.__version__ == "0.4.0"
+    assert pkg.__version__ == "0.4.1"
 
 
 @pytest.mark.parametrize("script_name", _EXAMPLE_SCRIPTS)

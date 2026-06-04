@@ -3,13 +3,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](./docs/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](./CHANGELOG.md)
 
 A unified framework merging **Physics-Informed Neural Networks (PINNs)**, **Time-Series Deep Learning**, and **Model-Reference Adaptive Systems (MRAS)** for robust adaptive control of complex dynamical systems.
 
 ## ⚠️ Project Status
 
-This is a **research and engineering exploration** combining control theory with modern AI/ML. **Released through v0.4.0** (see [CHANGELOG.md](./CHANGELOG.md)):
+This is a **research and engineering exploration** combining control theory with modern AI/ML. **Released through v0.4.1** (see [CHANGELOG.md](./CHANGELOG.md)):
 
 - ✅ **Complete mathematical framework** - formal specification with algorithms
 - ✅ **Full Python implementation** - all 9 ROADMAP phases implemented (config/math → NN models → losses → controllers → training → inference → examples → tests → CI), plus the **PCML** physics-constraint layer (v0.3.0)
@@ -363,10 +363,10 @@ See [docs/ROADMAP.md](./docs/ROADMAP.md) for the phase-by-phase build plan and
 - ✅ **v0.3.0** — PCML: soft (augmented-loss) + hard (DAE-HardNet KKT projection) physics-constraint enforcement
 - ✅ **v0.3.1 / v0.3.2 / v0.3.3** — simplification/optimization pass + engineering-debt resolution
 - ✅ **v0.4.0** — opens the feature/refinement line (first sub-project: the HJB/costate co-training rewire)
+- ✅ **v0.4.1** — removed 6 unconsumed `LossConfig` fields + README/docs sweep
 
 ### v0.4.x (queued)
 
-- ⏳ Dead `LossConfig` fields → wire-or-remove
 - ⏳ KKT projection robustness — damped / line-search Newton
 - ⏳ Higher-fidelity example plants (nonlinear manipulator, bicycle/tyre AV, RC building-thermal)
 - ⏳ `ParallelInferenceEngine` hardening (multi-rate deployment + double-buffered critic swap)
