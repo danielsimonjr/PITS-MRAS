@@ -18,7 +18,7 @@ Phase-1 sanity gate (IP §13): ``solve_lyapunov(-I, I)`` must return
 """
 
 from functools import lru_cache
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -26,16 +26,42 @@ from scipy.linalg import solve_continuous_are, solve_continuous_lyapunov
 from torch import Tensor
 
 
-@lru_cache(maxsize=None)
-def _triu_pairs(n: int, device: str) -> Tuple[Tensor, Tensor]:
+def _canonical_device_key(device: Union[str, torch.device]) -> str:
+    """Canonical cache key for a device.
+
+    Collapses equivalent specs onto one key so the ``_triu_pairs`` cache does not
+    hold duplicate entries — e.g. a bare ``"cuda"`` (current device) is resolved
+    to its concrete ``"cuda:<idx>"`` form when CUDA is available, matching what a
+    tensor's own ``.device`` reports. Returns ``str(torch.device(...))``.
+    """
+    dev = torch.device(device)
+    if dev.type == "cuda" and dev.index is None and torch.cuda.is_available():
+        dev = torch.device("cuda", torch.cuda.current_device())
+    return str(dev)
+
+
+@lru_cache(maxsize=128)
+def _triu_pairs_cached(n: int, device_key: str) -> Tuple[Tensor, Tensor]:
+    """Build the row-major upper-triangular index pair for an n x n matrix.
+
+    Keyed on a *canonical* device string (see :func:`_canonical_device_key`).
+    Bounded cache: only a handful of ``(n, device)`` combinations occur in
+    practice, so a small ``maxsize`` is ample and avoids unbounded retention of
+    the index tensors for the process lifetime.
+    """
+    idx = torch.triu_indices(n, n, device=device_key)
+    return idx[0], idx[1]
+
+
+def _triu_pairs(n: int, device: Union[str, torch.device]) -> Tuple[Tensor, Tensor]:
     """Cached row-major upper-triangular index pair ``(i, j)`` for an n x n matrix.
 
-    The quadratic-basis ordering used everywhere. Cached per ``(n, device)`` so
-    the shared helpers avoid rebuilding the index tensors on every call (a small
-    win on the per-step ``extract_P`` path for the common small ``n``).
+    The quadratic-basis ordering used everywhere. The returned ``(i, j)`` are
+    shared, **read-only** index tensors — callers must not mutate them. Cached
+    per ``(n, canonical-device)`` so the shared helpers avoid rebuilding the
+    index tensors on every call (a small win on the per-step ``extract_P`` path).
     """
-    idx = torch.triu_indices(n, n, device=device)
-    return idx[0], idx[1]
+    return _triu_pairs_cached(n, _canonical_device_key(device))
 
 
 def solve_lyapunov(A_m: np.ndarray, Q: np.ndarray) -> np.ndarray:
@@ -152,7 +178,7 @@ def quadratic_basis(e: Tensor) -> Tensor:
     ``[..., n*(n+1)//2]``.
     """
     n = e.shape[-1]
-    i, j = _triu_pairs(n, str(e.device))
+    i, j = _triu_pairs(n, e.device)
     return e[..., i] * e[..., j]  # [..., n*(n+1)//2]
 
 
@@ -170,7 +196,7 @@ def pack_symmetric(P: Tensor) -> Tensor:
     upper-triangular order as :func:`quadratic_basis`.
     """
     n = P.shape[-1]
-    i, j = _triu_pairs(n, str(P.device))
+    i, j = _triu_pairs(n, P.device)
     off = i != j
     return P[i, j] + torch.where(off, P[j, i], torch.zeros_like(P[i, j]))
 
@@ -181,7 +207,7 @@ def unpack_symmetric(vec: Tensor, n: int) -> Tensor:
     Diagonal entries take the coefficient directly; off-diagonal coefficients are
     split symmetrically across ``P[i, j]`` and ``P[j, i]``.
     """
-    i, j = _triu_pairs(n, str(vec.device))
+    i, j = _triu_pairs(n, vec.device)
     off = i != j
     half = torch.where(off, vec / 2.0, vec)
     P = torch.zeros(n, n, device=vec.device, dtype=vec.dtype)

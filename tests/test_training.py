@@ -219,6 +219,39 @@ def test_train_irl_critic_gd_converges_from_perturbation() -> None:
     assert history[-1] < 0.05  # converges close to the CARE solution
 
 
+def test_cotrain_positivity_regularizer_repairs_indefinite_critic() -> None:
+    """The critic positivity term is actually applied to the critic.
+
+    Regression for the wiring bug where ``1e-3 * positivity_loss`` was added to
+    the PITNN objective ``l_total`` but, depending only on the critic's ``W_c``,
+    its gradient was never stepped (``optimizer_pitnn`` doesn't own ``W_c`` and
+    the IRL block's ``zero_grad`` then wiped it). Here the IRL update is disabled
+    (``irl_window`` > ``n_steps`` so the window never fills) and HJB/costate/CBF
+    are off, so the positivity regularizer is the ONLY thing that can move the
+    critic. A seeded indefinite ``P`` must have its minimum eigenvalue driven
+    upward.
+    """
+    cfg = _small_cfg()
+    cfg.losses.lambda_hjb = 0.0
+    cfg.losses.lambda_costate = 0.0
+    cfg.safety.enable_cbf = False
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    # Seed an indefinite P (one negative eigenvalue).
+    controller.critic.set_P(torch.tensor([[1.0, 0.0], [0.0, -2.0]]))
+    lam_before = torch.linalg.eigvalsh(controller.critic.extract_P()).min().item()
+    assert lam_before < 0.0  # indefinite to start
+
+    cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=1, n_steps=10, batch_size=4, irl_window=50,
+        critic_lr=1e-1, seed=0,
+    )
+    lam_after = torch.linalg.eigvalsh(controller.critic.extract_P()).min().item()
+    assert lam_after > lam_before  # positivity drove the critic toward PD
+
+
 def test_cotrain_hjb_disabled_path() -> None:
     """lambda_hjb == 0 disables the HJB term but the loop still runs."""
     cfg = _small_cfg()

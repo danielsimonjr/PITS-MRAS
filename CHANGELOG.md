@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Knocks out the two *easy* carried-forward gaps from the v0.3.2 sprint. No
+public-API changes; suite green throughout; flake8 + mypy clean.
+
+### Fixed
+
+- **Critic positivity regularizer was structurally inert in co-training.** The
+  `1e-3 * positivity_loss` term lived in `cotraining_loop`'s `l_total` (the PITNN
+  objective), but it depends only on the critic's `W_c`; `optimizer_pitnn.step()`
+  doesn't own `W_c`, and the IRL block's `zero_grad` then wiped the gradient — so
+  the positive-definiteness regularizer never actually updated the critic. It is
+  now applied through the **critic** optimizer, guarded on a strictly-positive
+  loss so it stays a no-op while `P` is PD (the healthy regime) and does not bias
+  the IRL update's Adam step schedule. New isolation test (IRL disabled,
+  HJB/costate/CBF off) confirms a seeded indefinite `P` has its minimum
+  eigenvalue driven upward. (The identical wiring issue affects the HJB and
+  costate terms; rewiring those is behavior-changing and is tracked for v0.4.0.)
+
+### Changed
+
+- **`_triu_pairs` cache hygiene** (`utils/lyapunov.py`). The upper-triangular
+  index cache now canonicalizes its device key (`_canonical_device_key` resolves
+  a bare `"cuda"` to `"cuda:<idx>"` when CUDA is available, so equivalent device
+  specs share one entry) and is bounded (`maxsize=128` instead of unbounded).
+  CPU behavior is identical.
+
 ## [0.3.2] - 2026-06-03
 
 A small **engineering-debt-resolution** release (the debt logged at the close of

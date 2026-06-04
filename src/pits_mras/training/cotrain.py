@@ -17,8 +17,9 @@ Per step the loop:
    critic with a SEPARATE ``critic_optimizer`` (Adam lr=1e-3, grad-clip 1.0),
    then performs the policy-improvement read-out ``K = R^{-1} B^T P_hat``,
 4. builds the PITNN objective ``L_total`` = physics + (optional) HJB residual +
-   costate consistency + ``1e-3`` * critic positivity + ``0.1`` * CBF
-   constraint, and steps the PITNN optimizer (Adam lr=1e-4),
+   costate consistency + ``0.1`` * CBF constraint, and steps the PITNN optimizer
+   (Adam lr=1e-4); separately regularizes the critic's positive-definiteness
+   (``POSITIVITY_WEIGHT`` * ``relu(-λ_min(P))``) through the *critic* optimizer,
 5. advances the synthetic plant + reference model and slides the history window.
 
 Everything runs on tiny synthetic trajectories (no external dataset; Gap G7) so
@@ -63,6 +64,10 @@ if TYPE_CHECKING:
     from pits_mras.models.pcml import PCMLModule
 
 logger = logging.getLogger(__name__)
+
+# Weight on the critic positive-definiteness regularizer (``relu(-λ_min(P))``).
+# Applied through the critic optimizer; see the co-training loop.
+POSITIVITY_WEIGHT = 1e-3
 
 
 def _synthetic_plant_step(
@@ -260,10 +265,6 @@ def cotraining_loop(
             l_costate = (lambda_hat - grad_V).pow(2).mean()
             l_total = l_total + loss_cfg.lambda_costate * l_costate
 
-            # ── NEW: Critic positivity regularization ──
-            l_pos = controller.critic.positivity_loss()
-            l_total = l_total + 1e-3 * l_pos
-
             # ── CBF constraint loss ──
             l_cbf_val = 0.0
             if use_cbf and controller.safety_filter is not None:
@@ -274,9 +275,31 @@ def cotraining_loop(
                 l_cbf_val = float(l_cbf.detach())
 
             optimizer_pitnn.zero_grad()
-            critic_optimizer.zero_grad()
+            critic_optimizer.zero_grad()  # also clears any stale critic grad
             l_total.backward()
             optimizer_pitnn.step()
+            # NB: l_total.backward() also deposits gradients on the critic's W_c
+            # via the HJB/costate terms, which optimizer_pitnn does not own.
+            # Those critic gradients are intentionally NOT applied here — the
+            # critic is trained by IRL + the positivity regularizer below.
+            # (Rewiring HJB/costate into the critic update is a tracked v0.4.0
+            # decision; it would change what the critic learns.)
+
+            # ── Critic positivity regularization (applied via the CRITIC
+            # optimizer). It depends only on the critic's W_c, so it must ride
+            # with ``critic_optimizer`` — adding it to ``l_total`` (PITNN
+            # objective) left its gradient on W_c unstepped and then wiped by the
+            # IRL block's ``zero_grad``. ``positivity_loss`` is exactly 0 while P
+            # is PD (the healthy regime), so the step is GUARDED on a strictly
+            # positive loss: this both skips a no-op update and avoids advancing
+            # the shared critic-optimizer's Adam step count (which would bias the
+            # IRL update's bias-correction schedule). When P drifts indefinite it
+            # pulls the minimum eigenvalue back up.
+            l_pos = controller.critic.positivity_loss()
+            if float(l_pos.detach()) > 0.0:
+                critic_optimizer.zero_grad()
+                (POSITIVITY_WEIGHT * l_pos).backward()
+                critic_optimizer.step()
 
             # ── NEW: IRL critic update (Identity 1 — Vrabie & Lewis 2009) ──
             e_window.append(e.detach())

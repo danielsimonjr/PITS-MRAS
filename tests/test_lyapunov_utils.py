@@ -105,6 +105,29 @@ def test_pack_unpack_symmetric_round_trip() -> None:
         assert torch.allclose(P_back, P_back.T, atol=1e-6)
 
 
+def test_triu_pairs_canonicalizes_equivalent_devices_and_bounds_cache() -> None:
+    """_triu_pairs dedups equivalent device specs (str vs torch.device) onto a
+    single cache entry, and the cache is bounded (not maxsize=None)."""
+    from pits_mras.utils import lyapunov as lyap
+
+    lyap._triu_pairs_cached.cache_clear()
+    a = lyap._triu_pairs(3, "cpu")
+    b = lyap._triu_pairs(3, torch.device("cpu"))
+    # Same canonical key -> the identical cached tensors (one entry, not two).
+    assert a[0] is b[0] and a[1] is b[1]
+    assert lyap._triu_pairs_cached.cache_info().currsize == 1
+    # Cache is bounded.
+    assert lyap._triu_pairs_cached.cache_info().maxsize is not None
+
+
+def test_canonical_device_key_cpu() -> None:
+    """The device-key canonicalizer accepts both str and torch.device for CPU."""
+    from pits_mras.utils.lyapunov import _canonical_device_key
+
+    assert _canonical_device_key("cpu") == "cpu"
+    assert _canonical_device_key(torch.device("cpu")) == "cpu"
+
+
 def test_quadratic_form_equals_basis_dot_packed() -> None:
     """e^T P e == quadratic_basis(e) . pack_symmetric(P) (the shared convention)."""
     torch.manual_seed(1)

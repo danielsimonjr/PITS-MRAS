@@ -144,6 +144,17 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
   (`solve_gare`, not yet implemented), and the robust-control / worst-case
   min-max training loop. The Blueprint describes it; the Implementation Plan
   built critic/costate/CBF as the three concrete heads. Major capability.
+- **Cotrain HJB/costate critic-coupling — ADR + rewire** (discovered v0.3.3).
+  `l_hjb` and `l_costate` in `cotraining_loop`'s `l_total` depend only on the
+  critic's `W_c` (everything else is `.detach()`ed), but `l_total` is stepped by
+  `optimizer_pitnn` (which owns only PITNN params), so those gradients land on
+  `W_c` and are then discarded by the critic block's `zero_grad` — exactly the
+  wiring bug fixed for positivity in v0.3.3, except these two terms are **nonzero
+  in general**, so applying them genuinely changes what the critic learns
+  (IRL-only vs IRL+HJB+costate). Decide the intended design and rewire with
+  convergence validation; this is why v0.3.3 fixed *only* positivity (safe
+  because it is 0 in the healthy regime). Touches `src/pits_mras/training/
+  cotrain.py` (HJB ~line 251-255, costate ~257-261).
 - **Complete `ParallelInferenceEngine`** (`inference/parallel.py`) from the
   honest threaded skeleton to a hardened multi-rate (1 kHz / 100 Hz / 10 Hz)
   deployment with the double-buffered critic swap.
@@ -164,21 +175,23 @@ current source. Candidates for v0.4.0 or a later hardening pass.
    implicit-function gradient there anyway. The debt note's other half — a
    **damped / line-search / trust-region Newton** step to actually improve the
    convergence rate — is unaddressed. Real refinement for v0.4.0.
-2. **No integration test that the positivity regularizer affects cotraining.**
-   Debt #1 made `QuadraticCritic.positivity_loss` differentiable and unit-tested
-   it (standalone Adam repairs a seeded indefinite `P`,
-   `tests/test_models.py:212`), but nothing verifies the `1e-3 * positivity` term
-   in `cotraining_loop` (`src/pits_mras/training/cotrain.py:264-265`) measurably
-   influences the learned `P` — and at weight `1e-3` it may be negligible.
-   Action: add a cotrain-level test (e.g. seed an indefinite critic, assert the
-   loop drives `λ_min(P)` upward) and tune the weight if the term is inert.
-3. **`_triu_pairs` cache hygiene for any future GPU port** (low priority).
-   `src/pits_mras/utils/lyapunov.py` caches `(i, j)` via
-   `@lru_cache(maxsize=None)` keyed on `str(device)`. Two latent issues, both
-   no-ops on the current CPU-only / CI setup: (a) `"cuda"` vs `"cuda:0"` string
-   forms would create duplicate cache entries; (b) the unbounded cache holds the
-   index tensors for the process lifetime. Revisit only if/when the project runs
-   on GPU.
+2. **[RESOLVED v0.3.3] Positivity regularizer was structurally inert in
+   cotraining.** Investigating this gap revealed it was *not* a weight-tuning
+   issue but a **wiring bug**: the `1e-3 * positivity` term lived in `l_total`
+   (the PITNN objective), but it depends only on the critic's `W_c`, so
+   `optimizer_pitnn.step()` never applied its gradient and the critic block's
+   `zero_grad` wiped it. Fixed by applying positivity through the *critic*
+   optimizer (guarded on a strictly-positive loss so it stays a no-op while P is
+   PD and doesn't bias the IRL update's Adam schedule). New isolation test
+   `test_cotrain_positivity_regularizer_repairs_indefinite_critic`. The same bug
+   affects `l_hjb` / `l_costate` — bumped to v0.4.0 (see above) because fixing
+   those is behavior-changing, unlike positivity.
+3. **[RESOLVED v0.3.3] `_triu_pairs` cache hygiene.** `src/pits_mras/utils/
+   lyapunov.py` now canonicalizes the device key (`_canonical_device_key`
+   collapses `"cuda"` → `"cuda:<idx>"` when CUDA is available) and bounds the
+   cache (`maxsize=128`). CPU behavior identical; tests
+   `test_triu_pairs_canonicalizes_equivalent_devices_and_bounds_cache` +
+   `test_canonical_device_key_cpu`.
 4. **Example-test framework warmup is unavoidable at the test level** (watch).
    The ~15 s first-run cost in the example tests is torch higher-order-op /
    functorch lazy-init (see resolved #6), amortized across the suite. If CI
