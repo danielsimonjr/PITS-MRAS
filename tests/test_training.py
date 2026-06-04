@@ -233,7 +233,6 @@ def test_cotrain_positivity_regularizer_repairs_indefinite_critic() -> None:
     """
     cfg = _small_cfg()
     cfg.losses.lambda_hjb = 0.0
-    cfg.losses.lambda_costate = 0.0
     cfg.safety.enable_cbf = False
     pitnn = _small_pitnn(cfg)
     ref_model = _make_ref_model()

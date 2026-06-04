@@ -82,7 +82,6 @@ class LossConfig:
     lambda_data: float = 1.0
     lambda_irl: float = 1.0  # IRL Bellman error weight
     lambda_hjb: float = 0.01  # HJB residual weight (tune carefully, see §3.5)
-    lambda_costate: float = 0.1  # Costate consistency weight
     lambda_adjoint: float = 0.05  # Adjoint dynamics residual weight
     lambda_pcml: float = 1.0  # PCML constraint loss weight (soft or hard)
     # Physics sub-weights

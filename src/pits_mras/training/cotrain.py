@@ -17,7 +17,7 @@ Per step the loop:
    critic with a SEPARATE ``critic_optimizer`` (Adam lr=1e-3, grad-clip 1.0),
    then performs the policy-improvement read-out ``K = R^{-1} B^T P_hat``,
 4. builds the PITNN objective ``L_total`` = physics + (optional) HJB residual +
-   costate consistency + ``0.1`` * CBF constraint, and steps the PITNN optimizer
+   ``0.1`` * CBF constraint, and steps the PITNN optimizer
    (Adam lr=1e-4); separately regularizes the critic's positive-definiteness
    (``_POSITIVITY_WEIGHT`` * ``relu(-λ_min(P))``) through the *critic* optimizer,
 5. advances the synthetic plant + reference model and slides the history window.
@@ -129,7 +129,7 @@ def cotraining_loop(
 
     Returns:
         Metrics dict mapping names to per-step lists: ``irl_loss``,
-        ``hjb_loss``, ``costate_loss``, ``positivity_loss``, ``cbf_loss``,
+        ``hjb_loss``, ``positivity_loss``, ``cbf_loss``,
         ``total_loss``, ``running_cost``, ``critic_convergence`` (and ``pcml_loss``
         when a ``pcml_module`` is supplied).
     """
@@ -179,7 +179,6 @@ def cotraining_loop(
     metrics: dict[str, list[float]] = {
         "irl_loss": [],
         "hjb_loss": [],
-        "costate_loss": [],
         "positivity_loss": [],
         "cbf_loss": [],
         "total_loss": [],
@@ -259,12 +258,6 @@ def cotraining_loop(
                 l_total = l_total + loss_cfg.lambda_hjb * l_hjb
                 l_hjb_val = float(l_hjb.detach())
 
-            # ── NEW: Costate consistency loss ──
-            lambda_hat, _ = controller.costate_head(e.detach())
-            grad_V = controller.critic.gradient(e.detach())
-            l_costate = (lambda_hat - grad_V).pow(2).mean()
-            l_total = l_total + loss_cfg.lambda_costate * l_costate
-
             # ── CBF constraint loss ──
             l_cbf_val = 0.0
             if use_cbf and controller.safety_filter is not None:
@@ -279,11 +272,11 @@ def cotraining_loop(
             l_total.backward()
             optimizer_pitnn.step()
             # NB: l_total.backward() also deposits gradients on the critic's W_c
-            # via the HJB/costate terms, which optimizer_pitnn does not own.
-            # Those critic gradients are intentionally NOT applied here — the
-            # critic is trained by IRL + the positivity regularizer below.
-            # (Rewiring HJB/costate into the critic update is a tracked v0.4.0
-            # decision; it would change what the critic learns.)
+            # via the HJB term, which optimizer_pitnn does not own. That critic
+            # gradient is intentionally NOT applied here — the critic is trained
+            # by IRL + the positivity regularizer below.
+            # (Rewiring HJB into the critic update is a tracked v0.4.0 decision;
+            # it would change what the critic learns.)
 
             # ── Critic positivity regularization (applied via the CRITIC
             # optimizer). It depends only on the critic's W_c, so it must ride
@@ -324,7 +317,6 @@ def cotraining_loop(
 
             metrics["irl_loss"].append(l_irl_val)
             metrics["hjb_loss"].append(l_hjb_val)
-            metrics["costate_loss"].append(float(l_costate.detach()))
             metrics["positivity_loss"].append(float(l_pos.detach()))
             metrics["cbf_loss"].append(l_cbf_val)
             metrics["total_loss"].append(float(l_total.detach()))

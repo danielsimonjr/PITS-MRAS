@@ -245,15 +245,14 @@ class TestTotalLoss:
             "stability": torch.tensor(3.0),
             "irl": torch.tensor(4.0),
             "hjb": torch.tensor(5.0),
-            "costate": torch.tensor(6.0),
             "data": torch.tensor(7.0),
         }
         out = total(components)
         # LossConfig defaults: physics=1.0, temporal=0.5, stability=2.0,
-        # irl=1.0, hjb=0.01, costate=0.1, data=1.0.
+        # irl=1.0, hjb=0.01, data=1.0.
         expected = (
             1.0 * 1 + 0.5 * 2 + 2.0 * 3 + 1.0 * 4
-            + 0.01 * 5 + 0.1 * 6 + 1.0 * 7
+            + 0.01 * 5 + 1.0 * 7
         )
         assert math.isclose(out["loss"].item(), expected, rel_tol=1e-6)
         for key in ("loss/physics", "loss/temporal", "loss/hjb", "loss/data"):
