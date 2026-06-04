@@ -163,8 +163,9 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
 > at a time, foundation/safe-first. **Done so far:** HJB/costate co-training
 > rewire (v0.4.0); README + linked-docs sweep (v0.4.1 docs); dead `LossConfig`
 > fields removed (v0.4.1); KKT line-search Newton (v0.4.2); higher-fidelity
-> nonlinear plants (v0.4.3). **Order for the rest:** `ParallelInferenceEngine`
-> → **H∞ head (its own brainstorm — ADR-level).**
+> nonlinear plants (v0.4.3); ParallelInferenceEngine hardening (v0.4.4).
+> **Remaining:** only **H∞ head** — its own brainstorm (ADR-level), the last
+> v0.4.x item.
 
 - [x] **Dead `LossConfig` fields → wire-or-remove** (**DONE v0.4.1**): decided
   **remove** all 6 (`lambda_adjoint`, `alpha_attn`, `alpha_smooth`, `mu_lyap`,
@@ -193,9 +194,13 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
   found `l_costate ≡ 0` (`λ̂ ≡ ∇V̂` by construction; the original "nonzero in
   general" assumption was wrong for the costate half — only HJB was a real
   signal). Identity 2 holds by construction. See the v0.4.0 release note above.
-- **Complete `ParallelInferenceEngine`** (`inference/parallel.py`) from the
-  honest threaded skeleton to a hardened multi-rate (1 kHz / 100 Hz / 10 Hz)
-  deployment with the double-buffered critic swap.
+- [x] **Complete `ParallelInferenceEngine`** (**DONE v0.4.4**) — replaced the
+  no-op adaptation with a real double-buffered IRL critic update (control thread
+  feeds an `(e,u)` window; `_adaptation_update` deepcopies under the lock, takes
+  one IRL Adam step off-lock, atomically swaps both critic + costate head) and
+  added thread-exception capture (`error`/`check()`, fail-fast). Reviewed for
+  thread-safety (no deadlock, no concurrent-deepcopy race). Remaining scaffold
+  (documented): fixed `x_p`/`r`, cooperative scheduler, CBF `P` fixed at setup.
 - [x] **Higher-fidelity example plants** (**DONE v0.4.3**) — `examples/plants.py`:
   `pendulum_step` (sin-gravity manipulator joint), `lateral_tyre_step` (tanh
   tyre-force-saturation lateral model), `rc_thermal_step` (2-node RC network +

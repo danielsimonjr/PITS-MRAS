@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.3 | **Last Updated**: 2026-06-04
+**Version**: 0.4.4 | **Last Updated**: 2026-06-04
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -373,6 +373,7 @@ The codebase is organized into the following modules:
 **Third-party Dependencies:**
 | Package | Import |
 |---------|--------|
+| `torch` | `(module)` |
 | `torch` | `Tensor` |
 
 **Standard-library Dependencies:**
@@ -381,13 +382,15 @@ The codebase is organized into the following modules:
 | `copy` | `(module)` |
 | `threading` | `(module)` |
 | `time` | `(module)` |
+| `collections` | `deque` |
 | `dataclasses` | `dataclass` |
-| `typing` | `List, Optional` |
+| `typing` | `Callable, Deque, List, Optional, Tuple` |
 
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/inference/realtime.py` | `RealtimeInferenceEngine` | Import |
+| `src/pits_mras/losses/irl.py` | `IRLBellmanLoss` | Import |
 
 **Exports:**
 - Classes: `ControllerState`, `ParallelInferenceEngine`
@@ -977,7 +980,7 @@ graph TD
 |----------|-------|
 | Total Python Files | 40 |
 | Total Modules | 10 |
-| Total Lines of Code | 5488 |
+| Total Lines of Code | 5577 |
 | Total Public Exports | 119 |
 | Total Re-exports | 45 |
 | Total Classes | 44 |
@@ -992,4 +995,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-04  |  *Version*: 0.4.3
+*Last Updated*: 2026-06-04  |  *Version*: 0.4.4

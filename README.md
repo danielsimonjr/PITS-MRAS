@@ -3,13 +3,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](./docs/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.4.3-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.4-blue.svg)](./CHANGELOG.md)
 
 A unified framework merging **Physics-Informed Neural Networks (PINNs)**, **Time-Series Deep Learning**, and **Model-Reference Adaptive Systems (MRAS)** for robust adaptive control of complex dynamical systems.
 
 ## ⚠️ Project Status
 
-This is a **research and engineering exploration** combining control theory with modern AI/ML. **Released through v0.4.3** (see [CHANGELOG.md](./CHANGELOG.md)):
+This is a **research and engineering exploration** combining control theory with modern AI/ML. **Released through v0.4.4** (see [CHANGELOG.md](./CHANGELOG.md)):
 
 - ✅ **Complete mathematical framework** - formal specification with algorithms
 - ✅ **Full Python implementation** - all 9 ROADMAP phases implemented (config/math → NN models → losses → controllers → training → inference → examples → tests → CI), plus the **PCML** physics-constraint layer (v0.3.0)
@@ -226,8 +226,8 @@ demos. Each exposes `run(steps=..., show=False) -> dict` and a `main()` entry po
 ### 4. Real-Time Implementation
 
 - **Thread-safe single-loop engine** (`RealtimeInferenceEngine`) — implemented: lock-guarded `@torch.no_grad` closed-loop `step()` with bounded history, optional PCML projection bypass
-- **Multi-rate parallel deployment** (1 kHz control / 100 Hz adaptation / 10 Hz monitor) — `ParallelInferenceEngine` ships as a reference *skeleton*; hardening (double-buffered critic swap) is queued for the v0.4.x line
-- 🔮 **Failure detection / recovery** and **ensemble uncertainty quantification** — planned (not yet implemented)
+- **Multi-rate parallel deployment** (1 kHz control / 100 Hz adaptation / 10 Hz monitor) — `ParallelInferenceEngine` runs a real double-buffered IRL critic update and captures thread failures (fail-fast); still a scaffold (fixed inputs, cooperative scheduler — not hard-real-time)
+- 🔮 **Ensemble uncertainty quantification** — planned (not yet implemented)
 
 ---
 
@@ -277,7 +277,7 @@ PITS-MRAS/
 │   ├── controllers/               # MRASController, LinearReferenceModel, CLF-CBF safety filter
 │   ├── constraints/               # PhysicsConstraints ABC, MechanicalDAE, HeatConductionDAE (PCML)
 │   ├── training/                  # pretrain_pitnn, cotraining_loop, IRL trainer
-│   ├── inference/                 # RealtimeInferenceEngine, ParallelInferenceEngine (skeleton)
+│   ├── inference/                 # RealtimeInferenceEngine, ParallelInferenceEngine
 │   └── utils/                     # Lyapunov/Riccati engine, Hamiltonian helpers, PE monitor
 ├── examples/                      # robotic_manipulator, autonomous_vehicle, building_hvac, pcml_heat_diffusion
 ├── tests/                         # pytest suite (test_models/losses/controllers/training/inference/pcml_*/identity_* ...)
@@ -366,9 +366,9 @@ See [docs/ROADMAP.md](./docs/ROADMAP.md) for the phase-by-phase build plan and
 - ✅ **v0.4.1** — removed 6 unconsumed `LossConfig` fields + README/docs sweep
 - ✅ **v0.4.2** — KKT projection robustness (backtracking line search in the Newton solve)
 - ✅ **v0.4.3** — higher-fidelity nonlinear example plants (pendulum, tyre-saturation lateral, RC thermal)
+- ✅ **v0.4.4** — `ParallelInferenceEngine` hardening (real double-buffered adaptation + thread-failure capture)
 
 ### v0.4.x (queued)
-- ⏳ `ParallelInferenceEngine` hardening (multi-rate deployment + double-buffered critic swap)
 - 🔮 **H∞ disturbance/adversary head** + GARE solver (`solve_gare`) + worst-case min-max training loop
 
 ### Future

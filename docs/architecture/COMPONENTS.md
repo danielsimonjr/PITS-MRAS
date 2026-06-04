@@ -85,7 +85,7 @@ records **zero** runtime or type-only circular dependencies; every arrow points
   `inference`, and `models.PITNN`.
 
 The package root `src/pits_mras/__init__.py` re-exports a flat public API of 17
-symbols (`__version__ = "0.4.3"`): `PITNN`, `QuadraticCritic`, `MRASController`,
+symbols (`__version__ = "0.4.4"`): `PITNN`, `QuadraticCritic`, `MRASController`,
 `LinearReferenceModel`, `CLFCBFSafetyFilter`, `RealtimeInferenceEngine`,
 `pretrain_pitnn`, `cotraining_loop`, plus the PCML surface
 (`PhysicsConstraints`, `ConstraintSpec`, `MechanicalDAE`, `HeatConductionDAE`,
@@ -322,15 +322,17 @@ architecture." Phase 6. Docstring-only package init.
 | File | Key classes | Responsibility |
 |---|---|---|
 | `realtime.py` | `RealtimeInferenceEngine` | Seven-step closed loop: measure `x_p` → lazily init reference state + bounded `deque` buffers → PITNN forward → reference-model step + error `e=x_p−x_m` → controller forward → CBF safety filter (replaces the heuristic `V̇<0` check) → update history, return monitoring dict `{u_safe, e, v_hat, h_cbf, f_hat, cbf_active}`. `step()` is `@torch.no_grad()` and guarded by a `threading.Lock`. |
-| `parallel.py` | `ControllerState`, `ParallelInferenceEngine` | Three-thread deployment skeleton: `ControlThread` (~1 kHz, calls `engine.step()`, never blocks), `AdaptationThread` (~100 Hz, critic update on a `copy.deepcopy` then atomic double-buffer swap), `MonitorThread` (~10 Hz, snapshots `V̂`, `‖e‖`, `h_CBF`, CBF-activation rate). Shutdown via a single `threading.Event`. |
+| `parallel.py` | `ControllerState`, `ParallelInferenceEngine` | Three-thread deployment scaffold: `ControlThread` (~1 kHz, calls `engine.step()`, feeds an `(e, u)` window, never blocks on adaptation), `AdaptationThread` (~100 Hz, a **real** one-step IRL Bellman critic update on a `copy.deepcopy`, then an atomic double-buffer swap of both the critic and the costate head), `MonitorThread` (~10 Hz, snapshots the CBF-activation rate). Each thread is guarded — the first exception is captured (`error`/`check()`) and fail-fast-stops the engine. Shutdown via a single `threading.Event`. |
 | `__init__.py` | (none) | Docstring-only package init. |
 
 `ControllerState` is the lock-protected snapshot dataclass (`u_safe`, `e_norm`,
 `v_hat`, `h_cbf`, `cbf_active`). The docstrings flag that the engine reconciles
 the real Phase-4 controller signature `MRASController.forward(e, r, x_plant,
 apply_safety=True)` with the §9 spec text (it computes `V̂` itself via
-`controller.critic`), and that the adaptation step in `parallel.py` is a no-op
-double-buffer-swap placeholder.
+`controller.critic`). As of v0.4.4 the `parallel.py` adaptation step is a **real**
+double-buffered IRL critic update (no longer a no-op placeholder); remaining
+scaffold: fixed `x_p`/`r` (no live sensor), a cooperative `Event.wait` scheduler
+(not hard-real-time), and the CBF `P` fixed at `setup_safety_filter` time.
 
 **Dependencies:** `realtime.py` imports `controllers.mras.MRASController`,
 `controllers.reference_models.LinearReferenceModel`, `models.pitnn.PITNN`, and

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-06-04
+
+Fifth v0.4.x sub-project: `ParallelInferenceEngine` hardening. Backward-compatible
+(new keyword args + a new `ControllerState` field); suite green; flake8 + mypy
+clean.
+
+### Changed
+
+- **`ParallelInferenceEngine` is no longer a no-op skeleton.** The adaptation
+  thread now performs a **real double-buffered critic update**: the control
+  thread feeds a bounded `(e, u_safe)` window, and `_adaptation_update()`
+  deepcopies the critic (under the critic lock — the quadratic critic is tiny, so
+  the copy never races a concurrent forward pass), takes one IRL Bellman Adam
+  step on the copy *off* the lock, then atomically swaps **both**
+  `controller.critic` and `controller.costate_head.critic` (the skeleton swapped
+  only the critic, leaving the costate head stale). Tracked via
+  `ControllerState.adaptation_swaps`. New constructor args `irl_window=8`,
+  `adapt_lr=1e-3`.
+
+### Fixed
+
+- **No more silent thread death.** Each thread body runs under a guard that
+  captures the first exception (new `error` property + `check()`) and triggers a
+  fail-fast shutdown, instead of a daemon thread dying unnoticed.
+
+### Notes
+
+- Still a scaffold (documented): fixed `x_p`/`r` (no live sensor), a cooperative
+  `Event.wait` scheduler (not hard-real-time), and the CBF `P` fixed at setup.
+
 ## [0.4.3] - 2026-06-04
 
 Fourth v0.4.x sub-project: higher-fidelity example plants. Examples-only (no

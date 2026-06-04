@@ -17,7 +17,7 @@ symbols, grouped by area:
 | **Training** | `pretrain_pitnn`, `cotraining_loop` |
 | **Inference** | `RealtimeInferenceEngine` |
 
-`__version__` is `"0.4.3"`.
+`__version__` is `"0.4.4"`.
 
 > Note on the configuration layer: `PITSMRASConfig` and its seven sub-config
 > dataclasses (`config.py`) are not in the package-level `__all__`, but they are

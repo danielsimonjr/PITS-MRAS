@@ -1,6 +1,6 @@
 metadata:
   name: pits_mras
-  version: 0.4.3
+  version: 0.4.4
   lastUpdated: '2026-06-04'
   totalFiles: 40
   totalModules: 10
@@ -907,6 +907,9 @@ modules:
       externalDependencies:
       - package: torch
         imports:
+        - (module)
+      - package: torch
+        imports:
         - Tensor
       stdlibDependencies:
       - module: copy
@@ -918,18 +921,28 @@ modules:
       - module: time
         imports:
         - (module)
+      - module: collections
+        imports:
+        - deque
       - module: dataclasses
         imports:
         - dataclass
       - module: typing
         imports:
+        - Callable
+        - Deque
         - List
         - Optional
+        - Tuple
       internalDependencies:
       - file: src/pits_mras/inference/realtime.py
         module: pits_mras.inference.realtime
         imports:
         - RealtimeInferenceEngine
+      - file: src/pits_mras/losses/irl.py
+        module: pits_mras.losses.irl
+        imports:
+        - IRLBellmanLoss
       exports:
       - ControllerState
       - ParallelInferenceEngine
@@ -1748,7 +1761,7 @@ dependencyGraph:
 statistics:
   totalPythonFiles: 40
   totalModules: 10
-  totalLinesOfCode: 5488
+  totalLinesOfCode: 5577
   totalExports: 119
   totalClasses: 44
   totalInterfaces: 1

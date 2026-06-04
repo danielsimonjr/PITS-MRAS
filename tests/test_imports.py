@@ -54,4 +54,4 @@ def test_version() -> None:
     """Top-level package exposes a version string matching setup.py."""
     import pits_mras
 
-    assert pits_mras.__version__ == "0.4.3"
+    assert pits_mras.__version__ == "0.4.4"
