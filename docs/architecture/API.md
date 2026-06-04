@@ -17,7 +17,7 @@ symbols, grouped by area:
 | **Training** | `pretrain_pitnn`, `cotraining_loop` |
 | **Inference** | `RealtimeInferenceEngine` |
 
-`__version__` is `"0.3.3"`.
+`__version__` is `"0.4.0"`.
 
 > Note on the configuration layer: `PITSMRASConfig` and its seven sub-config
 > dataclasses (`config.py`) are not in the package-level `__all__`, but they are
@@ -595,7 +595,7 @@ cotraining_loop(
 ```
 
 Returns a metrics dict with per-step lists: `irl_loss`, `hjb_loss`,
-`costate_loss`, `positivity_loss`, `cbf_loss`, `total_loss`, `running_cost`
+`positivity_loss`, `cbf_loss`, `total_loss`, `running_cost`
 (and `pcml_loss` when a `pcml_module` is supplied). Sets up the controller's CBF
 filter from the critic if requested and not yet attached.
 
@@ -730,8 +730,8 @@ class PITSMRASConfig:
 ### `LossConfig` — unified total-loss weights
 
 Main weights: `lambda_physics=1.0`, `lambda_temporal=0.5`, `lambda_stability=2.0`,
-`lambda_data=1.0`, `lambda_irl=1.0`, `lambda_hjb=0.01`, `lambda_costate=0.1`,
-`lambda_adjoint=0.05`, `lambda_pcml=1.0`.
+`lambda_data=1.0`, `lambda_irl=1.0`, `lambda_hjb=0.0` (opt-in; `>0` enables the
+HJB critic regularizer), `lambda_adjoint=0.05`, `lambda_pcml=1.0`.
 Physics sub-weights: `lambda_energy=1.0`, `lambda_pde=1.0`, `lambda_bc=0.5`,
 `lambda_sym=0.2`.
 Temporal sub-weights: `alpha_attn=0.1`, `alpha_smooth=0.05`.

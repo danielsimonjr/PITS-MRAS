@@ -32,12 +32,14 @@
 
 ---
 
-## 0. Implemented Architecture (v0.3.3) — graph-backed
+## 0. Implemented Architecture (v0.4.0) — graph-backed
 
 > **Status:** all nine ROADMAP phases are implemented (released **v0.3.0**) plus
 > the **PCML** (Physics-Constrained Machine Learning) component; **v0.3.1** was a
 > behavior-preserving simplification/optimization pass, **v0.3.2** and **v0.3.3**
-> behavior-preserving engineering-debt-resolution releases. The
+> behavior-preserving engineering-debt-resolution releases, and **v0.4.0** opens
+> the feature/refinement line (first sub-project: the HJB/costate co-training
+> rewire). The
 > structure below is generated from the codebase by
 > `tools/create-dependency-graph/create_dependency_graph.py` and cross-checked
 > against the source; regenerate with `python tools/create-dependency-graph/create_dependency_graph.py --include-tests`.
@@ -76,7 +78,7 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 39 files · 10 modules · ~5,302 LOC · 116
+Key statistics (graph-generated): 39 files · 10 modules · ~5,298 LOC · 116
 public exports (45 re-exported through barrels) · 44 classes · 1 ABC
 (`PhysicsConstraints`) · 26 functions · 10 `TYPE_CHECKING`-guarded imports.
 
@@ -288,7 +290,7 @@ new):
 | `IRLBellmanLoss` / `L_IRL` | Identity 1 | `δ_IRL(t)=∫_{t−T}^{t} r dτ − [V̂(e(t))−V̂(e(t−T))]`, `L_IRL=½E[δ_IRL²]`; "does NOT contain the drift matrix A → model-free." | `losses/irl.py` | `[IP PAGES 4,29; §3.2,§6.4]` |
 | `HJBResidualLoss` / `L_HJB` | Identity 8 | `‖eᵀQe+(u*)ᵀRu*+∇_eV̂·(A_m e+B u*+f_corr)‖²`; "Start with weight λ_HJB=0.01... treat it as a regularizer." | `losses/hjb.py` | `[IP PAGES 5,31; §3.5,§6.5]` |
 | `LyapunovDecreaseEnforcer` / `L_dec` | (Lyapunov decrease) | `L_dec=E[ReLU(∇V̂·f̂+ℓ)]` — "tighter than the existing L_Lyap." | `losses/hjb.py` | `[IP PAGE 31, §6.5]` |
-| `L_costate` (gradient consistency) | Identity 2 | `L_costate=‖λ̂(t)−∇_eV̂(e(t))‖²`; computed inline in `cotrain.py`. | `losses/` + `cotrain.py` | `[IP PAGES 5,39; §3.3,§8.2]` |
+| `L_costate` (gradient consistency) | Identity 2 | **Removed in v0.4.0** — vacuous: `λ̂ ≡ ∇_eV̂` by construction (the costate head IS the critic gradient), so `L_costate ≡ 0`. Identity 2 holds by construction, not by this loss. | (was `cotrain.py`) | `[IP PAGES 5,39; §3.3,§8.2]` |
 | `L_adjoint` (adjoint dynamics) | Identity 2 | `L_adjoint=‖λ̇(t)+∂H/∂e‖²` along trajectories. | (weight `lambda_adjoint` in `LossConfig`) | `[IP PAGES 5,9; §3.3,§4.2]` |
 | `cbf_constraint_loss` | Identity 3 | soft penalty `ReLU(−h_e).mean()` on CBF violation; added to L_total. | `controllers/safety.py` | `[IP PAGE 35, §7.2]` |
 | `positivity_loss` (critic) | Identity 1 | `ReLU(−min_eig(P̂))` — penalizes non-PD P̂. | `models/critic.py` | `[IP PAGE 24, §5.3]` |
@@ -299,11 +301,12 @@ Pre-existing (ported, augmented) losses: `PhysicsLoss` (energy+PDE+BC+sym)
 control effort) `[IP PAGE 29]`.
 
 All weights live in `LossConfig` `[IP PAGE 9, §4.2]`: `lambda_physics`,
-`lambda_temporal`, `lambda_stability`, `lambda_data`, `lambda_irl`, `lambda_hjb`,
-`lambda_costate`, `lambda_adjoint`, plus physics/temporal/stability sub-weights.
-`TotalLoss` logs each sub-loss separately under `loss/physics`, `loss/temporal`,
-`loss/stability`, `loss/irl`, `loss/hjb`, `loss/costate`, `loss/data`.
-`[IP PAGE 31, §6.6]`
+`lambda_temporal`, `lambda_stability`, `lambda_data`, `lambda_irl`, `lambda_hjb`
+(default `0.0`; opt-in critic regularizer), `lambda_adjoint`, plus
+physics/temporal/stability sub-weights. (`lambda_costate` was removed in v0.4.0
+with the vacuous costate term.) `TotalLoss` logs each sub-loss separately under
+`loss/physics`, `loss/temporal`, `loss/stability`, `loss/irl`, `loss/hjb`,
+`loss/data`. `[IP PAGE 31, §6.6]`
 
 ### 4.2 The Three New Network Heads
 
@@ -461,10 +464,11 @@ above threshold, reduce the data weight `λ_data` by 0.5 and log a warning."
 "the most critical training file." `[IP PAGE 39, §8.2]` After the standard
 gradient update it adds, in order:
 1. **IRL critic update** (Identity 1): push `(e, r_inst)` to `IRLBellmanAccumulator`; when ready, backprop `L_irl` on the critic with grad-clip 1.0 via a **separate `critic_optimizer`** (Adam lr=1e-3), then a **policy-improvement** read `K_new = R⁻¹BᵀP̂` (implicit via the costate head). `[IP PAGE 39]`
-2. **HJB residual update** (if `lambda_hjb>0`). `[IP PAGE 39]`
-3. **Costate consistency loss** `L_costate = (λ̂ − ∇V̂)².mean()`. `[IP PAGE 39]`
-4. **Critic positivity regularization** `1e-3·L_pos`. `[IP PAGE 39]`
-5. **CBF constraint loss** `0.1·L_cbf` (if `enable_cbf`). `[IP PAGE 40]`
+2. **HJB residual update** — opt-in (`lambda_hjb>0`), applied to the critic via `critic_optimizer` (v0.4.0; previously its gradient was discarded in `L_total`). `[IP PAGE 39]`
+3. **Critic positivity regularization** `1e-3·L_pos`, applied to the critic via `critic_optimizer`, guarded on `min_eig(P̂)<0` (v0.3.3). `[IP PAGE 39]`
+4. **CBF constraint loss** `0.1·L_cbf` (if `enable_cbf`) — part of the PITNN `L_total`. `[IP PAGE 40]`
+
+(The costate-consistency term was removed in v0.4.0: `λ̂ ≡ ∇V̂` by construction, so it was identically zero.)
 
 Two optimizers: `optimizer_pitnn` (Adam lr=1e-4) for PITNN params and
 `critic_optimizer` (Adam lr=1e-3) for the critic — "separate because the IRL

@@ -1,6 +1,6 @@
 # PITS-MRAS — Data Flow
 
-**Version**: 0.3.3 | **Last Updated**: 2026-06-03
+**Version**: 0.4.0 | **Last Updated**: 2026-06-04
 
 This document traces how tensors move through the PITS-MRAS stack. Every shape,
 dict key, loss term, and control-flow branch below is grounded in the source
@@ -333,27 +333,30 @@ For each episode/step (cotrain.py:183–319):
      lam_hat=out.get("lam_hat", zeros), y_true=f_target[:, :n_out])`; adds
      `lambda_pcml·l_pcml`. `x/t/d` are zeros (the synthetic plant has no
      spatial/temporal coords) — the residual is evaluated on `f_hat`;
-   - HJB residual `lambda_hjb·l_hjb` if enabled (cotrain.py:245–251);
-   - costate consistency `lambda_costate·‖lambda_hat − ∇V̂‖²` (cotrain.py:253–257);
-   - critic positivity `1e-3·positivity_loss()` (cotrain.py:259–261);
-   - CBF constraint `0.1·cbf_constraint_loss(e, u_safe)` if `use_cbf`
-     (cotrain.py:263–270).
-5. **PITNN step** `l_total.backward(); optimizer_pitnn.step()` (cotrain.py:272–275).
-6. **IRL critic step — taken AFTER the PITNN step**, on a *separate* optimizer
-   (cotrain.py:277–296): push detached `(e, u_safe)` into rolling deques; once
-   the window holds `irl_window + 1` samples, stack to `[batch, W+1, dim]`, form
-   `IRLBellmanLoss(critic, e_win, u_win, dt)`, backward, grad-clip to 1.0, step
-   `critic_optimizer` (Adam lr=1e-3). Then the **policy-improvement read-out**
-   `K = R⁻¹BᵀP̂` is computed for diagnostics only (cotrain.py:293–296) — the
-   effective feedback already lives in the costate head. Ordering is deliberate:
-   the in-place critic update must not invalidate the `L_total` graph
-   (cotrain.py:41–43).
-7. **Advance plant + reference, slide history** (cotrain.py:308–319):
+   - CBF constraint `0.1·cbf_constraint_loss(e, u_safe)` if `use_cbf`.
+   `L_total` is a **pure PITNN objective** — the critic-only regularizers (HJB,
+   positivity) are NOT in it (v0.4.0; previously their gradients landed on the
+   critic's `W_c` and were discarded).
+5. **PITNN step** `l_total.backward(); optimizer_pitnn.step()`.
+6. **Critic-only updates on the separate `critic_optimizer`** (Adam lr=1e-3),
+   each a fresh `zero_grad`/`backward`/`step`:
+   - **opt-in HJB residual** — when `lambda_hjb>0`: `lambda_hjb·hjb_loss(critic,
+     e.detach())` (a genuine gradient step every iteration);
+   - **guarded positivity** — when `min_eig(P̂)<0`: `1e-3·positivity_loss()`
+     (a no-op while `P̂` is PD, so it doesn't advance the Adam step count);
+   - **IRL Bellman step** — push detached `(e, u_safe)` into rolling deques; once
+     the window holds `irl_window + 1` samples, form `IRLBellmanLoss(critic,
+     e_win, u_win, dt)`, backward, grad-clip to 1.0, step. Then the
+     **policy-improvement read-out** `K = R⁻¹BᵀP̂` is computed for diagnostics
+     only — the effective feedback already lives in the costate head. The IRL
+     step is taken AFTER the PITNN step so the in-place critic update cannot
+     invalidate the `L_total` graph.
+7. **Advance plant + reference, slide history**:
    `x_p = _synthetic_plant_step(x_p, u_full, A_m, B_m, dt)` (detached),
    `x_m = ref_model.step(x_m, r, dt)`, and the three history windows are rolled.
 
-Metrics dict per step (cotrain.py:171–182, 298–306): `irl_loss`, `hjb_loss`,
-`costate_loss`, `positivity_loss`, `cbf_loss`, `total_loss`, `running_cost`
+Metrics dict per step: `irl_loss`, `hjb_loss`,
+`positivity_loss`, `cbf_loss`, `total_loss`, `running_cost`
 (plus `pcml_loss` when a `pcml_module` is supplied).
 
 ```mermaid
@@ -361,7 +364,7 @@ flowchart TD
     XP[x_p] --> E["e = x_p − x_m"]
     XM[x_m] --> E
     XP --> PI[PITNN.forward]
-    PI -->|f_hat| LT[L_total: physics + PCML? + HJB? + costate + positivity + CBF]
+    PI -->|f_hat| LT[L_total: physics + PCML? + CBF  →  PITNN optimizer]
     E --> CT["MRASController(e, r, x_p)"]
     CT -->|u_safe| LT
     CT -->|u_safe| RC["running cost eᵀQe + uᵀRu"]
@@ -511,7 +514,7 @@ flowchart TD
     CBF -->|u_safe| PLANT
 
     %% learning loops
-    ERR -. "IRL Bellman / costate" .-> CRITIC
+    ERR -. "IRL Bellman / HJB? / positivity" .-> CRITIC
     PCML -. "physics + constraint loss" .-> PITNN
     CBF -. "CBF constraint loss" .-> PITNN
 ```

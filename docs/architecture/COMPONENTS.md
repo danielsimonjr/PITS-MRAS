@@ -3,7 +3,7 @@
 > A grounded, per-module component reference for the `pits_mras` package.
 > Every class/function name, responsibility, and dependency below is taken from
 > the actual source under `src/pits_mras/` and cross-checked against
-> `docs/architecture/dependency-graph.json` (v0.3.3, 39 files, 10 modules, 116
+> `docs/architecture/dependency-graph.json` (v0.4.0, 39 files, 10 modules, 116
 > exports, 0 circular dependencies). Module purposes quote the package
 > `__init__` and file docstrings; class/function responsibilities quote their
 > own docstrings. For the *why* (the ten RL/optimal-control identities and the
@@ -85,7 +85,7 @@ records **zero** runtime or type-only circular dependencies; every arrow points
   `inference`, and `models.PITNN`.
 
 The package root `src/pits_mras/__init__.py` re-exports a flat public API of 17
-symbols (`__version__ = "0.3.3"`): `PITNN`, `QuadraticCritic`, `MRASController`,
+symbols (`__version__ = "0.4.0"`): `PITNN`, `QuadraticCritic`, `MRASController`,
 `LinearReferenceModel`, `CLFCBFSafetyFilter`, `RealtimeInferenceEngine`,
 `pretrain_pitnn`, `cotraining_loop`, plus the PCML surface
 (`PhysicsConstraints`, `ConstraintSpec`, `MechanicalDAE`, `HeatConductionDAE`,
@@ -115,7 +115,7 @@ backbone; IRL (Vrabie & Lewis 2009) makes it model-free.
 | `PhysicsConfig` | Port-Hamiltonian decoder dims: `n_generalized_coords=2`, `hamiltonian_hidden`, `dissipation_hidden`, `use_position_dependent_J`. |
 | `MRASConfig` | Classical + IRL/actor-critic params: `state_dim`, `control_dim`, reference matrices `A_m/B_m/C_m`, LQR cost `Q_cost/R_cost`, adaptation gains, `irl_window_size`, `use_irl_critic`. |
 | `SafetyConfig` | CLF-CBF filter: `enable_cbf`, `safety_margin` (the `c` in `h(e)=c−eᵀPe`), `cbf_decay_rate` (the `γ`). |
-| `LossConfig` | All loss weights: `lambda_physics/temporal/stability/data/irl/hjb/costate/adjoint/pcml` plus physics/temporal/stability sub-weights. |
+| `LossConfig` | All loss weights: `lambda_physics/temporal/stability/data/irl/hjb/adjoint/pcml` plus physics/temporal/stability sub-weights. (`lambda_hjb` defaults to `0.0` — opt-in critic regularizer.) |
 | `TrainingConfig` | Schedule for Algorithm 2/3: `pretrain_epochs`, stage epochs, `n_episodes`, `dt`, `device`, `seed`, logging cadence. |
 | `PCMLConfig` | Physics-Constrained ML module: soft-mode residual weights, hard-mode (DAE-HardNet) params (`omega`, `eta`, `delta`, `taylor_order`, Newton settings), and constraint-system selection (`constraint_type` = `"mechanical"`/`"thermal"`, `n_joints`, thermal bounds). |
 | `PITSMRASConfig` | Master config aggregating the seven sub-configs via `field(default_factory=...)`; provides `from_yaml` / `to_yaml`. The single object passed to all components. |
@@ -244,7 +244,7 @@ its components: physics, temporal, stability, IRL and HJB losses, aggregated by
 | `__init__.py` | `TotalLoss` + re-exports | Weighted sum of pre-computed per-component scalar losses. |
 
 **`TotalLoss`** takes a dict mapping component name (subset of `physics,
-temporal, stability, irl, hjb, costate, data, pcml`) to a scalar loss tensor,
+temporal, stability, irl, hjb, data, pcml`) to a scalar loss tensor,
 weights each by the matching `LossConfig` attribute, and returns
 `{"loss": total, "loss/physics": …, …}`; missing components are treated as zero.
 
@@ -294,7 +294,7 @@ trainer." Phase 5. Re-exports the three entry points.
 | File | Key functions | Responsibility |
 |---|---|---|
 | `pretrain.py` | `pretrain_pitnn`, `data_weight_schedule`, `temporal_weight_schedule` | Three-stage physics-informed pre-training curriculum (Algorithm 2): Stage 1A physics-only, Stage 1B cosine-anneal the data weight 0.1→1.0, Stage 1C add temporal loss with linear warm-up. A validation guard halves the data weight when the physics residual spikes. |
-| `cotrain.py` | `cotraining_loop` | The closed-loop actor-critic training loop ("the most critical training file", Algorithm 3 extended). Per step: PITNN forward → tracking error + MRAS control → IRL Bellman policy-evaluation step on a separate `critic_optimizer` (Adam lr=1e-3, grad-clip 1.0) + policy-improvement read `K=R⁻¹BᵀP̂` → PITNN objective (physics + optional HJB + costate consistency + critic positivity + CBF) on the PITNN optimizer (Adam lr=1e-4). |
+| `cotrain.py` | `cotraining_loop` | The closed-loop actor-critic training loop ("the most critical training file", Algorithm 3 extended). Per step: PITNN forward → tracking error + MRAS control → PITNN objective (physics + optional PCML + CBF) on `optimizer_pitnn` (Adam lr=1e-4); then the critic-only updates on a separate `critic_optimizer` (Adam lr=1e-3): an opt-in HJB residual (`lambda_hjb>0`), a guarded positivity regularizer, and the IRL Bellman policy-evaluation step (grad-clip 1.0) + policy-improvement read `K=R⁻¹BᵀP̂`. |
 | `irl_trainer.py` | `train_irl_critic` | Offline batch least-squares critic pre-training (§8.3): recovers `P` from the integral-RL Bellman identity `V(e(t))−V(e(t+T)) = ∫r ds` without knowing the drift; iterates and stops when `‖P̂−P_opt‖_F/‖P_opt‖_F < tol`. |
 | `__init__.py` | re-exports three functions | Subpackage public surface. |
 

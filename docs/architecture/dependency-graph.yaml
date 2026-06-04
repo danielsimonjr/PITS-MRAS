@@ -1,7 +1,7 @@
 metadata:
   name: pits_mras
-  version: 0.3.3
-  lastUpdated: '2026-06-03'
+  version: 0.4.0
+  lastUpdated: '2026-06-04'
   totalFiles: 39
   totalModules: 10
   totalExports: 116
@@ -1453,7 +1453,7 @@ dependencyGraph:
 statistics:
   totalPythonFiles: 39
   totalModules: 10
-  totalLinesOfCode: 5302
+  totalLinesOfCode: 5298
   totalExports: 116
   totalClasses: 44
   totalInterfaces: 1

@@ -83,6 +83,23 @@ Behavior- and API-preserving pass (Approach 2; spec in
 - Out of the safe pass: **B** (6 dead `LossConfig` fields) → logged as debt for
   v0.3.2; **E** (`parallel.py`) → v0.4.0 capability.
 
+## Done — released v0.4.0 (2026-06-04): HJB/costate co-training rewire
+
+First v0.4.0 sub-project (feature/refinement line), brainstormed → spec
+(`docs/superpowers/specs/2026-06-04-v0.4.0-hjb-costate-cotrain-rewire-design.md`)
+→ plan → TDD. **HJB** is now an opt-in (default-off, `lambda_hjb>0`) critic
+regularizer applied via the critic optimizer (it was in `l_total`, gradient
+discarded). **Costate** term removed — brainstorming found it was *identically
+0* (`λ̂ ≡ ∇V̂` by construction; not just discarded), so the `lambda_costate`
+field, `TotalLoss._COMPONENTS["costate"]`, and the `costate_loss` metric went
+too; Identity 2 holds by construction. Version 0.3.3→0.4.0; graph regenerated
+(39 files, 5,298 LOC, 116 exports, 0 circular, 0 unused); `docs/architecture` +
+`ROADMAP.md` stale cotrain/LossConfig descriptions synced; CHANGELOG `[0.4.0]`;
+tagged `v0.4.0`. **The remaining v0.4.0 sub-projects are still queued** (see the
+v0.4.0 section): H∞ head, KKT damped Newton, dead `LossConfig` fields,
+`ParallelInferenceEngine`, higher-fidelity plants — v0.4.0 is *opened*, not
+completed.
+
 ## Done — released v0.3.3 (2026-06-03): two easy carried-forward gaps
 
 Knocked out gaps #2 (positivity now applied via the critic optimizer — it was
@@ -163,17 +180,12 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
   trust-region step to actually improve the convergence rate. See the
   "Carried-forward gaps" item 1 for the grounding (`src/pits_mras/models/
   pcml.py:337-357`).
-- **Cotrain HJB/costate critic-coupling — ADR + rewire** (discovered v0.3.3).
-  `l_hjb` and `l_costate` in `cotraining_loop`'s `l_total` depend only on the
-  critic's `W_c` (everything else is `.detach()`ed), but `l_total` is stepped by
-  `optimizer_pitnn` (which owns only PITNN params), so those gradients land on
-  `W_c` and are then discarded by the critic block's `zero_grad` — exactly the
-  wiring bug fixed for positivity in v0.3.3, except these two terms are **nonzero
-  in general**, so applying them genuinely changes what the critic learns
-  (IRL-only vs IRL+HJB+costate). Decide the intended design and rewire with
-  convergence validation; this is why v0.3.3 fixed *only* positivity (safe
-  because it is 0 in the healthy regime). Touches `src/pits_mras/training/
-  cotrain.py` (HJB ~line 251-255, costate ~257-261).
+- [x] **Cotrain HJB/costate critic-coupling — ADR + rewire** (discovered v0.3.3;
+  **DONE in v0.4.0**). Resolved: HJB → opt-in critic regularizer applied via the
+  critic optimizer (default off). Costate → **removed**, because brainstorming
+  found `l_costate ≡ 0` (`λ̂ ≡ ∇V̂` by construction; the original "nonzero in
+  general" assumption was wrong for the costate half — only HJB was a real
+  signal). Identity 2 holds by construction. See the v0.4.0 release note above.
 - **Complete `ParallelInferenceEngine`** (`inference/parallel.py`) from the
   honest threaded skeleton to a hardened multi-rate (1 kHz / 100 Hz / 10 Hz)
   deployment with the double-buffered critic swap.

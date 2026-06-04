@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-04
+
+Opens the v0.4.0 feature/refinement line. First sub-project: the **HJB/costate
+co-training rewire** (the rest of the v0.4.0 set stays queued in `todo.md`).
+Effective training behavior is preserved by default; suite green throughout;
+flake8 + mypy clean.
+
+### Fixed
+
+- **HJB residual is now an opt-in, actually-applied critic regularizer.** The
+  `lambda_hjb * HJBResidualLoss` term lived in `cotraining_loop`'s `l_total` (the
+  PITNN objective), but it depends only on the critic's `W_c`; `optimizer_pitnn`
+  doesn't own `W_c` and the IRL block's `zero_grad` wiped the gradient — so HJB
+  never trained the critic. It is now applied through the **critic** optimizer as
+  a dedicated step (every step when `lambda_hjb > 0`; a genuine gradient step).
+
+### Removed
+
+- **Vacuous costate-consistency term.** `l_costate = (costate_head(e) −
+  critic.gradient(e))²` was identically `0`: `CostateHead` has no own parameters
+  and returns `critic.gradient(e)`, so Identity 2 (costate = ∇V̂) is enforced
+  **by construction**, not by this loss. Removed the term, the `lambda_costate`
+  config field, the `TotalLoss` `_COMPONENTS["costate"]` entry, and the
+  `costate_loss` metric. Identity 2 stays covered by `test_identity_costate`.
+
+### Changed
+
+- **`LossConfig.lambda_hjb` default `0.01 → 0.0`** (opt-in). This preserves
+  effective behavior exactly — HJB was previously discarded, so the effective
+  critic was already IRL-only.
+
+### Backward compatibility
+
+- Removing `lambda_costate` and changing the `lambda_hjb` default are
+  config-level changes only. `from_yaml` ignores unknown keys (`setattr` per
+  key), so an existing YAML carrying `lambda_costate` loads without error (the
+  key is silently unused). The `cotraining_loop` metrics dict no longer includes
+  `costate_loss`.
+
 ## [0.3.3] - 2026-06-03
 
 Knocks out the two *easy* carried-forward gaps from the v0.3.2 sprint. No
