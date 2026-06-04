@@ -154,6 +154,15 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
   (`solve_gare`, not yet implemented), and the robust-control / worst-case
   min-max training loop. The Blueprint describes it; the Implementation Plan
   built critic/costate/CBF as the three concrete heads. Major capability.
+- **KKT projection robustness — damped / line-search Newton** (carried from the
+  v0.3.2 debt; only the *signal* half shipped in v0.3.2). `KKTProjectionLayer.
+  forward` reports `last_converged` / `last_residual` and warns on
+  non-convergence, but still takes **undamped full Newton steps** and, when it
+  exhausts `max_newton_iter`, returns the non-stationary iterate and takes the
+  implicit-function gradient there anyway. Add a damped / line-search /
+  trust-region step to actually improve the convergence rate. See the
+  "Carried-forward gaps" item 1 for the grounding (`src/pits_mras/models/
+  pcml.py:337-357`).
 - **Cotrain HJB/costate critic-coupling — ADR + rewire** (discovered v0.3.3).
   `l_hjb` and `l_costate` in `cotraining_loop`'s `l_total` depend only on the
   critic's `W_c` (everything else is `.detach()`ed), but `l_total` is stepped by
@@ -184,7 +193,7 @@ current source. Candidates for v0.4.0 or a later hardening pass.
    `max_newton_iter`, returns the non-stationary iterate and takes the
    implicit-function gradient there anyway. The debt note's other half — a
    **damped / line-search / trust-region Newton** step to actually improve the
-   convergence rate — is unaddressed. Real refinement for v0.4.0.
+   convergence rate — is unaddressed. **Tracked in the v0.4.0 section above.**
 2. **[RESOLVED v0.3.3] Positivity regularizer was structurally inert in
    cotraining.** Investigating this gap revealed it was *not* a weight-tuning
    issue but a **wiring bug**: the `1e-3 * positivity` term lived in `l_total`
