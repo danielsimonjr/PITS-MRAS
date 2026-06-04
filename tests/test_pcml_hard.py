@@ -95,11 +95,99 @@ def test_kkt_projection_reports_convergence() -> None:
     assert ok.last_converged is True
     assert ok.last_residual < ok.newton_tol
 
-    # A single Newton step from a generic start does not converge.
-    bad = KKTProjectionLayer(dae, n_output=1, n_deriv=4, max_newton_iter=1)
+    # With no Newton iterations the projection reports the (high) initial
+    # residual as non-converged. (This near-affine heat-eq projection converges
+    # in a single Newton step, so 0 iterations is needed to show non-convergence;
+    # last_residual now reflects the RETURNED iterate, not the pre-step one.)
+    bad = KKTProjectionLayer(dae, n_output=1, n_deriv=4, max_newton_iter=0)
     bad(x, t, y_hat, d_hat, lam_hat)
     assert bad.last_converged is False
     assert bad.last_residual >= bad.newton_tol
+
+
+class _SteepEqDAE(PhysicsConstraints):
+    """Single high-curvature equality ``h(y) = atan(k*y) = 0`` (root y=0).
+
+    For large ``k`` the curvature makes an undamped full Newton step overshoot and
+    diverge from a far start -- the stiff case for the line-search test.
+    """
+
+    def __init__(self, k: float = 8.0) -> None:
+        self.k = k
+        self._spec = ConstraintSpec(
+            n_differential=0, n_equality=1, n_inequality=0, n_outputs=1
+        )
+
+    @property
+    def spec(self) -> ConstraintSpec:
+        return self._spec
+
+    def differential(self, x, t, y, d):
+        return torch.zeros(y.shape[0], 0, device=y.device, dtype=y.dtype)
+
+    def equality(self, x, t, y):
+        return torch.atan(self.k * y)  # [batch, 1]
+
+    def inequality(self, x, t, y):
+        return torch.zeros(y.shape[0], 0, device=y.device, dtype=y.dtype)
+
+
+def test_kkt_line_search_keeps_residual_bounded_on_stiff_projection() -> None:
+    """Line search keeps the Newton iterate BOUNDED on a stiff high-curvature
+    projection where the undamped full step diverges (carried-forward gap #1).
+
+    The undamped step overshoots and the residual blows up by orders of
+    magnitude; the line search guarantees a non-increasing residual, so it stays
+    bounded (a far more usable iterate for the implicit-function gradient). (The
+    atan constraint's gradient vanishes far from the root, so line search bounds
+    rather than fully converges it — the honest, demonstrable improvement.)
+    """
+    dae = _SteepEqDAE(k=8.0)
+    x = torch.zeros(3, 1)
+    t = torch.zeros(3, 1)
+    y_hat = torch.tensor([[2.0], [3.0], [5.0]])  # far from the root
+    d_hat = torch.zeros(3, 0)
+    lam_hat = torch.zeros(3, 1)
+    # Initial L-inf residual of the projection system (bounded; atan <= pi/2).
+    init_res = float(torch.atan(8.0 * y_hat).abs().max())
+
+    ls = KKTProjectionLayer(
+        dae, n_output=1, n_deriv=0, max_newton_iter=40, use_line_search=True
+    )
+    ls(x, t, y_hat, d_hat, lam_hat)
+    no = KKTProjectionLayer(
+        dae, n_output=1, n_deriv=0, max_newton_iter=40, use_line_search=False
+    )
+    no(x, t, y_hat, d_hat, lam_hat)
+
+    # Undamped diverges (residual explodes); line search stays bounded.
+    assert no.last_residual > 1e3
+    assert ls.last_residual <= init_res + 1e-6  # non-increasing -> bounded
+    assert ls.last_residual < no.last_residual / 1e3
+
+
+def test_kkt_line_search_matches_full_step_on_affine() -> None:
+    """On a well-behaved affine constraint the line search is a no-op: it accepts
+    the full step, so the output matches use_line_search=False exactly."""
+    torch.manual_seed(0)
+    n = 3
+    x = torch.zeros(4, 1)
+    t = torch.zeros(4, 1)
+    y_hat = torch.randn(4, n)
+    d_hat = torch.zeros(4, 0)
+    lam_hat = torch.zeros(4, 1)
+
+    proj_ls = KKTProjectionLayer(
+        _SumEqualsOneDAE(n=n), n_output=n, n_deriv=0, max_newton_iter=20,
+        use_line_search=True,
+    )
+    proj_no = KKTProjectionLayer(
+        _SumEqualsOneDAE(n=n), n_output=n, n_deriv=0, max_newton_iter=20,
+        use_line_search=False,
+    )
+    y_ls, _, _ = proj_ls(x, t, y_hat, d_hat, lam_hat)
+    y_no, _, _ = proj_no(x, t, y_hat, d_hat, lam_hat)
+    assert torch.allclose(y_ls, y_no, atol=1e-6)
 
 
 def test_kkt_projection_on_holonomic_mechanical_dae() -> None:

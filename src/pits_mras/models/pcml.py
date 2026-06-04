@@ -168,6 +168,8 @@ class KKTProjectionLayer(nn.Module):
         max_newton_iter: int = 10,
         newton_tol: float = 1e-6,
         reg: float = 1e-8,
+        use_line_search: bool = True,
+        line_search_max_halvings: int = 10,
     ) -> None:
         super().__init__()
         self.constraints = constraints
@@ -182,6 +184,12 @@ class KKTProjectionLayer(nn.Module):
         self.max_newton_iter = max_newton_iter
         self.newton_tol = newton_tol
         self.reg = reg
+        # Backtracking line search on the L-inf residual: makes the forward Newton
+        # solve robust to overshoot on high-curvature constraints (the full step
+        # is a descent direction for the merit, so halving finds a decreasing
+        # step). Default on; ``use_line_search=False`` restores the old full step.
+        self.use_line_search = use_line_search
+        self.line_search_max_halvings = line_search_max_halvings
         self.oy = 0
         self.od = self.n_y
         self.oeq = self.n_y + self.n_d
@@ -333,22 +341,56 @@ class KKTProjectionLayer(nn.Module):
         z = self._init_z(x, t, y_hat, d_hat, lam_hat)
         yh = y_hat.detach()
         converged = False
-        last_cj: Optional[Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]] = None
-        self.last_residual = float("inf")
+        # Evaluate constraints + residual at the initial iterate, then reuse each
+        # accepted iterate's constraints/Jacobian for the next step (so the happy
+        # path costs ~1 constraints+Jacobian build per iteration, as before).
+        c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z)
+        Fv = self._assemble_F(yh, z, c, g, jc_y, jc_d, jg)
+        res = float(Fv.abs().max())
         for _ in range(self.max_newton_iter):
-            c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z)
-            last_cj = (c, g, jc_y, jc_d, jg)
-            Fv = self._assemble_F(yh, z, c, g, jc_y, jc_d, jg)
-            self.last_residual = float(Fv.abs().max())
-            if self.last_residual < self.newton_tol:
+            if res < self.newton_tol:
                 converged = True
                 break
             J = self._assemble_J(z, jc_y, jc_d, jg)
             delta = torch.linalg.solve(
                 J + self.reg * eye_N, Fv.unsqueeze(-1)
             ).squeeze(-1)
-            z = z - self.newton_step * delta
+            if self.use_line_search:
+                # Backtrack alpha until the L-inf residual strictly decreases (the
+                # Newton direction is a descent direction for the merit while the
+                # Gauss-Newton Jacobian is a good local model). This keeps the
+                # iterate BOUNDED on stiff constraints where the full step would
+                # diverge. If no halving decreases the residual, the local model
+                # has stalled -- stop (the residual is then non-increasing across
+                # the whole solve, and non-convergence is reported honestly).
+                alpha = self.newton_step
+                for _h in range(self.line_search_max_halvings + 1):
+                    z_trial = z - alpha * delta
+                    c_t, g_t, jcy_t, jcd_t, jg_t = self._constraints_and_jac(
+                        x, t, z_trial
+                    )
+                    F_t = self._assemble_F(yh, z_trial, c_t, g_t, jcy_t, jcd_t, jg_t)
+                    res_trial = float(F_t.abs().max())
+                    if res_trial < res:
+                        z = z_trial
+                        c, g, jc_y, jc_d, jg = c_t, g_t, jcy_t, jcd_t, jg_t
+                        Fv, res = F_t, res_trial
+                        break
+                    alpha *= 0.5
+                else:
+                    break  # no descent step found -> Gauss-Newton stalled
+            else:
+                z = z - self.newton_step * delta
+                c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z)
+                Fv = self._assemble_F(yh, z, c, g, jc_y, jc_d, jg)
+                res = float(Fv.abs().max())
+        # Final check: ``res`` now reflects the *returned* iterate (post-step), so
+        # flag convergence if the last step reached tolerance (the loop only
+        # re-checks at the top of the next iteration, which may not run).
+        converged = converged or (res < self.newton_tol)
+        self.last_residual = res
         self.last_converged = converged
+        last_cj = (c, g, jc_y, jc_d, jg)
         if not converged:
             logger.warning(
                 "KKT projection did not converge: residual=%.3e after %d Newton "
@@ -364,7 +406,9 @@ class KKTProjectionLayer(nn.Module):
         # those values are exactly at ``z_star`` -- reuse them instead of
         # recomputing (output-identical; saves one constraints+Jacobian build).
         z_star = z.detach()
-        if converged and last_cj is not None:
+        if converged:
+            # ``last_cj`` is at z_star (the loop keeps c/g/jac in sync with z),
+            # so reuse it (output-identical; saves one constraints+Jacobian build).
             c, g, jc_y, jc_d, jg = last_cj
         else:
             c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z_star)
