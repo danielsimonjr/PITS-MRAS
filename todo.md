@@ -162,9 +162,9 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
 > **Sequencing (2026-06-04):** working the remaining v0.4.0 set one sub-project
 > at a time, foundation/safe-first. **Done so far:** HJB/costate co-training
 > rewire (v0.4.0); README + linked-docs sweep (v0.4.1 docs); dead `LossConfig`
-> fields removed (v0.4.1); KKT line-search Newton (v0.4.2). **Order for the
-> rest:** higher-fidelity plants → `ParallelInferenceEngine` → **H∞ head (its
-> own brainstorm — ADR-level).**
+> fields removed (v0.4.1); KKT line-search Newton (v0.4.2); higher-fidelity
+> nonlinear plants (v0.4.3). **Order for the rest:** `ParallelInferenceEngine`
+> → **H∞ head (its own brainstorm — ADR-level).**
 
 - [x] **Dead `LossConfig` fields → wire-or-remove** (**DONE v0.4.1**): decided
   **remove** all 6 (`lambda_adjoint`, `alpha_attn`, `alpha_smooth`, `mu_lyap`,
@@ -196,9 +196,12 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
 - **Complete `ParallelInferenceEngine`** (`inference/parallel.py`) from the
   honest threaded skeleton to a hardened multi-rate (1 kHz / 100 Hz / 10 Hz)
   deployment with the double-buffered critic swap.
-- **Higher-fidelity example plants** — replace the linear reference-model
-  surrogates with a nonlinear rigid-body manipulator, a bicycle/tyre AV model,
-  and an RC building-thermal network.
+- [x] **Higher-fidelity example plants** (**DONE v0.4.3**) — `examples/plants.py`:
+  `pendulum_step` (sin-gravity manipulator joint), `lateral_tyre_step` (tanh
+  tyre-force-saturation lateral model), `rc_thermal_step` (2-node RC network +
+  saturated heater). Each linearizes to the example's original linear surrogate
+  so the LQR/CBF controller stays stable; all 3 closed loops verified bounded.
+  Honest caveat: still illustrative, not hardware-validated.
 
 ## Carried-forward gaps / watch (discovered during the v0.3.2 sprint)
 

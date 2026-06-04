@@ -6,21 +6,22 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 39 |
-| Total Test Files | 21 |
+| Total Source Files | 40 |
+| Total Test Files | 22 |
 | Source Files with Tests | 32 |
-| Source Files without Tests | 7 |
-| Coverage | 82.1% |
+| Source Files without Tests | 8 |
+| Coverage | 80.0% |
 
 ---
 
 ## Source Files Without Test Coverage
 
-7 source files are not imported by any test:
+8 source files are not imported by any test:
 
 - `examples/autonomous_vehicle.py`
 - `examples/building_hvac.py`
 - `examples/pcml_heat_diffusion.py`
+- `examples/plants.py`
 - `examples/robotic_manipulator.py`
 - `setup.py`
 - `src/pits_mras/controllers/__init__.py`

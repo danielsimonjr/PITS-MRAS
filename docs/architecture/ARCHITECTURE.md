@@ -32,7 +32,7 @@
 
 ---
 
-## 0. Implemented Architecture (v0.4.2) — graph-backed
+## 0. Implemented Architecture (v0.4.3) — graph-backed
 
 > **Status:** all nine ROADMAP phases are implemented (released **v0.3.0**) plus
 > the **PCML** (Physics-Constrained Machine Learning) component; **v0.3.1** was a
@@ -40,7 +40,7 @@
 > behavior-preserving engineering-debt-resolution releases, and the **v0.4.x**
 > feature/refinement line is underway (**v0.4.0** HJB/costate co-training rewire,
 > **v0.4.1** removed 6 unconsumed `LossConfig` fields, **v0.4.2** backtracking
-> line search in the KKT projection). The
+> line search in the KKT projection, **v0.4.3** nonlinear example plants). The
 > structure below is generated from the codebase by
 > `tools/create-dependency-graph/create_dependency_graph.py` and cross-checked
 > against the source; regenerate with `python tools/create-dependency-graph/create_dependency_graph.py --include-tests`.
@@ -56,7 +56,7 @@
 ### 0.1 Module map (as built)
 
 The package lives under `src/pits_mras/` (src-layout). The dependency graph
-finds **39 first-party Python files across 10 modules**:
+finds **40 first-party Python files across 10 modules** (incl. `examples/`):
 
 | Module | Files | Responsibility |
 |--------|-------|----------------|
@@ -79,9 +79,9 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 39 files · 10 modules · ~5,334 LOC · 116
+Key statistics (graph-generated): 40 files · 10 modules · ~5,488 LOC · 119
 public exports (45 re-exported through barrels) · 44 classes · 1 ABC
-(`PhysicsConstraints`) · 26 functions · 10 `TYPE_CHECKING`-guarded imports.
+(`PhysicsConstraints`) · 29 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---
 

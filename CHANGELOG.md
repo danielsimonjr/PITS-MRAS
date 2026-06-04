@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-06-04
+
+Fourth v0.4.x sub-project: higher-fidelity example plants. Examples-only (no
+library API change); suite green; flake8 + mypy clean.
+
+### Added
+
+- **Nonlinear example plants** (`examples/plants.py`): `pendulum_step` (1-DOF
+  manipulator joint with `sin`-gravity), `lateral_tyre_step` (single-track
+  lateral dynamics with `tanh` tyre-force saturation), `rc_thermal_step` (2-node
+  RC building-thermal network + saturated heater). Each is a pure
+  `f(state, u, dt) -> next_state` step; new `tests/test_example_plants.py` checks
+  the physics. The three example demos now control these **nonlinear** plants
+  instead of the toy linear surrogates, exercising the controller's
+  model-mismatch robustness. Each plant linearizes to the example's original
+  surrogate, so the existing LQR/CBF controller stays stabilizing (all three
+  closed loops verified bounded/finite).
+
+### Changed
+
+- The HVAC example's reference model is now the 2-node RC linearization (it
+  tracks the zone temperature).
+- Fixed a pre-existing time-alignment off-by-one in the AV example's `_simulate`
+  (the lateral-offset series was recorded one step late).
+
 ## [0.4.2] - 2026-06-04
 
 Third v0.4.x sub-project: KKT projection robustness. Backward-compatible
