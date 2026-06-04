@@ -137,3 +137,69 @@ def test_parallel_engine_double_stop_is_safe() -> None:
     par.stop(timeout=2.0)
     par.stop(timeout=2.0)  # idempotent, must not raise
     assert not par.is_alive()
+
+
+def test_parallel_adaptation_update_runs_irl_step() -> None:
+    """_adaptation_update (no threads) fits a deepcopy with one IRL step and
+    atomically swaps it in; an unfilled window is a no-op."""
+    engine = _make_engine()
+    par = ParallelInferenceEngine(
+        engine, x_p=torch.zeros(2), r=torch.zeros(1), irl_window=4,
+    )
+    # Empty window -> nothing to fit.
+    assert par._adaptation_update() is False
+    assert par.state.adaptation_swaps == 0
+
+    # Perturb the critic off P_opt and fill the window with (e, u) samples.
+    engine.controller.critic.set_P(torch.eye(2) * 4.0)
+    w_before = engine.controller.critic.W_c.weight.detach().clone()
+    torch.manual_seed(0)
+    for _ in range(5):  # irl_window + 1
+        par._window.append((torch.randn(2), torch.randn(1)))
+
+    assert par._adaptation_update() is True
+    assert par.state.adaptation_swaps == 1
+    # The live critic was swapped for an updated copy (W_c changed)...
+    assert not torch.allclose(w_before, engine.controller.critic.W_c.weight)
+    # ...and the costate head points at the same new critic (full double-buffer).
+    assert engine.controller.costate_head.critic is engine.controller.critic
+
+
+def test_parallel_engine_captures_thread_exception() -> None:
+    """A failing control step is captured (no silent thread death) and triggers
+    a fail-fast shutdown; check() re-raises it."""
+    import pytest
+
+    engine = _make_engine()
+
+    def _boom(*_args, **_kwargs):
+        raise RuntimeError("sensor fault")
+
+    engine.step = _boom  # type: ignore[method-assign]
+    par = ParallelInferenceEngine(engine, x_p=torch.zeros(2), r=torch.zeros(1))
+    par.start()
+    par.wait(0.1)
+    par.stop(timeout=2.0)
+    assert par.error is not None
+    assert isinstance(par.error, RuntimeError)
+    assert not par.is_alive()
+    with pytest.raises(RuntimeError, match="sensor fault"):
+        par.check()
+
+
+def test_parallel_engine_adapts_during_run() -> None:
+    """Threaded smoke: the control thread ticks AND the adaptation thread applies
+    real double-buffered swaps; shared metrics stay finite and threads join."""
+    engine = _make_engine()
+    par = ParallelInferenceEngine(
+        engine, x_p=torch.zeros(2), r=torch.ones(1) * 0.1, irl_window=4,
+    )
+    par.start()
+    par.wait(0.3)
+    par.stop(timeout=2.0)
+    assert not par.is_alive()
+    assert par.error is None
+    assert par.state.step_count > 0
+    assert par.state.adaptation_swaps > 0  # the window filled and adaptation ran
+    assert math.isfinite(par.state.v_hat)
+    assert math.isfinite(par.state.cbf_activation_rate)
