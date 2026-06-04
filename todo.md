@@ -159,6 +159,14 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
 
 ## v0.4.0 (next version) — features / refinements / new capacities
 
+> **Sequencing (2026-06-04):** working the remaining v0.4.0 set one sub-project
+> at a time, foundation/safe-first. **Done so far:** HJB/costate co-training
+> rewire (v0.4.0); **README + linked-docs sweep** (doc-only, `[Unreleased]` —
+> real verified-runnable Quick Start, status/roadmap/structure synced, perf
+> numbers relabeled as design targets). **Order for the rest:** dead `LossConfig`
+> fields → KKT damped Newton → higher-fidelity plants → `ParallelInferenceEngine`
+> → **H∞ head (its own brainstorm — ADR-level).**
+
 - **Dead `LossConfig` fields → wire-or-remove** (bumped from v0.3.2 debt): the 6
   unconsumed fields `lambda_adjoint`, `alpha_attn`, `alpha_smooth`, `mu_lyap`,
   `beta_param`, `lambda_delta_u`. Decide per field: **wire** into the

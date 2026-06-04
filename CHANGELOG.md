@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **README brought in line with v0.4.0.** Replaced the stale "implementation in
+  progress / Version 1.0" framing with the released status (9 phases + PCML,
+  pytest 192/0); fixed the Python requirement (`3.8+` → `3.10+`); replaced the
+  non-functional Quick Start (`adaptation_rate`, `initialize_controller`,
+  `closed_loop_training`, `inference_realtime`) with the real, verified-runnable
+  API (`PITSMRASConfig`/`NetworkConfig`/`PhysicsConfig`, `PITNN`,
+  `MRASController`, `pretrain_pitnn`, `cotraining_loop`, `RealtimeInferenceEngine`);
+  corrected the project-structure tree and roadmap; relabeled "Performance
+  Highlights" as **design targets** (not yet experimentally validated); softened
+  the real-time feature claims to match what's implemented; and clarified that
+  the linked validation/summary docs describe the *design document*, not the code.
+
 ## [0.4.0] - 2026-06-04
 
 Opens the v0.4.0 feature/refinement line. First sub-project: the **HJB/costate
