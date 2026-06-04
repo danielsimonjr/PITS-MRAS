@@ -68,7 +68,7 @@ def test_loss_config_defaults() -> None:
     assert c.lambda_stability == 2.0
     assert c.lambda_data == 1.0
     assert c.lambda_irl == 1.0
-    assert c.lambda_hjb == 0.01
+    assert c.lambda_hjb == 0.0
     assert c.lambda_adjoint == 0.05
     assert c.lambda_energy == 1.0
     assert c.lambda_pde == 1.0

@@ -266,6 +266,64 @@ def test_cotrain_hjb_disabled_path() -> None:
     assert all(v == 0.0 for v in metrics["hjb_loss"])
 
 
+def test_cotrain_hjb_applied_to_critic_when_enabled() -> None:
+    """With HJB enabled and IRL disabled, the HJB residual actually updates the
+    critic (regression for the wiring bug where its gradient was discarded).
+
+    Isolation: irl_window > n_steps so the IRL block never fires; the critic is
+    seeded PD but off P_opt, so the positivity step is a no-op while the HJB
+    residual is non-zero -> the HJB critic step is the ONLY thing that can move
+    W_c.
+    """
+    cfg = _small_cfg()
+    cfg.losses.lambda_hjb = 0.5
+    cfg.safety.enable_cbf = False
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    # PD but not the HJB optimum -> positivity inactive, HJB residual non-zero.
+    controller.critic.set_P(torch.eye(controller.state_dim) * 3.0)
+    w_before = controller.critic.W_c.weight.detach().clone()
+    cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=1, n_steps=6, batch_size=4, irl_window=50,
+        critic_lr=1e-2, seed=0,
+    )
+    w_after = controller.critic.W_c.weight.detach()
+    assert not torch.allclose(w_before, w_after)  # HJB gradient was applied
+
+
+def test_cotrain_hjb_default_off_is_irl_only() -> None:
+    """The default LossConfig leaves HJB off, so it is never applied."""
+    cfg = _small_cfg()  # cfg.losses.lambda_hjb defaults to 0.0
+    assert cfg.losses.lambda_hjb == 0.0
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    metrics = cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=1, n_steps=8, batch_size=4, irl_window=3, seed=5,
+    )
+    assert all(v == 0.0 for v in metrics["hjb_loss"])
+
+
+def test_cotrain_converges_with_hjb_enabled() -> None:
+    """Enabling HJB does not break IRL convergence of the critic toward P_opt."""
+    cfg = _small_cfg()
+    cfg.losses.lambda_hjb = 0.01
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+    controller.critic.set_P(torch.eye(controller.state_dim) * 5.0)
+    metrics = cotraining_loop(
+        pitnn, controller, ref_model, cfg,
+        n_episodes=3, n_steps=12, batch_size=8, irl_window=3,
+        critic_lr=5e-2, seed=7,
+    )
+    conv = metrics["critic_convergence"]
+    assert conv[-1] < conv[0]
+
+
 # --------------------------------------------------------------------------- #
 # irl_trainer non-convergence branch (§8.3).
 # --------------------------------------------------------------------------- #

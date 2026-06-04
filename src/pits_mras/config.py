@@ -81,7 +81,8 @@ class LossConfig:
     lambda_stability: float = 2.0
     lambda_data: float = 1.0
     lambda_irl: float = 1.0  # IRL Bellman error weight
-    lambda_hjb: float = 0.01  # HJB residual weight (tune carefully, see §3.5)
+    lambda_hjb: float = 0.0  # HJB residual weight; >0 opts the critic into the
+    # HJB regularizer (applied via the critic optimizer in cotraining_loop, §3.5)
     lambda_adjoint: float = 0.05  # Adjoint dynamics residual weight
     lambda_pcml: float = 1.0  # PCML constraint loss weight (soft or hard)
     # Physics sub-weights

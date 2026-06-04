@@ -16,10 +16,11 @@ Per step the loop:
    (:class:`IRLBellmanLoss`) and takes a policy-evaluation gradient step on the
    critic with a SEPARATE ``critic_optimizer`` (Adam lr=1e-3, grad-clip 1.0),
    then performs the policy-improvement read-out ``K = R^{-1} B^T P_hat``,
-4. builds the PITNN objective ``L_total`` = physics + (optional) HJB residual +
-   ``0.1`` * CBF constraint, and steps the PITNN optimizer
-   (Adam lr=1e-4); separately regularizes the critic's positive-definiteness
-   (``_POSITIVITY_WEIGHT`` * ``relu(-λ_min(P))``) through the *critic* optimizer,
+4. builds the PITNN objective ``L_total`` = physics + (optional) PCML +
+   ``0.1`` * CBF constraint, and steps the PITNN optimizer (Adam lr=1e-4); the
+   critic-only regularizers are applied SEPARATELY through the *critic* optimizer
+   — an opt-in HJB residual (``lambda_hjb`` > 0) and positive-definiteness
+   (``_POSITIVITY_WEIGHT`` * ``relu(-λ_min(P))``),
 5. advances the synthetic plant + reference model and slides the history window.
 
 Everything runs on tiny synthetic trajectories (no external dataset; Gap G7) so
@@ -250,14 +251,6 @@ def cotraining_loop(
                 l_total = l_total + loss_cfg.lambda_pcml * l_pcml
                 l_pcml_val = float(l_pcml.detach())
 
-            # ── NEW: HJB residual update ──
-            l_hjb_val = 0.0
-            if loss_cfg.lambda_hjb > 0:
-                hjb_out = hjb_loss(controller.critic, e.detach())
-                l_hjb = hjb_out["loss"]
-                l_total = l_total + loss_cfg.lambda_hjb * l_hjb
-                l_hjb_val = float(l_hjb.detach())
-
             # ── CBF constraint loss ──
             l_cbf_val = 0.0
             if use_cbf and controller.safety_filter is not None:
@@ -268,15 +261,27 @@ def cotraining_loop(
                 l_cbf_val = float(l_cbf.detach())
 
             optimizer_pitnn.zero_grad()
-            critic_optimizer.zero_grad()  # also clears any stale critic grad
+            critic_optimizer.zero_grad()  # l_total is a pure PITNN objective
             l_total.backward()
             optimizer_pitnn.step()
-            # NB: l_total.backward() also deposits gradients on the critic's W_c
-            # via the HJB term, which optimizer_pitnn does not own. That critic
-            # gradient is intentionally NOT applied here — the critic is trained
-            # by IRL + the positivity regularizer below.
-            # (Rewiring HJB into the critic update is a tracked v0.4.0 decision;
-            # it would change what the critic learns.)
+
+            # ── HJB residual regularizer on the CRITIC (opt-in: lambda_hjb > 0).
+            # HJB depends only on the critic's W_c, so it must ride with
+            # ``critic_optimizer`` — in ``l_total`` its gradient went to W_c
+            # unstepped and was wiped. Unlike the positivity step below (guarded
+            # because positivity_loss is EXACTLY 0 in the healthy regime, so an
+            # unguarded step would be a pure no-op that still advances Adam's
+            # counter), the HJB residual is a genuine signal the caller opted into:
+            # it applies every step by design. Sharing ``critic_optimizer``'s Adam
+            # state with the IRL step is the accepted cost of co-training the
+            # critic with IRL + HJB through one optimizer.
+            l_hjb_val = 0.0
+            if loss_cfg.lambda_hjb > 0.0:
+                critic_optimizer.zero_grad()
+                hjb_out = hjb_loss(controller.critic, e.detach())
+                (loss_cfg.lambda_hjb * hjb_out["loss"]).backward()
+                critic_optimizer.step()
+                l_hjb_val = float(hjb_out["loss"].detach())
 
             # ── Critic positivity regularization (applied via the CRITIC
             # optimizer). It depends only on the critic's W_c, so it must ride
