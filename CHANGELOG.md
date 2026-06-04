@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-04
+
+Third v0.4.x sub-project: KKT projection robustness. Backward-compatible
+(default-on line search only changes *divergent* cases); suite green; flake8 +
+mypy clean.
+
+### Changed
+
+- **KKT projection: backtracking line search in the Newton solve** (resolves the
+  carried-forward gap #1 — the robustness half of the v0.3.2 debt #2). The
+  forward Newton loop took an undamped full step that **diverges** on
+  high-curvature constraints (a single equality `atan(8·y)=0` from a far start
+  blew the residual up to ~1e7). It now backtracks the step length on the L∞
+  residual: accept the first halving that strictly decreases it, else stop
+  (Gauss-Newton stalled). The residual is **non-increasing** across the solve and
+  stays **bounded** on stiff inputs (atan case: ~1e7 → O(1)) — a far more usable
+  iterate for the implicit-function gradient. New `KKTProjectionLayer` params
+  `use_line_search=True` (opt-out restores the old full step) and
+  `line_search_max_halvings=10`. The differentiable implicit-function one-step is
+  unchanged.
+- `last_residual` / `last_converged` now reflect the **returned** iterate
+  (post-step), fixing a pre-existing off-by-one where the pre-step residual was
+  reported.
+
 ## [0.4.1] - 2026-06-04
 
 Second v0.4.x sub-project + the README/doc sweep. Behavior-preserving;

@@ -1,6 +1,6 @@
 # PITS-MRAS — Data Flow
 
-**Version**: 0.4.1 | **Last Updated**: 2026-06-04
+**Version**: 0.4.2 | **Last Updated**: 2026-06-04
 
 This document traces how tensors move through the PITS-MRAS stack. Every shape,
 dict key, loss term, and control-flow branch below is grounded in the source
