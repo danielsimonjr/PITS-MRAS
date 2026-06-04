@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-06-03
+
 Knocks out the two *easy* carried-forward gaps from the v0.3.2 sprint. No
 public-API changes; suite green throughout; flake8 + mypy clean.
 

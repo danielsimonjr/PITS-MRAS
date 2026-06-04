@@ -83,6 +83,16 @@ Behavior- and API-preserving pass (Approach 2; spec in
 - Out of the safe pass: **B** (6 dead `LossConfig` fields) → logged as debt for
   v0.3.2; **E** (`parallel.py`) → v0.4.0 capability.
 
+## Done — released v0.3.3 (2026-06-03): two easy carried-forward gaps
+
+Knocked out gaps #2 (positivity now applied via the critic optimizer — it was
+structurally inert, not just under-weighted) and #3 (`_triu_pairs` device-key
+canonicalization + bounded cache) via the dev-workflow (TDD, suite green). The
+HJB/costate variant of the same wiring bug is bumped to v0.4.0 (behavior-
+changing). Version bumped to 0.3.3; graph regenerated (39 files, 5,302 LOC, 116
+exports, 0 circular, 0 unused); `docs/architecture` markers synced; CHANGELOG
+`[0.3.3]`; tagged `v0.3.3`. See the "Carried-forward gaps" section for detail.
+
 ## Done — released v0.3.2 (2026-06-03): engineering-debt-resolution
 
 The debt logged at the close of v0.3.1, all resolved via the dev-workflow (TDD,

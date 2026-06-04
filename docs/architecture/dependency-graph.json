@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "lastUpdated": "2026-06-03",
     "totalFiles": 39,
     "totalModules": 10,
@@ -2199,7 +2199,8 @@
             "module": "typing",
             "imports": [
               "Optional",
-              "Tuple"
+              "Tuple",
+              "Union"
             ]
           }
         ],
@@ -2368,7 +2369,7 @@
   "statistics": {
     "totalPythonFiles": 39,
     "totalModules": 10,
-    "totalLinesOfCode": 5253,
+    "totalLinesOfCode": 5302,
     "totalExports": 116,
     "totalClasses": 44,
     "totalInterfaces": 1,

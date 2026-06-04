@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.3.2 | **Last Updated**: 2026-06-03
+**Version**: 0.3.3 | **Last Updated**: 2026-06-03
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -821,7 +821,7 @@ The codebase is organized into the following modules:
 | Module | Import |
 |--------|--------|
 | `functools` | `lru_cache` |
-| `typing` | `Optional, Tuple` |
+| `typing` | `Optional, Tuple, Union` |
 
 **Exports:**
 - Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric`
@@ -964,7 +964,7 @@ graph TD
 |----------|-------|
 | Total Python Files | 39 |
 | Total Modules | 10 |
-| Total Lines of Code | 5253 |
+| Total Lines of Code | 5302 |
 | Total Public Exports | 116 |
 | Total Re-exports | 45 |
 | Total Classes | 44 |
@@ -979,4 +979,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-03  |  *Version*: 0.3.2
+*Last Updated*: 2026-06-03  |  *Version*: 0.3.3

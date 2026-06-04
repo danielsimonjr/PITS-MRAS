@@ -19,7 +19,7 @@ Per step the loop:
 4. builds the PITNN objective ``L_total`` = physics + (optional) HJB residual +
    costate consistency + ``0.1`` * CBF constraint, and steps the PITNN optimizer
    (Adam lr=1e-4); separately regularizes the critic's positive-definiteness
-   (``POSITIVITY_WEIGHT`` * ``relu(-λ_min(P))``) through the *critic* optimizer,
+   (``_POSITIVITY_WEIGHT`` * ``relu(-λ_min(P))``) through the *critic* optimizer,
 5. advances the synthetic plant + reference model and slides the history window.
 
 Everything runs on tiny synthetic trajectories (no external dataset; Gap G7) so
@@ -66,8 +66,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Weight on the critic positive-definiteness regularizer (``relu(-λ_min(P))``).
-# Applied through the critic optimizer; see the co-training loop.
-POSITIVITY_WEIGHT = 1e-3
+# Applied through the critic optimizer; see the co-training loop. Module-internal.
+_POSITIVITY_WEIGHT = 1e-3
 
 
 def _synthetic_plant_step(
@@ -298,7 +298,7 @@ def cotraining_loop(
             l_pos = controller.critic.positivity_loss()
             if float(l_pos.detach()) > 0.0:
                 critic_optimizer.zero_grad()
-                (POSITIVITY_WEIGHT * l_pos).backward()
+                (_POSITIVITY_WEIGHT * l_pos).backward()
                 critic_optimizer.step()
 
             # ── NEW: IRL critic update (Identity 1 — Vrabie & Lewis 2009) ──
