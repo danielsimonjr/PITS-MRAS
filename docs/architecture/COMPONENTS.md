@@ -115,7 +115,7 @@ backbone; IRL (Vrabie & Lewis 2009) makes it model-free.
 | `PhysicsConfig` | Port-Hamiltonian decoder dims: `n_generalized_coords=2`, `hamiltonian_hidden`, `dissipation_hidden`, `use_position_dependent_J`. |
 | `MRASConfig` | Classical + IRL/actor-critic params: `state_dim`, `control_dim`, reference matrices `A_m/B_m/C_m`, LQR cost `Q_cost/R_cost`, adaptation gains, `irl_window_size`, `use_irl_critic`. |
 | `SafetyConfig` | CLF-CBF filter: `enable_cbf`, `safety_margin` (the `c` in `h(e)=c−eᵀPe`), `cbf_decay_rate` (the `γ`). |
-| `LossConfig` | All loss weights: `lambda_physics/temporal/stability/data/irl/hjb/adjoint/pcml` plus physics/temporal/stability sub-weights. (`lambda_hjb` defaults to `0.0` — opt-in critic regularizer.) |
+| `LossConfig` | All loss weights: `lambda_physics/temporal/stability/data/irl/hjb/pcml` plus the physics sub-weights (`lambda_energy/pde/bc/sym`). (`lambda_hjb` defaults to `0.0` — opt-in critic regularizer; the 6 unconsumed temporal/stability/adjoint sub-weights were removed in v0.4.1.) |
 | `TrainingConfig` | Schedule for Algorithm 2/3: `pretrain_epochs`, stage epochs, `n_episodes`, `dt`, `device`, `seed`, logging cadence. |
 | `PCMLConfig` | Physics-Constrained ML module: soft-mode residual weights, hard-mode (DAE-HardNet) params (`omega`, `eta`, `delta`, `taylor_order`, Newton settings), and constraint-system selection (`constraint_type` = `"mechanical"`/`"thermal"`, `n_joints`, thermal bounds). |
 | `PITSMRASConfig` | Master config aggregating the seven sub-configs via `field(default_factory=...)`; provides `from_yaml` / `to_yaml`. The single object passed to all components. |

@@ -291,7 +291,7 @@ new):
 | `HJBResidualLoss` / `L_HJB` | Identity 8 | `‖eᵀQe+(u*)ᵀRu*+∇_eV̂·(A_m e+B u*+f_corr)‖²`; "Start with weight λ_HJB=0.01... treat it as a regularizer." | `losses/hjb.py` | `[IP PAGES 5,31; §3.5,§6.5]` |
 | `LyapunovDecreaseEnforcer` / `L_dec` | (Lyapunov decrease) | `L_dec=E[ReLU(∇V̂·f̂+ℓ)]` — "tighter than the existing L_Lyap." | `losses/hjb.py` | `[IP PAGE 31, §6.5]` |
 | `L_costate` (gradient consistency) | Identity 2 | **Removed in v0.4.0** — vacuous: `λ̂ ≡ ∇_eV̂` by construction (the costate head IS the critic gradient), so `L_costate ≡ 0`. Identity 2 holds by construction, not by this loss. | (was `cotrain.py`) | `[IP PAGES 5,39; §3.3,§8.2]` |
-| `L_adjoint` (adjoint dynamics) | Identity 2 | `L_adjoint=‖λ̇(t)+∂H/∂e‖²` along trajectories. | (weight `lambda_adjoint` in `LossConfig`) | `[IP PAGES 5,9; §3.3,§4.2]` |
+| `L_adjoint` (adjoint dynamics) | Identity 2 | `L_adjoint=‖λ̇(t)+∂H/∂e‖²` along trajectories. **Not implemented** (the `lambda_adjoint` weight was a dead config knob, removed in v0.4.1); a future feature if needed. | (none) | `[IP PAGES 5,9; §3.3,§4.2]` |
 | `cbf_constraint_loss` | Identity 3 | soft penalty `ReLU(−h_e).mean()` on CBF violation; added to L_total. | `controllers/safety.py` | `[IP PAGE 35, §7.2]` |
 | `positivity_loss` (critic) | Identity 1 | `ReLU(−min_eig(P̂))` — penalizes non-PD P̂. | `models/critic.py` | `[IP PAGE 24, §5.3]` |
 
@@ -302,9 +302,11 @@ control effort) `[IP PAGE 29]`.
 
 All weights live in `LossConfig` `[IP PAGE 9, §4.2]`: `lambda_physics`,
 `lambda_temporal`, `lambda_stability`, `lambda_data`, `lambda_irl`, `lambda_hjb`
-(default `0.0`; opt-in critic regularizer), `lambda_adjoint`, plus
-physics/temporal/stability sub-weights. (`lambda_costate` was removed in v0.4.0
-with the vacuous costate term.) `TotalLoss` logs each sub-loss separately under
+(default `0.0`; opt-in critic regularizer), `lambda_pcml`, plus the physics
+sub-weights (`lambda_energy`/`lambda_pde`/`lambda_bc`/`lambda_sym`). (`lambda_costate`
+was removed in v0.4.0 with the vacuous costate term; the 6 unconsumed weights
+`lambda_adjoint`/`alpha_attn`/`alpha_smooth`/`mu_lyap`/`beta_param`/`lambda_delta_u`
+were removed in v0.4.1.) `TotalLoss` logs each sub-loss separately under
 `loss/physics`, `loss/temporal`, `loss/stability`, `loss/irl`, `loss/hjb`,
 `loss/data`. `[IP PAGE 31, §6.6]`
 

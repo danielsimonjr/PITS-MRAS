@@ -731,11 +731,12 @@ class PITSMRASConfig:
 
 Main weights: `lambda_physics=1.0`, `lambda_temporal=0.5`, `lambda_stability=2.0`,
 `lambda_data=1.0`, `lambda_irl=1.0`, `lambda_hjb=0.0` (opt-in; `>0` enables the
-HJB critic regularizer), `lambda_adjoint=0.05`, `lambda_pcml=1.0`.
+HJB critic regularizer), `lambda_pcml=1.0`.
 Physics sub-weights: `lambda_energy=1.0`, `lambda_pde=1.0`, `lambda_bc=0.5`,
 `lambda_sym=0.2`.
-Temporal sub-weights: `alpha_attn=0.1`, `alpha_smooth=0.05`.
-Stability sub-weights: `mu_lyap=0.01`, `beta_param=1e-4`, `lambda_delta_u=0.01`.
+(The orphaned `lambda_adjoint` / `alpha_attn` / `alpha_smooth` / `mu_lyap` /
+`beta_param` / `lambda_delta_u` weights were removed in v0.4.1 — they were
+unconsumed; the corresponding sub-loss classes carry their own weights.)
 
 ### `TrainingConfig` — schedule (Algorithms 2 & 3)
 

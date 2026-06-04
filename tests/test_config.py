@@ -69,16 +69,10 @@ def test_loss_config_defaults() -> None:
     assert c.lambda_data == 1.0
     assert c.lambda_irl == 1.0
     assert c.lambda_hjb == 0.0
-    assert c.lambda_adjoint == 0.05
     assert c.lambda_energy == 1.0
     assert c.lambda_pde == 1.0
     assert c.lambda_bc == 0.5
     assert c.lambda_sym == 0.2
-    assert c.alpha_attn == 0.1
-    assert c.alpha_smooth == 0.05
-    assert c.mu_lyap == 0.01
-    assert c.beta_param == 1e-4
-    assert c.lambda_delta_u == 0.01
 
 
 def test_training_config_defaults() -> None:

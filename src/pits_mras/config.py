@@ -83,20 +83,12 @@ class LossConfig:
     lambda_irl: float = 1.0  # IRL Bellman error weight
     lambda_hjb: float = 0.0  # HJB residual weight; >0 opts the critic into the
     # HJB regularizer (applied via the critic optimizer in cotraining_loop, §3.5)
-    lambda_adjoint: float = 0.05  # Adjoint dynamics residual weight
     lambda_pcml: float = 1.0  # PCML constraint loss weight (soft or hard)
-    # Physics sub-weights
+    # Physics sub-weights (consumed by PhysicsLoss)
     lambda_energy: float = 1.0
     lambda_pde: float = 1.0
     lambda_bc: float = 0.5
     lambda_sym: float = 0.2
-    # Temporal sub-weights
-    alpha_attn: float = 0.1  # attention entropy regularization
-    alpha_smooth: float = 0.05  # temporal smoothness
-    # Stability sub-weights
-    mu_lyap: float = 0.01  # exponential decay rate in L_Lyap
-    beta_param: float = 1e-4  # parameter boundedness regularization
-    lambda_delta_u: float = 0.01  # control rate penalty
 
 
 @dataclass
