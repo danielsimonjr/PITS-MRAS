@@ -75,7 +75,6 @@ class PITNN(nn.Module):
             d_k=net_cfg.hidden_dim,
             e_dim=net_cfg.output_dim,  # error dim ~= output dim for this system
             n_state=net_cfg.input_dim,
-            n_heads=net_cfg.attention_heads,
             control_dim=phys_cfg.n_generalized_coords,
         )
 

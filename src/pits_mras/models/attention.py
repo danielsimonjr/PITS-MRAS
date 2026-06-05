@@ -45,12 +45,10 @@ class PhysicsInformedAttention(nn.Module):
         d_k: int,  # key/query dimension
         e_dim: int,  # tracking error dimension
         n_state: int,  # full state dimension
-        n_heads: int = 4,
         control_dim: int | None = None,  # control dim; defaults to n_state
     ) -> None:
         super().__init__()
         self.d_k = d_k
-        self.n_heads = n_heads
         # Physical descriptor is [x_p, x_p_dot, u] = 2*n_state + control_dim.
         # IP §5.1 wrote ``n_state * 3`` assuming control_dim == n_state; we size
         # it correctly for the general (control_dim != n_state) case.

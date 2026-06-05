@@ -84,6 +84,8 @@ class LossConfig:
     lambda_hjb: float = 0.0  # HJB residual weight; >0 opts the critic into the
     # HJB regularizer (applied via the critic optimizer in cotraining_loop, §3.5)
     lambda_pcml: float = 1.0  # PCML constraint loss weight (soft or hard)
+    lambda_cbf: float = 0.1  # CBF constraint-loss weight in the PITNN objective
+    # (cotraining_loop, §8.2). Default 0.1 reproduces the historical hardcoded term.
     # Physics sub-weights (consumed by PhysicsLoss)
     lambda_energy: float = 1.0
     lambda_pde: float = 1.0

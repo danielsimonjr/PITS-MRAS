@@ -19,7 +19,7 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.4.9` · 42 source files · 10 modules · 5,971 LOC · 130 exports
+**Version `0.4.10` · 42 source files · 10 modules · 6,134 LOC · 130 exports
 (46 re-exports) · 47 classes · 1 Protocol/ABC · 36 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
@@ -172,10 +172,10 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.4.9` |
+| Version | `0.4.10` |
 | Total Python files | 42 |
 | Modules | 10 |
-| Total lines of code | 5,971 |
+| Total lines of code | 6,134 |
 | Total exports | 130 |
 | Re-exports (barrel) | 46 |
 | Classes | 47 |

@@ -17,7 +17,8 @@ Per step the loop:
    critic with a SEPARATE ``critic_optimizer`` (Adam lr=1e-3, grad-clip 1.0),
    then performs the policy-improvement read-out ``K = R^{-1} B^T P_hat``,
 4. builds the PITNN objective ``L_total`` = physics + (optional) PCML +
-   ``0.1`` * CBF constraint, and steps the PITNN optimizer (Adam lr=1e-4); the
+   ``cfg.losses.lambda_cbf`` * CBF constraint, and steps the PITNN optimizer
+   (Adam lr=1e-4); the
    critic-only regularizers are applied SEPARATELY through the *critic* optimizer
    — an opt-in HJB residual (``lambda_hjb`` > 0) and positive-definiteness
    (``_POSITIVITY_WEIGHT`` * ``relu(-λ_min(P))``),
@@ -58,10 +59,12 @@ from pits_mras.losses.hjb import HJBResidualLoss
 from pits_mras.losses.irl import IRLBellmanLoss
 
 if TYPE_CHECKING:
-    from pits_mras.config import PITSMRASConfig
+    from pits_mras.config import LossConfig, PITSMRASConfig
     from pits_mras.controllers.mras import MRASController
     from pits_mras.controllers.reference_models import LinearReferenceModel
+    from pits_mras.controllers.safety import CLFCBFSafetyFilter
     from pits_mras.models import PITNN
+    from pits_mras.models.critic import QuadraticCritic
     from pits_mras.models.pcml import PCMLModule
 
 logger = logging.getLogger(__name__)
@@ -80,6 +83,210 @@ def _synthetic_plant_step(x_p: Tensor, u: Tensor, A_m: Tensor, B_m: Tensor, dt: 
     """
     x_dot = torch.einsum("ij,bj->bi", A_m, x_p) + torch.einsum("ij,bj->bi", B_m, u)
     return (x_p + dt * x_dot).detach()
+
+
+def _pitnn_objective_step(
+    pitnn_output: dict[str, Tensor],
+    e: Tensor,
+    u_safe: Tensor,
+    f_target: Tensor,
+    state_dim: int,
+    loss_cfg: "LossConfig",
+    optimizer_pitnn: torch.optim.Optimizer,
+    critic_optimizer: torch.optim.Optimizer,
+    *,
+    pcml_module: "PCMLModule | None",
+    use_cbf: bool,
+    safety_filter: "CLFCBFSafetyFilter | None",
+    batch_size: int,
+    x_p: Tensor,
+) -> tuple[float, float, float]:
+    """Build the PITNN objective ``L_total`` and take ONE PITNN optimizer step.
+
+    ``L_total`` = ``lambda_physics`` * physics + (optional) ``lambda_pcml`` * PCML
+    + (optional) ``lambda_cbf`` * CBF. These are exactly the components that ride
+    the *PITNN* optimizer; the critic-only regularizers (HJB / positivity / IRL)
+    are stepped separately by the caller through ``critic_optimizer``.
+
+    The PITNN gradients are zeroed, ``L_total.backward()`` is run, and the PITNN
+    optimizer is stepped. ``critic_optimizer.zero_grad()`` is also called first so
+    the critic graph stays clean (``L_total`` is a pure PITNN objective; any
+    gradient it deposits on the critic's ``W_c`` is discarded here).
+
+    Returns ``(l_total_val, l_pcml_val, l_cbf_val)`` as plain floats for logging.
+    """
+    # ── physics term ──
+    l_phys = (pitnn_output["f_hat"][:, :state_dim] - f_target).pow(2).mean()
+    l_total = loss_cfg.lambda_physics * l_phys
+
+    # ── PCML constraint loss (opt-in; §3.1 dynamic activation) ──
+    l_pcml_val = 0.0
+    if pcml_module is not None:
+        n_out = pcml_module.projection.n_y
+        n_der = pcml_module.n_deriv
+        zeros_xt = x_p.new_zeros(batch_size, 1)
+        y_hat_p = pitnn_output["f_hat"][:, :n_out]
+        d_hat_p = pitnn_output["f_hat"].new_zeros(batch_size, n_der)
+        lam_hat_p = pitnn_output.get(
+            "lam_hat",
+            pitnn_output["f_hat"].new_zeros(
+                batch_size, pcml_module.projection.n_c + pcml_module.projection.n_g
+            ),
+        )
+        pcml_module.update_activation(float(l_phys.detach()))
+        _, l_pcml, _ = pcml_module(
+            zeros_xt,
+            zeros_xt,
+            y_hat_p,
+            d_hat_p,
+            lam_hat_p,
+            y_true=f_target[:, :n_out],
+        )
+        l_total = l_total + loss_cfg.lambda_pcml * l_pcml
+        l_pcml_val = float(l_pcml.detach())
+
+    # ── CBF constraint loss (opt-in via the safety filter) ──
+    l_cbf_val = 0.0
+    if use_cbf and safety_filter is not None:
+        l_cbf = safety_filter.cbf_constraint_loss(e.detach(), u_safe.detach())
+        l_total = l_total + loss_cfg.lambda_cbf * l_cbf
+        l_cbf_val = float(l_cbf.detach())
+
+    optimizer_pitnn.zero_grad()
+    critic_optimizer.zero_grad()  # l_total is a pure PITNN objective
+    l_total.backward()
+    optimizer_pitnn.step()
+
+    return float(l_total.detach()), l_pcml_val, l_cbf_val
+
+
+def _hjb_critic_step(
+    critic: torch.nn.Module,
+    e: Tensor,
+    hjb_loss: HJBResidualLoss,
+    lambda_hjb: float,
+    critic_optimizer: torch.optim.Optimizer,
+) -> float:
+    """Opt-in HJB residual regularizer on the CRITIC (applies iff ``lambda_hjb > 0``).
+
+    HJB depends only on the critic's ``W_c``, so it must ride with
+    ``critic_optimizer`` — in ``L_total`` its gradient went to ``W_c`` unstepped
+    and was wiped. Unlike the positivity step (guarded because ``positivity_loss``
+    is EXACTLY 0 in the healthy regime, so an unguarded step would be a pure no-op
+    that still advances Adam's counter), the HJB residual is a genuine signal the
+    caller opted into: it applies every step by design. Sharing
+    ``critic_optimizer``'s Adam state with the IRL step is the accepted cost of
+    co-training the critic with IRL + HJB through one optimizer.
+
+    Returns the HJB residual loss as a float (0.0 when disabled).
+    """
+    if lambda_hjb <= 0.0:
+        return 0.0
+    critic_optimizer.zero_grad()
+    hjb_out = hjb_loss(critic, e.detach())
+    (lambda_hjb * hjb_out["loss"]).backward()
+    critic_optimizer.step()
+    return float(hjb_out["loss"].detach())
+
+
+def _positivity_critic_step(
+    critic: "QuadraticCritic",
+    critic_optimizer: torch.optim.Optimizer,
+) -> float:
+    """Guarded critic positive-definiteness regularization (applied via the CRITIC
+    optimizer).
+
+    It depends only on the critic's ``W_c``, so it must ride with
+    ``critic_optimizer`` — adding it to ``L_total`` (PITNN objective) left its
+    gradient on ``W_c`` unstepped and then wiped by the IRL block's
+    ``zero_grad``. ``positivity_loss`` is exactly 0 while P is PD (the healthy
+    regime), so the step is GUARDED on a strictly positive loss: this both skips
+    a no-op update and avoids advancing the shared critic-optimizer's Adam step
+    count (which would bias the IRL update's bias-correction schedule). When P
+    drifts indefinite it pulls the minimum eigenvalue back up.
+
+    Returns the positivity loss value as a float (the metric recorded each step).
+    """
+    l_pos = critic.positivity_loss()
+    l_pos_val = float(l_pos.detach())
+    if l_pos_val > 0.0:
+        critic_optimizer.zero_grad()
+        (_POSITIVITY_WEIGHT * l_pos).backward()
+        critic_optimizer.step()
+    return l_pos_val
+
+
+def _irl_critic_step(
+    controller: "MRASController",
+    ref_model: "LinearReferenceModel",
+    e_window: "Deque[Tensor]",
+    u_window: "Deque[Tensor]",
+    e: Tensor,
+    u_safe: Tensor,
+    irl_window: int,
+    irl_loss: IRLBellmanLoss,
+    dt: float,
+    critic_optimizer: torch.optim.Optimizer,
+) -> float:
+    """IRL critic update (Identity 1 — Vrabie & Lewis 2009); window-gated.
+
+    Appends the detached ``(e, u_safe)`` sample to the rolling window; once it
+    holds ``irl_window + 1`` samples it forms the integral-RL Bellman loss and
+    takes one policy-evaluation gradient step on the critic (grad-clip 1.0) via
+    ``critic_optimizer``, then runs the diagnostic policy-improvement read-out
+    ``K <- R^{-1} B^T P_hat``.
+
+    Returns the IRL Bellman loss as a float (0.0 until the window fills).
+    """
+    e_window.append(e.detach())
+    u_window.append(u_safe.detach())
+    if len(e_window) != irl_window + 1:
+        return 0.0
+    e_win = torch.stack(list(e_window), dim=1)  # [batch, W+1, n]
+    u_win = torch.stack(list(u_window), dim=1)  # [batch, W+1, m]
+    irl_out = irl_loss(controller.critic, e_win, u_win, dt)
+    l_irl = irl_out["loss"]
+    critic_optimizer.zero_grad()
+    l_irl.backward()
+    torch.nn.utils.clip_grad_norm_(controller.critic.parameters(), max_norm=1.0)
+    critic_optimizer.step()
+    # Policy-improvement read-out: K <- R^{-1} B^T P_hat (diagnostic).
+    with torch.no_grad():
+        P_hat = controller.critic.extract_P()
+        _ = ref_model.R_inv @ ref_model.B_m.T @ P_hat
+    return float(l_irl.detach())
+
+
+def _advance_plant(
+    x_p: Tensor,
+    x_m: Tensor,
+    x_hist: Tensor,
+    u_hist: Tensor,
+    e_hist: Tensor,
+    e_curr: Tensor,
+    u_safe: Tensor,
+    r: Tensor,
+    ref_model: "LinearReferenceModel",
+    A_m: Tensor,
+    B_m: Tensor,
+    dt: float,
+    control_dim: int,
+    input_dim: int,
+    batch_size: int,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    """Advance the synthetic plant + reference model and slide the history window.
+
+    Returns the updated ``(x_hist, u_hist, e_hist, x_p, x_m)`` tuple. All returned
+    tensors are detached (each step's losses are computed on detached state).
+    """
+    u_full = torch.zeros(batch_size, input_dim)
+    u_full[:, :control_dim] = u_safe.detach()
+    x_hist = torch.cat([x_hist[:, 1:, :], x_p.unsqueeze(1)], dim=1).detach()
+    u_hist = torch.cat([u_hist[:, 1:, :], u_full.unsqueeze(1)], dim=1).detach()
+    e_hist = torch.cat([e_hist[:, 1:, :], e_curr.detach().unsqueeze(1)], dim=1).detach()
+    x_p = _synthetic_plant_step(x_p, u_full, A_m, B_m, dt)
+    x_m = ref_model.step(x_m, r, dt).detach()
+    return x_hist, u_hist, e_hist, x_p, x_m
 
 
 def cotraining_loop(
@@ -217,109 +424,56 @@ def cotraining_loop(
                 "bi,ij,bj->b", u_safe, R, u_safe
             )
 
-            # ── PITNN objective L_total ──
+            # PITNN-objective target: f_target = A_m e + B_m u_safe (control detached).
             f_target = torch.einsum("ij,bj->bi", A_m, e) + torch.einsum(
                 "ij,bj->bi", B_m, u_safe.detach()
             )
-            l_phys = (pitnn_output["f_hat"][:, :state_dim] - f_target).pow(2).mean()
-            l_total = loss_cfg.lambda_physics * l_phys
 
-            # ── PCML constraint loss (opt-in; §3.1 dynamic activation) ──
-            l_pcml_val = 0.0
-            if pcml_module is not None:
-                n_out = pcml_module.projection.n_y
-                n_der = pcml_module.n_deriv
-                zeros_xt = x_p.new_zeros(batch_size, 1)
-                y_hat_p = pitnn_output["f_hat"][:, :n_out]
-                d_hat_p = pitnn_output["f_hat"].new_zeros(batch_size, n_der)
-                lam_hat_p = pitnn_output.get(
-                    "lam_hat",
-                    pitnn_output["f_hat"].new_zeros(
-                        batch_size, pcml_module.projection.n_c + pcml_module.projection.n_g
-                    ),
-                )
-                pcml_module.update_activation(float(l_phys.detach()))
-                _, l_pcml, _ = pcml_module(
-                    zeros_xt,
-                    zeros_xt,
-                    y_hat_p,
-                    d_hat_p,
-                    lam_hat_p,
-                    y_true=f_target[:, :n_out],
-                )
-                l_total = l_total + loss_cfg.lambda_pcml * l_pcml
-                l_pcml_val = float(l_pcml.detach())
+            # ── Step 1: PITNN objective (physics + pcml + cbf) -> PITNN optimizer.
+            l_total_val, l_pcml_val, l_cbf_val = _pitnn_objective_step(
+                pitnn_output,
+                e,
+                u_safe,
+                f_target,
+                state_dim,
+                loss_cfg,
+                optimizer_pitnn,
+                critic_optimizer,
+                pcml_module=pcml_module,
+                use_cbf=use_cbf,
+                safety_filter=controller.safety_filter,
+                batch_size=batch_size,
+                x_p=x_p,
+            )
 
-            # ── CBF constraint loss ──
-            l_cbf_val = 0.0
-            if use_cbf and controller.safety_filter is not None:
-                l_cbf = controller.safety_filter.cbf_constraint_loss(e.detach(), u_safe.detach())
-                l_total = l_total + 0.1 * l_cbf
-                l_cbf_val = float(l_cbf.detach())
+            # ── Step 2: HJB residual regularizer -> critic optimizer (opt-in).
+            l_hjb_val = _hjb_critic_step(
+                controller.critic, e, hjb_loss, loss_cfg.lambda_hjb, critic_optimizer
+            )
 
-            optimizer_pitnn.zero_grad()
-            critic_optimizer.zero_grad()  # l_total is a pure PITNN objective
-            l_total.backward()
-            optimizer_pitnn.step()
+            # ── Step 3: critic positivity regularizer -> critic optimizer (guarded).
+            l_pos_val = _positivity_critic_step(controller.critic, critic_optimizer)
 
-            # ── HJB residual regularizer on the CRITIC (opt-in: lambda_hjb > 0).
-            # HJB depends only on the critic's W_c, so it must ride with
-            # ``critic_optimizer`` — in ``l_total`` its gradient went to W_c
-            # unstepped and was wiped. Unlike the positivity step below (guarded
-            # because positivity_loss is EXACTLY 0 in the healthy regime, so an
-            # unguarded step would be a pure no-op that still advances Adam's
-            # counter), the HJB residual is a genuine signal the caller opted into:
-            # it applies every step by design. Sharing ``critic_optimizer``'s Adam
-            # state with the IRL step is the accepted cost of co-training the
-            # critic with IRL + HJB through one optimizer.
-            l_hjb_val = 0.0
-            if loss_cfg.lambda_hjb > 0.0:
-                critic_optimizer.zero_grad()
-                hjb_out = hjb_loss(controller.critic, e.detach())
-                (loss_cfg.lambda_hjb * hjb_out["loss"]).backward()
-                critic_optimizer.step()
-                l_hjb_val = float(hjb_out["loss"].detach())
+            # ── Step 4: IRL critic update -> critic optimizer (window-gated).
+            l_irl_val = _irl_critic_step(
+                controller,
+                ref_model,
+                e_window,
+                u_window,
+                e,
+                u_safe,
+                irl_window,
+                irl_loss,
+                dt,
+                critic_optimizer,
+            )
 
-            # ── Critic positivity regularization (applied via the CRITIC
-            # optimizer). It depends only on the critic's W_c, so it must ride
-            # with ``critic_optimizer`` — adding it to ``l_total`` (PITNN
-            # objective) left its gradient on W_c unstepped and then wiped by the
-            # IRL block's ``zero_grad``. ``positivity_loss`` is exactly 0 while P
-            # is PD (the healthy regime), so the step is GUARDED on a strictly
-            # positive loss: this both skips a no-op update and avoids advancing
-            # the shared critic-optimizer's Adam step count (which would bias the
-            # IRL update's bias-correction schedule). When P drifts indefinite it
-            # pulls the minimum eigenvalue back up.
-            l_pos = controller.critic.positivity_loss()
-            if float(l_pos.detach()) > 0.0:
-                critic_optimizer.zero_grad()
-                (_POSITIVITY_WEIGHT * l_pos).backward()
-                critic_optimizer.step()
-
-            # ── NEW: IRL critic update (Identity 1 — Vrabie & Lewis 2009) ──
-            e_window.append(e.detach())
-            u_window.append(u_safe.detach())
-            l_irl_val = 0.0
-            if len(e_window) == irl_window + 1:
-                e_win = torch.stack(list(e_window), dim=1)  # [batch, W+1, n]
-                u_win = torch.stack(list(u_window), dim=1)  # [batch, W+1, m]
-                irl_out = irl_loss(controller.critic, e_win, u_win, dt)
-                l_irl = irl_out["loss"]
-                critic_optimizer.zero_grad()
-                l_irl.backward()
-                torch.nn.utils.clip_grad_norm_(controller.critic.parameters(), max_norm=1.0)
-                critic_optimizer.step()
-                l_irl_val = float(l_irl.detach())
-                # Policy-improvement read-out: K <- R^{-1} B^T P_hat (diagnostic).
-                with torch.no_grad():
-                    P_hat = controller.critic.extract_P()
-                    _ = ref_model.R_inv @ ref_model.B_m.T @ P_hat
-
+            # ── Step 5: record per-step metrics.
             metrics["irl_loss"].append(l_irl_val)
             metrics["hjb_loss"].append(l_hjb_val)
-            metrics["positivity_loss"].append(float(l_pos.detach()))
+            metrics["positivity_loss"].append(l_pos_val)
             metrics["cbf_loss"].append(l_cbf_val)
-            metrics["total_loss"].append(float(l_total.detach()))
+            metrics["total_loss"].append(l_total_val)
             metrics["running_cost"].append(float(r_inst.detach().mean()))
             # Critic convergence to the CARE solution (reflects the IRL update).
             with torch.no_grad():
@@ -330,14 +484,24 @@ def cotraining_loop(
             if pcml_module is not None:
                 metrics["pcml_loss"].append(l_pcml_val)
 
-            # ── Advance synthetic plant + reference model, slide history ──
-            u_full = torch.zeros(batch_size, input_dim)
-            u_full[:, :control_dim] = u_safe.detach()
-            x_hist = torch.cat([x_hist[:, 1:, :], x_p.unsqueeze(1)], dim=1).detach()
-            u_hist = torch.cat([u_hist[:, 1:, :], u_full.unsqueeze(1)], dim=1).detach()
-            e_hist = torch.cat([e_hist[:, 1:, :], e_curr.detach().unsqueeze(1)], dim=1).detach()
-            x_p = _synthetic_plant_step(x_p, u_full, A_m, B_m, dt)
-            x_m = ref_model.step(x_m, r, dt).detach()
+            # ── Step 6: advance synthetic plant + reference model, slide history.
+            x_hist, u_hist, e_hist, x_p, x_m = _advance_plant(
+                x_p,
+                x_m,
+                x_hist,
+                u_hist,
+                e_hist,
+                e_curr,
+                u_safe,
+                r,
+                ref_model,
+                A_m,
+                B_m,
+                dt,
+                control_dim,
+                input_dim,
+                batch_size,
+            )
 
         if episode % max(train_cfg.log_every, 1) == 0:
             logger.info(

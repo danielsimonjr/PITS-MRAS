@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.9 | **Last Updated**: 2026-06-05
+**Version**: 0.4.10 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -752,10 +752,12 @@ The codebase is organized into the following modules:
 |--------|---------|------|
 | `src/pits_mras/losses/hjb.py` | `HJBResidualLoss` | Import |
 | `src/pits_mras/losses/irl.py` | `IRLBellmanLoss` | Import |
-| `src/pits_mras/config.py` | `PITSMRASConfig` | Import (TYPE_CHECKING) |
+| `src/pits_mras/config.py` | `LossConfig, PITSMRASConfig` | Import (TYPE_CHECKING) |
 | `src/pits_mras/controllers/mras.py` | `MRASController` | Import (TYPE_CHECKING) |
 | `src/pits_mras/controllers/reference_models.py` | `LinearReferenceModel` | Import (TYPE_CHECKING) |
+| `src/pits_mras/controllers/safety.py` | `CLFCBFSafetyFilter` | Import (TYPE_CHECKING) |
 | `src/pits_mras/models/__init__.py` | `PITNN` | Import (TYPE_CHECKING) |
+| `src/pits_mras/models/critic.py` | `QuadraticCritic` | Import (TYPE_CHECKING) |
 | `src/pits_mras/models/pcml.py` | `PCMLModule` | Import (TYPE_CHECKING) |
 
 **Exports:**
@@ -1038,7 +1040,7 @@ graph TD
 |----------|-------|
 | Total Python Files | 42 |
 | Total Modules | 10 |
-| Total Lines of Code | 5971 |
+| Total Lines of Code | 6134 |
 | Total Public Exports | 130 |
 | Total Re-exports | 46 |
 | Total Classes | 47 |
@@ -1047,10 +1049,10 @@ graph TD
 | Total Functions | 36 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
-| TYPE_CHECKING Imports | 10 |
+| TYPE_CHECKING Imports | 12 |
 | Runtime Circular Deps | 0 |
 | TYPE_CHECKING Circular Deps | 0 |
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.9
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.10

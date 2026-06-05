@@ -193,6 +193,121 @@ def test_cotrain_no_nan_and_critic_steps() -> None:
     assert not torch.allclose(p_before, p_after)
 
 
+def test_cotrain_characterization() -> None:
+    """Pin the exact ``cotraining_loop`` output for a fixed seed (behavior lock).
+
+    This is a golden-value safety net for the §8.2 simplicity refactor: the
+    metric series and the final critic ``W_c`` must match values captured from
+    the pre-refactor implementation, so the decomposition into helpers cannot
+    silently change training dynamics (RNG consumption, operation order, or the
+    optimizer-step sequence). If this test fails after a refactor, behavior was
+    NOT preserved.
+    """
+    # Seed model construction so the random init is deterministic too; the loop's
+    # own internal seed pins the synthetic-data RNG. Without seeding construction,
+    # the controller's compensator init (built before the loop sets the seed) is
+    # nondeterministic and the metrics drift run-to-run.
+    torch.manual_seed(0)
+    cfg = _small_cfg()
+    pitnn = _small_pitnn(cfg)
+    ref_model = _make_ref_model()
+    controller = _make_controller(ref_model)
+
+    metrics = cotraining_loop(
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=2,
+        n_steps=6,
+        batch_size=4,
+        irl_window=3,
+        seed=0,
+    )
+
+    # Golden values captured from the pre-refactor implementation (construction
+    # seeded with manual_seed(0); loop seed=0).
+    golden = {
+        "cbf_loss": [0.0] * 12,
+        "hjb_loss": [0.0] * 12,
+        "positivity_loss": [0.0] * 12,
+        "irl_loss": [
+            0.0,
+            0.0,
+            0.0,
+            0.0007019792683422565,
+            0.00025910313706845045,
+            0.00032936898060142994,
+            0.0,
+            0.0,
+            0.0,
+            6.310611206572503e-05,
+            0.00028466308140195906,
+            0.0002833290782291442,
+        ],
+        "critic_convergence": [
+            0.0,
+            0.0,
+            0.0,
+            0.0009608363034203649,
+            0.0017728230450302362,
+            0.0025667042937129736,
+            0.0025667042937129736,
+            0.0025667042937129736,
+            0.0025667042937129736,
+            0.0031943991780281067,
+            0.003753677010536194,
+            0.004279528744518757,
+        ],
+        "running_cost": [
+            3.8924312591552734,
+            3.831296443939209,
+            3.7673466205596924,
+            3.7175076007843018,
+            3.6740059852600098,
+            3.617445230484009,
+            2.5767951011657715,
+            2.5431299209594727,
+            2.518582344055176,
+            2.4797956943511963,
+            2.4506125450134277,
+            2.4367644786834717,
+        ],
+        "total_loss": [
+            4.068385124206543,
+            3.945486068725586,
+            3.833880662918091,
+            3.737290859222412,
+            3.659062385559082,
+            3.5560996532440186,
+            2.519118309020996,
+            2.4471771717071533,
+            2.3850197792053223,
+            2.3057875633239746,
+            2.2665834426879883,
+            2.2229363918304443,
+        ],
+    }
+
+    for key, expected in golden.items():
+        actual = torch.tensor(metrics[key], dtype=torch.float64)
+        torch.testing.assert_close(
+            actual,
+            torch.tensor(expected, dtype=torch.float64),
+            rtol=1e-5,
+            atol=1e-7,
+            msg=f"metric '{key}' diverged from golden values",
+        )
+
+    # Final critic weight tensor must match the captured golden tensor.
+    golden_w_c = torch.tensor(
+        [1.383518934249878, 0.827769935131073, 0.6769635677337646],
+        dtype=torch.float64,
+    )
+    actual_w_c = controller.critic.W_c.weight.detach().flatten().to(torch.float64)
+    torch.testing.assert_close(actual_w_c, golden_w_c, rtol=1e-5, atol=1e-6)
+
+
 def test_cotrain_records_critic_convergence_and_it_decreases() -> None:
     """cotrain reports a critic_convergence series; IRL drives P_hat toward P_opt.
 

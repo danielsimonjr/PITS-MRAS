@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.10] - 2026-06-05
+
+Sprint item ROADMAP #9 (simplicity refactor of the co-training loop). Pure
+behaviour-preserving refactor — locked by a new characterization test. Suite
+green (254); ruff + mypy clean.
+
+### Changed
+
+- **`cotraining_loop` decomposed into five named helpers** (`_pitnn_objective_step`,
+  `_hjb_critic_step`, `_positivity_critic_step`, `_irl_critic_step`,
+  `_advance_plant`); the top-level loop now reads as a sequence of named steps.
+  Verified behaviour-identical (same ops, order, RNG consumption, optimizer-step
+  sequence) by a new `test_cotrain_characterization` golden-value test.
+- **CBF weight is now configurable.** The hardcoded `0.1 * L_cbf` in the PITNN
+  objective is replaced by `LossConfig.lambda_cbf` (default `0.1`, so behaviour is
+  unchanged; YAML-backward-compatible).
+
+### Removed
+
+- **Dead `n_heads` parameter** dropped from `PhysicsInformedAttention` (declared
+  but never used in `forward`); the `models/pitnn.py` caller no longer passes it.
+  `NetworkConfig.attention_heads` is kept (user-facing / backward-compatible).
+
+### Notes
+
+- The `TotalLoss` registry was **deliberately not** wired into `cotraining_loop`:
+  the loop splits losses across two optimizers (PITNN-objective vs critic-side
+  IRL/HJB/positivity) and interleaves PCML activation, which `TotalLoss`'s
+  single-aggregate model doesn't fit — forcing it would add indirection, not
+  remove it. `TotalLoss` remains the aggregator for pre-training / external use.
+
 ## [0.4.9] - 2026-06-05
 
 Sprint item ROADMAP #3 (uncertainty quantification), plus a CI fix for the

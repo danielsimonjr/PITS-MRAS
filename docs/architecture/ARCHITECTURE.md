@@ -81,7 +81,7 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 42 files · 10 modules · ~5,971 LOC · 130
+Key statistics (graph-generated): 42 files · 10 modules · ~6,134 LOC · 130
 public exports (46 re-exported through barrels) · 47 classes · 1 ABC
 (`PhysicsConstraints`) · 36 functions · 10 `TYPE_CHECKING`-guarded imports.
 

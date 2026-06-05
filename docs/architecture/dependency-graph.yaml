@@ -1,6 +1,6 @@
 metadata:
   name: pits_mras
-  version: 0.4.9
+  version: 0.4.10
   lastUpdated: '2026-06-05'
   totalFiles: 42
   totalModules: 10
@@ -1247,6 +1247,7 @@ modules:
       - file: src/pits_mras/config.py
         module: pits_mras.config
         imports:
+        - LossConfig
         - PITSMRASConfig
         typeOnly: true
       - file: src/pits_mras/controllers/mras.py
@@ -1259,10 +1260,20 @@ modules:
         imports:
         - LinearReferenceModel
         typeOnly: true
+      - file: src/pits_mras/controllers/safety.py
+        module: pits_mras.controllers.safety
+        imports:
+        - CLFCBFSafetyFilter
+        typeOnly: true
       - file: src/pits_mras/models/__init__.py
         module: pits_mras.models
         imports:
         - PITNN
+        typeOnly: true
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - QuadraticCritic
         typeOnly: true
       - file: src/pits_mras/models/pcml.py
         module: pits_mras.models.pcml
@@ -1592,7 +1603,7 @@ dependencyGraph:
 statistics:
   totalPythonFiles: 42
   totalModules: 10
-  totalLinesOfCode: 5971
+  totalLinesOfCode: 6134
   totalExports: 130
   totalClasses: 47
   totalInterfaces: 1
@@ -1601,7 +1612,7 @@ statistics:
   totalTypeGuards: 0
   totalConstants: 0
   totalReExports: 46
-  totalTypeCheckingImports: 10
+  totalTypeCheckingImports: 12
   runtimeCircularDeps: 0
   typeCheckingCircularDeps: 0
   unusedFilesCount: 0
