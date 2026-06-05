@@ -1,11 +1,12 @@
 # TODO
 
-Working tracker for PITS-MRAS. **Current state: released through v0.4.5** — the
-9-phase foundation (v0.2.0), the PCML physics-constraint layer (v0.3.0), the
-v0.3.x simplification/debt passes, and the **complete v0.4.x feature line**
-(v0.4.0–v0.4.5: HJB/costate rewire, docs sweep, dead-field removal, KKT
-line-search Newton, nonlinear example plants, ParallelInferenceEngine hardening,
-H∞ adversary core). See [CHANGELOG.md](CHANGELOG.md) for landed work.
+Working tracker for PITS-MRAS. **Current state: released through v0.5.0** — the
+9-phase foundation (v0.2.0), PCML (v0.3.0), v0.3.x simplify/debt, the complete
+v0.4.x feature line (v0.4.0–v0.4.5), and the **2026-06-05 improvement sprint**
+(v0.4.6–v0.5.0: rollout diagnostics, Ruff migration, UQ, cotrain decomposition,
+adaptive loss weighting, vectorized KKT Jacobian, differentiable CARE/GARE, deep
+Koopman lifting, and the **H∞ neural min-max** capstone). See
+[CHANGELOG.md](CHANGELOG.md) for landed work.
 
 See **Open items** below for what's not-yet-done; everything in the dated
 release sections further down is DONE.
@@ -41,28 +42,27 @@ are genuine optional follow-ons, in rough priority order:
 > H∞ neural min-max) is now ROADMAP proposal #1. The proposals are candidates, not
 > scheduled. See memory `project_pits_mras_improvement_research.md`.
 
-1. **CDG tool — import-parsing accuracy bug** (tooling). The dependency-graph
-   tool captures **64 malformed `externalDependencies` import strings**: a
-   function-level `from x import y  # noqa: E402` is swallowed *together with the
-   following function body* into one giant "import" entry (the logical-line
-   joiner mishandles the trailing comment / subsequent code). Pollutes
-   `dependency-graph.json` only — the `.md` reports and the headline stats are
-   unaffected (which is why it stayed hidden). Bounded, TDD-able; the natural
-   follow-on to the v0.4.x-era reproducibility fix (`fix(tools)` c9c2f49).
-   Regenerate the graph after fixing.
-2. **v0.5.0 — H∞ neural adversarial min-max training loop** (feature). A learned
-   adversary *network* + worst-case min-max co-training on top of the v0.4.5
-   analytic core (`solve_gare` + `AdversaryHead`). A new feature line — needs its
-   own brainstorm → spec → plan → TDD. The only *planned* feature still open.
-3. **Verify CI green on GitHub** for the post-v0.4.5 pushes (local gates pass and
-   CI runs the same matrix; remote run not yet confirmed this session). Minor.
-4. **Tooling `[Unreleased]` CHANGELOG entry** (the CDG reproducibility fix) has no
-   tagged home — fine to let it roll into the next release, or cut a patch tag.
-   Decision only; no code work.
-
-Deferred/not-actionable now: the "watch" item below (#4 example-test framework
-warmup) and the Future roadmap (multi-agent, hierarchical PITS-MRAS, GPU/TPU,
-monitoring dashboard).
+> **2026-06-05 — GAP-CLOSURE SPRINT (in progress).** After the 10-proposal sprint,
+> enumerated all remaining gaps and committed to implementing them all, least →
+> most complex, via the same autonomous dev-workflow + subagent process (per-item
+> version+tag). Complexity-ascending ladder:
+>
+> 1. todo.md doc-rot cleanup + record this plan — XS *(this edit)*
+> 2. Example-test warmup fixture (session-scoped functorch warmup) — S
+> 3. Revisit / un-skip the tight-equality H∞ min-max test — S
+> 4. **G8** — generalize MIMO control input in the decoder (`B @ u`, not `B·u.sum`) — S–M
+> 5. **G7** — `data/` dataset/loader module (replace inline synthetic data) — M
+> 6. **#5 integration** — wire deep Koopman lifting into the control loop (latent
+>    `(A_z,B_z)` → `solve_care`/MRAS on lifted coords) — M–L
+> 7. **#6 integration** — wire the H∞ neural min-max loop into the PITNN/cotrain
+>    pipeline (currently standalone on linear systems) — M–L
+> 8. **Connection 5** — SAC / max-entropy RL module — L (minor bump)
+> 9. **Connection 9** — TD-MPC2 / learned-model planning module — L (minor bump)
+> 10. **GENERIC/GFINN** thermodynamic decoder extension — L (minor bump)
+>
+> **Excluded (Cardinal-Rule-6, needs its own brainstorm/design — NOT auto-implemented):**
+> the aspirational bucket — multi-agent, hierarchical PITS-MRAS, GPU/TPU support,
+> monitoring dashboard. These are undefined directions, not bounded tasks.
 
 ## Done
 
