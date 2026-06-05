@@ -1,5 +1,12 @@
 # PITS-MRAS GitHub Project - Setup Complete ✅
 
+> **Historical snapshot (October 2025).** This records the *initial* project
+> setup (documentation + pseudocode, pre-implementation) at an old path. The
+> project has since been fully implemented and released through **v0.4.5**. For
+> current state see [README.md](README.md), [CHANGELOG.md](CHANGELOG.md),
+> [docs/ROADMAP.md](docs/ROADMAP.md), and [docs/architecture/](docs/architecture/).
+> Kept as a historical record; not updated to track the implementation.
+
 **Date:** October 12, 2025
 **Project:** PITS-MRAS - Physics-Informed Time-Series Model-Reference Adaptive Systems
 

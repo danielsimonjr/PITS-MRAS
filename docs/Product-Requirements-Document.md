@@ -815,9 +815,10 @@ controller.register_physics_constraint(MyCustomConstraint())
 
 **TC-2: Software Constraints**
 
-**REQ-TC-2.1** [MUST]: System SHALL support Python ≥ 3.8
-- Justification: Type hints (PEP 484), dataclasses (PEP 557), modern asyncio
-- Compatibility: Test on Python 3.8, 3.9, 3.10, 3.11
+**REQ-TC-2.1** [MUST]: System SHALL support Python ≥ 3.10
+- Justification: Type hints (PEP 484/604), dataclasses (PEP 557); torch ≥ 2.0 and
+  the project's mypy target both require 3.10+
+- Compatibility: Tested on Python 3.10, 3.11, 3.12 (CI matrix)
 - EOL: Drop support for Python versions 6 months after EOL
 
 **REQ-TC-2.2** [MUST]: System SHALL be compatible with PyTorch ≥ 2.0

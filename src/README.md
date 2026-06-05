@@ -1,47 +1,57 @@
 # PITS-MRAS Source Code
 
-This directory will contain the implementation of the PITS-MRAS framework.
+The implemented `pits_mras` package (released through **v0.4.5**). See
+[`docs/architecture/`](../docs/architecture/) for the graph-backed component /
+API / data-flow docs, and [`CHANGELOG.md`](../CHANGELOG.md) for release history.
 
-## Planned Structure
+## Structure
 
 ```
 pits_mras/
-├── __init__.py
+├── __init__.py                     # public API + __version__
+├── config.py                       # PITSMRASConfig / NetworkConfig / PhysicsConfig / LossConfig / ...
 ├── models/
-│   ├── __init__.py
-│   ├── pitnn.py                    # Physics-Informed Temporal Neural Network
-│   ├── decoders.py                 # Port-Hamiltonian decoder
-│   └── attention.py                # Multi-head attention mechanisms
+│   ├── pitnn.py                    # Physics-Informed Temporal NN (LSTM + attention + decoder)
+│   ├── attention.py                # physics-informed multi-head attention
+│   ├── decoders.py                 # port-Hamiltonian decoder (HamiltonianNet, DissipationNet)
+│   ├── critic.py                   # QuadraticCritic, CostateHead, AdversaryHead (H∞)
+│   ├── pcml.py                     # PCML: SoftPCMLLoss, KKTProjectionLayer, PCMLModule
+│   └── lagrangian_head.py          # Lagrangian-multiplier head
 ├── controllers/
-│   ├── __init__.py
-│   ├── mras.py                     # MRAS adaptive controller
-│   └── reference_models.py         # Reference model implementations
+│   ├── mras.py                     # MRASController
+│   ├── reference_models.py         # LinearReferenceModel
+│   └── safety.py                   # CLF-CBF safety filter
+├── constraints/                    # PCML physics constraints
+│   ├── base.py                     # PhysicsConstraints ABC + ConstraintSpec
+│   ├── mechanical.py               # MechanicalDAE
+│   └── thermal.py                  # HeatConductionDAE
 ├── losses/
-│   ├── __init__.py
-│   ├── physics.py                  # Physics-informed losses
-│   ├── temporal.py                 # Time-series learning losses
-│   └── stability.py                # MRAS stability losses
+│   ├── physics.py temporal.py stability.py   # the loss families
+│   ├── irl.py                      # Integral-RL Bellman loss
+│   ├── hjb.py                      # HJB residual loss
+│   └── __init__.py                 # TotalLoss aggregator
 ├── training/
-│   ├── __init__.py
-│   ├── pretrain.py                 # Algorithm 2: Pre-training
-│   ├── cotrain.py                  # Algorithm 3: Co-training
-│   └── curriculum.py               # Curriculum learning schedules
+│   ├── pretrain.py                 # Algorithm 2: 3-stage curriculum pre-training
+│   ├── cotrain.py                  # Algorithm 3: closed-loop actor-critic co-training
+│   └── irl_trainer.py             # offline IRL critic fitting
 ├── inference/
-│   ├── __init__.py
-│   ├── realtime.py                 # Real-time inference engine
-│   └── parallel.py                 # Parallel thread architecture
+│   ├── realtime.py                 # RealtimeInferenceEngine (thread-safe single loop)
+│   └── parallel.py                 # ParallelInferenceEngine (3-thread deployment scaffold)
 └── utils/
-    ├── __init__.py
-    ├── lyapunov.py                 # Lyapunov analysis tools
-    ├── hamiltonian.py              # Port-Hamiltonian utilities
-    └── visualization.py            # Plotting and monitoring
+    ├── lyapunov.py                 # Lyapunov / Riccati engine (solve_lyapunov/care/gare, kleinman)
+    ├── hamiltonian.py              # port-Hamiltonian utilities
+    └── pe_monitor.py               # persistency-of-excitation monitor
 ```
 
-## Implementation Status
+## Status
 
-- ⏳ **In Development** - Implementation based on pseudocode in documentation
-- 📝 **Specifications Complete** - See `docs/` for detailed algorithms and mathematical framework
+- ✅ **Implemented** — all 9 ROADMAP phases + the PCML layer + the v0.4.x feature
+  line (released through v0.4.5). Gates: `pytest` green, `flake8` + `mypy` clean,
+  dependency graph 0 circular / 0 unused.
+- The rigorously-verified part is the *mathematical core* (the identities); the
+  bundled example plants are illustrative nonlinear surrogates, not
+  hardware-validated.
 
 ## Contributing
 
-Please refer to the main [README.md](../README.md) for contribution guidelines.
+See the main [README.md](../README.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).

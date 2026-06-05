@@ -1,10 +1,15 @@
 # TODO
 
-Working tracker for the **PCML** (Physics-Constrained Machine Learning) effort —
-adding soft + hard physics-constraint enforcement (Patel et al. 2022; DAE-HardNet,
-arXiv:2512.05881) on top of the v0.2.0 PITS-MRAS framework. See
-[CHANGELOG.md](CHANGELOG.md) for landed work and `docs/PITS-MRAS — PCML Addendum.md`
-for the spec.
+Working tracker for PITS-MRAS. **Current state: released through v0.4.5** — the
+9-phase foundation (v0.2.0), the PCML physics-constraint layer (v0.3.0), the
+v0.3.x simplification/debt passes, and the **complete v0.4.x feature line**
+(v0.4.0–v0.4.5: HJB/costate rewire, docs sweep, dead-field removal, KKT
+line-search Newton, nonlinear example plants, ParallelInferenceEngine hardening,
+H∞ adversary core). See [CHANGELOG.md](CHANGELOG.md) for landed work.
+
+**Next (v0.5.0, not started):** the H∞ neural adversarial min-max training loop
+(a learned adversary network + worst-case co-training, on top of the v0.4.5
+analytic core). No other work is pending; the items below are all DONE.
 
 ## Done
 
@@ -157,10 +162,10 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
   Docstring clarified; characterization test guards the non-redundancy. No API
   change.
 
-## v0.4.0 (next version) — features / refinements / new capacities
+## Done — v0.4.x feature line (v0.4.0–v0.4.5, COMPLETE 2026-06-04)
 
-> **Sequencing (2026-06-04):** working the remaining v0.4.0 set one sub-project
-> at a time, foundation/safe-first. **Done so far:** HJB/costate co-training
+> **Sequencing (2026-06-04):** worked the v0.4.x set one sub-project
+> at a time, foundation/safe-first. **Done:** HJB/costate co-training
 > rewire (v0.4.0); README + linked-docs sweep (v0.4.1 docs); dead `LossConfig`
 > fields removed (v0.4.1); KKT line-search Newton (v0.4.2); higher-fidelity
 > nonlinear plants (v0.4.3); ParallelInferenceEngine hardening (v0.4.4); H∞

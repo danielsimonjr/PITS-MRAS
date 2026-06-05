@@ -1,5 +1,11 @@
 # GitHub Repository Setup Guide
 
+> **Note (historical setup guide).** The repository is already live at
+> `github.com/danielsimonjr/PITS-MRAS` — released through **v0.4.5** with a full
+> implementation and CI. This is the original init-and-push runbook (still useful
+> for forks); for current project state see [README.md](README.md),
+> [CHANGELOG.md](CHANGELOG.md), and [docs/ROADMAP.md](docs/ROADMAP.md).
+
 This guide will help you initialize and push the PITS-MRAS project to GitHub.
 
 ## Prerequisites
@@ -190,14 +196,11 @@ git push origin main
 git remote -v
 ```
 
-## GitHub Actions (Coming Soon)
+## GitHub Actions
 
-A `.github/workflows/` directory will be added for:
-
-- Automated testing on push/PR
-- Code quality checks
-- Documentation building
-- Release automation
+`.github/workflows/ci.yml` is in place — on every push/PR it runs `flake8` +
+`mypy` + `pytest --cov` across Python 3.10–3.12 (CPU-only torch wheel). Further
+automation (docs building, release automation) can be added as needed.
 
 ## Questions?
 
