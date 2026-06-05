@@ -57,7 +57,7 @@ def port_hamiltonian_energy_loss(
     """
     del H_pred  # not used in the residual; present for API parity (IP §4.4)
     residual = dH_dt - P_control + P_diss
-    return (residual ** 2).mean()
+    return (residual**2).mean()
 
 
 def hamiltonian_positivity_loss(H: Tensor) -> Tensor:

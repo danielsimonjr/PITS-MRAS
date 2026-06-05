@@ -58,9 +58,7 @@ def test_irl_critic_converges_to_lyapunov_P() -> None:
     P_hat, converged, n_iters = train_irl_critic(critic, ref, tol=0.01, seed=0)
 
     P_opt = torch.as_tensor(np.asarray(ref.P_opt.tolist()), dtype=P_hat.dtype)
-    rel_err = float(
-        torch.linalg.norm(P_hat - P_opt) / torch.linalg.norm(P_opt)
-    )
+    rel_err = float(torch.linalg.norm(P_hat - P_opt) / torch.linalg.norm(P_opt))
 
     assert converged
     assert n_iters >= 1
@@ -69,9 +67,7 @@ def test_irl_critic_converges_to_lyapunov_P() -> None:
 
     # The fitted P is written into the critic in place; it must agree too.
     extracted = critic.extract_P()
-    extracted_rel = float(
-        torch.linalg.norm(extracted - P_opt) / torch.linalg.norm(P_opt)
-    )
+    extracted_rel = float(torch.linalg.norm(extracted - P_opt) / torch.linalg.norm(P_opt))
     assert extracted_rel < 0.01
     assert torch.allclose(extracted, P_hat)
 
@@ -94,7 +90,5 @@ def test_quadratic_basis_reconstructs_P() -> None:
     w = torch.tensor([P[0, 0], 2.0 * P[0, 1], P[1, 1]], dtype=torch.float64)
     v_basis = phi @ w  # [batch]
 
-    v_true = torch.tensor(
-        [e_np[k] @ P @ e_np[k] for k in range(5)], dtype=torch.float64
-    )
+    v_true = torch.tensor([e_np[k] @ P @ e_np[k] for k in range(5)], dtype=torch.float64)
     assert torch.allclose(v_basis, v_true, atol=1e-10)

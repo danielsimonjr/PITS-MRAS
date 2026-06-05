@@ -67,11 +67,17 @@ def test_temporal_weight_warmup() -> None:
 def _small_cfg() -> PITSMRASConfig:
     cfg = PITSMRASConfig()
     cfg.network = NetworkConfig(
-        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=2,
+        hidden_dim=16,
+        output_dim=2,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     cfg.physics = PhysicsConfig(
-        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=1,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     return cfg
 
@@ -137,9 +143,15 @@ def test_irl_trainer_recovers_p_opt() -> None:
     critic.set_P(torch.eye(2) * 5.0)  # perturb away from P_opt
 
     P_hat, converged, n_iters = train_irl_critic(
-        critic, ref_model,
-        n_trajectories=64, traj_len=40, window_size=5,
-        dt=0.01, max_iters=50, tol=0.01, seed=3,
+        critic,
+        ref_model,
+        n_trajectories=64,
+        traj_len=40,
+        window_size=5,
+        dt=0.01,
+        max_iters=50,
+        tol=0.01,
+        seed=3,
     )
     P_opt = ref_model.P_opt
     rel_err = torch.linalg.norm(P_hat - P_opt) / torch.linalg.norm(P_opt)
@@ -160,8 +172,15 @@ def test_cotrain_no_nan_and_critic_steps() -> None:
     controller = _make_controller(ref_model)
     p_before = controller.critic.W_c.weight.detach().clone()
     metrics = cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=2, n_steps=8, batch_size=4, irl_window=3, seed=4,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=2,
+        n_steps=8,
+        batch_size=4,
+        irl_window=3,
+        seed=4,
     )
     assert "irl_loss" in metrics
     assert "total_loss" in metrics
@@ -188,9 +207,16 @@ def test_cotrain_records_critic_convergence_and_it_decreases() -> None:
     # Perturb the critic away from P_opt so convergence is observable.
     controller.critic.set_P(torch.eye(controller.state_dim) * 5.0)
     metrics = cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=3, n_steps=12, batch_size=8, irl_window=3,
-        critic_lr=5e-2, seed=7,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=3,
+        n_steps=12,
+        batch_size=8,
+        irl_window=3,
+        critic_lr=5e-2,
+        seed=7,
     )
     assert "critic_convergence" in metrics
     conv = metrics["critic_convergence"]
@@ -243,9 +269,16 @@ def test_cotrain_positivity_regularizer_repairs_indefinite_critic() -> None:
     assert lam_before < 0.0  # indefinite to start
 
     cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=1, n_steps=10, batch_size=4, irl_window=50,
-        critic_lr=1e-1, seed=0,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=1,
+        n_steps=10,
+        batch_size=4,
+        irl_window=50,
+        critic_lr=1e-1,
+        seed=0,
     )
     lam_after = torch.linalg.eigvalsh(controller.critic.extract_P()).min().item()
     assert lam_after > lam_before  # positivity drove the critic toward PD
@@ -259,8 +292,15 @@ def test_cotrain_hjb_disabled_path() -> None:
     ref_model = _make_ref_model()
     controller = _make_controller(ref_model)
     metrics = cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=1, n_steps=8, batch_size=4, irl_window=3, seed=5,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=1,
+        n_steps=8,
+        batch_size=4,
+        irl_window=3,
+        seed=5,
     )
     assert all(math.isfinite(v) for v in metrics["total_loss"])
     assert all(v == 0.0 for v in metrics["hjb_loss"])
@@ -285,9 +325,16 @@ def test_cotrain_hjb_applied_to_critic_when_enabled() -> None:
     controller.critic.set_P(torch.eye(controller.state_dim) * 3.0)
     w_before = controller.critic.W_c.weight.detach().clone()
     cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=1, n_steps=6, batch_size=4, irl_window=50,
-        critic_lr=1e-2, seed=0,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=1,
+        n_steps=6,
+        batch_size=4,
+        irl_window=50,
+        critic_lr=1e-2,
+        seed=0,
     )
     w_after = controller.critic.W_c.weight.detach()
     assert not torch.allclose(w_before, w_after)  # HJB gradient was applied
@@ -301,8 +348,15 @@ def test_cotrain_hjb_default_off_is_irl_only() -> None:
     ref_model = _make_ref_model()
     controller = _make_controller(ref_model)
     metrics = cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=1, n_steps=8, batch_size=4, irl_window=3, seed=5,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=1,
+        n_steps=8,
+        batch_size=4,
+        irl_window=3,
+        seed=5,
     )
     assert all(v == 0.0 for v in metrics["hjb_loss"])
 
@@ -316,9 +370,16 @@ def test_cotrain_converges_with_hjb_enabled() -> None:
     controller = _make_controller(ref_model)
     controller.critic.set_P(torch.eye(controller.state_dim) * 5.0)
     metrics = cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=3, n_steps=12, batch_size=8, irl_window=3,
-        critic_lr=5e-2, seed=7,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=3,
+        n_steps=12,
+        batch_size=8,
+        irl_window=3,
+        critic_lr=5e-2,
+        seed=7,
     )
     conv = metrics["critic_convergence"]
     assert conv[-1] < conv[0]
@@ -336,7 +397,11 @@ def test_irl_trainer_non_convergence_exhausts_max_iters() -> None:
     ref_model = _make_ref_model()
     critic = QuadraticCritic(state_dim=2)
     P_hat, converged, n_iters = train_irl_critic(
-        critic, ref_model, tol=1e-12, max_iters=3, seed=0,
+        critic,
+        ref_model,
+        tol=1e-12,
+        max_iters=3,
+        seed=0,
     )
     assert converged is False
     assert n_iters == 3
@@ -357,7 +422,12 @@ def test_pretrain_spike_halves_data_weight() -> None:
     cfg = _small_cfg()
     pitnn = _small_pitnn(cfg)
     history = pretrain_pitnn(
-        pitnn, cfg, epochs=2, batch_size=8, seed=1, epsilon_tol=1e-12,
+        pitnn,
+        cfg,
+        epochs=2,
+        batch_size=8,
+        seed=1,
+        epsilon_tol=1e-12,
     )
     assert all(math.isclose(v, 0.05, abs_tol=1e-9) for v in history["lambda_data"])
 

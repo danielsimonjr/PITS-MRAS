@@ -91,8 +91,6 @@ class PhysicsConstraints(ABC):
         ineq_v = ineq.clamp(min=0.0).mean() if ineq.numel() > 0 else x.new_zeros(())
         n_total = spec.n_differential + spec.n_equality + spec.n_inequality
         weighted = (
-            diff_v * spec.n_differential
-            + eq_v * spec.n_equality
-            + ineq_v * spec.n_inequality
+            diff_v * spec.n_differential + eq_v * spec.n_equality + ineq_v * spec.n_inequality
         )
         return weighted / max(n_total, 1)

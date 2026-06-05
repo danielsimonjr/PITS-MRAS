@@ -4,6 +4,7 @@ Covers physics energy balance, temporal multi-step prediction, stability
 ReLU behaviour, the HJB residual at the optimum, and TotalLoss aggregation.
 The IRL load-bearing checks live in ``tests/test_irl.py``.
 """
+
 from __future__ import annotations
 
 import math
@@ -90,7 +91,7 @@ class TestTemporal:
         loss = TemporalLoss(horizon=2)
         pred = torch.zeros(1, 2, 1)
         tgt = torch.tensor([[[1.0], [3.0]]])  # sq err = [1, 9]
-        attn = torch.tensor([[1.0, 0.0]])     # weight only first step
+        attn = torch.tensor([[1.0, 0.0]])  # weight only first step
         out = loss(pred, tgt, attention_weights=attn)
         assert math.isclose(out["loss"].item(), 1.0, rel_tol=1e-6)
 
@@ -250,10 +251,7 @@ class TestTotalLoss:
         out = total(components)
         # LossConfig defaults: physics=1.0, temporal=0.5, stability=2.0,
         # irl=1.0, hjb=0.0 (opt-in), data=1.0.
-        expected = (
-            1.0 * 1 + 0.5 * 2 + 2.0 * 3 + 1.0 * 4
-            + 0.0 * 5 + 1.0 * 7
-        )
+        expected = 1.0 * 1 + 0.5 * 2 + 2.0 * 3 + 1.0 * 4 + 0.0 * 5 + 1.0 * 7
         assert math.isclose(out["loss"].item(), expected, rel_tol=1e-6)
         for key in ("loss/physics", "loss/temporal", "loss/hjb", "loss/data"):
             assert key in out

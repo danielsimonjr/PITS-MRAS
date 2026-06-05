@@ -138,7 +138,7 @@ class PITNN(nn.Module):
 
         # 5. Port-Hamiltonian decoder -- extract [q, p] from the state.
         q = x_p_curr[:, : self.n_q]  # [batch, n_q]
-        p = x_p_curr[:, self.n_q: 2 * self.n_q]  # [batch, n_q]
+        p = x_p_curr[:, self.n_q : 2 * self.n_q]  # [batch, n_q]
         q_dot = x_p_dot[:, : self.n_q]  # [batch, n_q]
         f_hat, H_val, P_diss, energy_loss = self.decoder(q, p, q_dot, u_curr, context)
 

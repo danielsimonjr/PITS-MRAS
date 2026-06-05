@@ -70,10 +70,31 @@ try:
     _STDLIB = set(sys.stdlib_module_names)  # type: ignore[attr-defined]
 except AttributeError:  # pragma: no cover - very old Python
     _STDLIB = {
-        "abc", "argparse", "ast", "asyncio", "collections", "contextlib", "copy",
-        "dataclasses", "datetime", "enum", "functools", "io", "itertools", "json",
-        "logging", "math", "os", "pathlib", "re", "sys", "threading", "time",
-        "typing", "warnings", "weakref",
+        "abc",
+        "argparse",
+        "ast",
+        "asyncio",
+        "collections",
+        "contextlib",
+        "copy",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "functools",
+        "io",
+        "itertools",
+        "json",
+        "logging",
+        "math",
+        "os",
+        "pathlib",
+        "re",
+        "sys",
+        "threading",
+        "time",
+        "typing",
+        "warnings",
+        "weakref",
     }
 
 
@@ -334,9 +355,7 @@ def parse_file(
 
     for start_idx, logical in _logical_import_lines(content):
         type_only = _in_typechecking(start_idx, tc_ranges)
-        _parse_import_statement(
-            logical, pf, type_only, is_init, package_roots, all_files
-        )
+        _parse_import_statement(logical, pf, type_only, is_init, package_roots, all_files)
 
     _parse_exports(content, pf, is_init)
     return pf
@@ -776,9 +795,7 @@ def generate_json(files, modules, stats, circular, name, version, script_eps) ->
     modules_json: Dict[str, Dict[str, dict]] = {}
     for cat, cat_files in modules.items():
         modules_json[cat] = {p: file_to_json(f) for p, f in cat_files.items()}
-    layers = [
-        {"name": _title(n), "files": list(modules[n].keys())} for n in modules if modules[n]
-    ]
+    layers = [{"name": _title(n), "files": list(modules[n].keys())} for n in modules if modules[n]]
     entry_points = [
         {
             "file": f.path,
@@ -983,18 +1000,25 @@ def generate_markdown(files, modules, stats, circular, name, version) -> str:
 def generate_compact(files, modules, stats, circular, name, version) -> str:
     summary: Dict[str, object] = {
         "m": {
-            "n": name, "v": version, "d": date.today().isoformat(),
-            "f": stats["totalPythonFiles"], "e": stats["totalExports"],
+            "n": name,
+            "v": version,
+            "d": date.today().isoformat(),
+            "f": stats["totalPythonFiles"],
+            "e": stats["totalExports"],
             "re": stats["totalReExports"],
         },
         "s": {
-            "loc": stats["totalLinesOfCode"], "cls": stats["totalClasses"],
-            "int": stats["totalInterfaces"], "fn": stats["totalFunctions"],
-            "en": stats["totalEnums"], "co": stats["totalConstants"],
+            "loc": stats["totalLinesOfCode"],
+            "cls": stats["totalClasses"],
+            "int": stats["totalInterfaces"],
+            "fn": stats["totalFunctions"],
+            "en": stats["totalEnums"],
+            "co": stats["totalConstants"],
             "tci": stats["totalTypeCheckingImports"],
         },
         "c": {
-            "rt": len(circular["runtime"]), "to": len(circular["typeOnly"]),
+            "rt": len(circular["runtime"]),
+            "to": len(circular["typeOnly"]),
             "rtp": [
                 "->".join(os.path.splitext(os.path.basename(p))[0] for p in c)
                 for c in circular["runtime"][:5]
@@ -1019,9 +1043,7 @@ def generate_compact(files, modules, stats, circular, name, version) -> str:
     summary["mod"] = mod_summary
     conn: List[dict] = []
     for f in files:
-        out_count = sum(
-            1 for o in files if any(d.file == f.path for d in o.internal_dependencies)
-        )
+        out_count = sum(1 for o in files if any(d.file == f.path for d in o.internal_dependencies))
         conn.append(
             {
                 "p": "/".join(f.path.split("/")[-2:]),
@@ -1041,13 +1063,20 @@ def generate_test_coverage_md(cov: dict) -> str:
     tested = len(cov["testedFiles"])
     pct = f"{(tested / total * 100):.1f}" if total else "0"
     L += [
-        "## Summary", "", "| Metric | Count |", "|--------|-------|",
+        "## Summary",
+        "",
+        "| Metric | Count |",
+        "|--------|-------|",
         f"| Total Source Files | {total} |",
         f"| Total Test Files | {len(cov['testFiles'])} |",
         f"| Source Files with Tests | {tested} |",
         f"| Source Files without Tests | {len(cov['untestedFiles'])} |",
-        f"| Coverage | {pct}% |", "", "---", "",
-        "## Source Files Without Test Coverage", "",
+        f"| Coverage | {pct}% |",
+        "",
+        "---",
+        "",
+        "## Source Files Without Test Coverage",
+        "",
     ]
     if not cov["untestedFiles"]:
         L.append("**All source files have test coverage!**")
@@ -1056,8 +1085,15 @@ def generate_test_coverage_md(cov: dict) -> str:
         L.append("")
         for f in sorted(cov["untestedFiles"]):
             L.append(f"- `{f}`")
-    L += ["", "---", "", "## Source Files With Test Coverage", "",
-          "| Source File | Test Files |", "|-------------|------------|"]
+    L += [
+        "",
+        "---",
+        "",
+        "## Source Files With Test Coverage",
+        "",
+        "| Source File | Test Files |",
+        "|-------------|------------|",
+    ]
     for src in sorted(cov["testedFiles"]):
         tests = cov["coverageMap"].get(src, [])
         short = ", ".join(f"`{os.path.basename(t)}`" for t in tests)
@@ -1088,11 +1124,17 @@ def generate_test_coverage_json(cov: dict) -> dict:
 def generate_unused_md(unused: dict) -> str:
     today = date.today().isoformat()
     L = [
-        "# Unused Files and Exports Analysis", "", f"**Generated**: {today}", "",
-        "## Summary", "",
+        "# Unused Files and Exports Analysis",
+        "",
+        f"**Generated**: {today}",
+        "",
+        "## Summary",
+        "",
         f"- **Potentially unused files**: {len(unused['unusedFiles'])}",
-        f"- **Potentially unused exports**: {len(unused['unusedExports'])}", "",
-        "## Potentially Unused Files", "",
+        f"- **Potentially unused exports**: {len(unused['unusedExports'])}",
+        "",
+        "## Potentially Unused Files",
+        "",
     ]
     if not unused["unusedFiles"]:
         L.append("None.")
@@ -1121,16 +1163,30 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Generate a Python dependency graph under docs/architecture/.",
     )
-    p.add_argument("root", nargs="?", default=os.getcwd(),
-                   help="Project root directory (default: current directory)")
-    p.add_argument("--root", dest="root_opt", default=None,
-                   help="Project root directory (overrides positional)")
-    p.add_argument("--exclude", default=None,
-                   help="Replace the default skip list (comma-separated dir names)")
-    p.add_argument("--also-exclude", default=None,
-                   help="Add directory names to the default skip list")
-    p.add_argument("--include-tests", "-t", action="store_true",
-                   help="Include test files in dependency / coverage analysis")
+    p.add_argument(
+        "root",
+        nargs="?",
+        default=os.getcwd(),
+        help="Project root directory (default: current directory)",
+    )
+    p.add_argument(
+        "--root",
+        dest="root_opt",
+        default=None,
+        help="Project root directory (overrides positional)",
+    )
+    p.add_argument(
+        "--exclude", default=None, help="Replace the default skip list (comma-separated dir names)"
+    )
+    p.add_argument(
+        "--also-exclude", default=None, help="Add directory names to the default skip list"
+    )
+    p.add_argument(
+        "--include-tests",
+        "-t",
+        action="store_true",
+        help="Include test files in dependency / coverage analysis",
+    )
     return p
 
 
@@ -1149,9 +1205,7 @@ def run(argv: Optional[List[str]] = None) -> int:
 
     name, version, script_eps = read_project_meta(root)
     source_abs, test_abs = find_py_files(root, exclude)
-    all_rel = {
-        os.path.relpath(p, root).replace(os.sep, "/") for p in source_abs + test_abs
-    }
+    all_rel = {os.path.relpath(p, root).replace(os.sep, "/") for p in source_abs + test_abs}
     package_roots = discover_package_roots(root, exclude)
 
     print(f"Scanning {root}")
@@ -1178,6 +1232,7 @@ def run(argv: Optional[List[str]] = None) -> int:
 
     try:
         import yaml  # type: ignore
+
         with open(os.path.join(output_dir, "dependency-graph.yaml"), "w", encoding="utf-8") as fh:
             yaml.dump(json_obj, fh, indent=2, sort_keys=False, allow_unicode=True, width=120)
         print("Written: docs/architecture/dependency-graph.yaml")

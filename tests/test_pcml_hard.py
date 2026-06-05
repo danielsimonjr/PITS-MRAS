@@ -22,9 +22,7 @@ class _SumEqualsOneDAE(PhysicsConstraints):
 
     def __init__(self, n: int = 2) -> None:
         self.n = n
-        self._spec = ConstraintSpec(
-            n_differential=0, n_equality=1, n_inequality=0, n_outputs=n
-        )
+        self._spec = ConstraintSpec(n_differential=0, n_equality=1, n_inequality=0, n_outputs=n)
 
     @property
     def spec(self) -> ConstraintSpec:
@@ -114,9 +112,7 @@ class _SteepEqDAE(PhysicsConstraints):
 
     def __init__(self, k: float = 8.0) -> None:
         self.k = k
-        self._spec = ConstraintSpec(
-            n_differential=0, n_equality=1, n_inequality=0, n_outputs=1
-        )
+        self._spec = ConstraintSpec(n_differential=0, n_equality=1, n_inequality=0, n_outputs=1)
 
     @property
     def spec(self) -> ConstraintSpec:
@@ -151,13 +147,9 @@ def test_kkt_line_search_keeps_residual_bounded_on_stiff_projection() -> None:
     # Initial L-inf residual of the projection system (bounded; atan <= pi/2).
     init_res = float(torch.atan(8.0 * y_hat).abs().max())
 
-    ls = KKTProjectionLayer(
-        dae, n_output=1, n_deriv=0, max_newton_iter=40, use_line_search=True
-    )
+    ls = KKTProjectionLayer(dae, n_output=1, n_deriv=0, max_newton_iter=40, use_line_search=True)
     ls(x, t, y_hat, d_hat, lam_hat)
-    no = KKTProjectionLayer(
-        dae, n_output=1, n_deriv=0, max_newton_iter=40, use_line_search=False
-    )
+    no = KKTProjectionLayer(dae, n_output=1, n_deriv=0, max_newton_iter=40, use_line_search=False)
     no(x, t, y_hat, d_hat, lam_hat)
 
     # Undamped diverges (residual explodes); line search stays bounded.
@@ -178,11 +170,17 @@ def test_kkt_line_search_matches_full_step_on_affine() -> None:
     lam_hat = torch.zeros(4, 1)
 
     proj_ls = KKTProjectionLayer(
-        _SumEqualsOneDAE(n=n), n_output=n, n_deriv=0, max_newton_iter=20,
+        _SumEqualsOneDAE(n=n),
+        n_output=n,
+        n_deriv=0,
+        max_newton_iter=20,
         use_line_search=True,
     )
     proj_no = KKTProjectionLayer(
-        _SumEqualsOneDAE(n=n), n_output=n, n_deriv=0, max_newton_iter=20,
+        _SumEqualsOneDAE(n=n),
+        n_output=n,
+        n_deriv=0,
+        max_newton_iter=20,
         use_line_search=False,
     )
     y_ls, _, _ = proj_ls(x, t, y_hat, d_hat, lam_hat)
@@ -206,8 +204,12 @@ def test_kkt_projection_on_holonomic_mechanical_dae() -> None:
         return torch.tensor([[1.0, -1.0]]).unsqueeze(0).expand(q.shape[0], m, n)
 
     dae = MechanicalDAE(
-        n_joints=n, n_holonomic=m, inertia_fn=inertia, coriolis_fn=zero_force,
-        gravity_fn=zero_force, actuator_fn=lambda q: torch.zeros(q.shape[0], n, m),
+        n_joints=n,
+        n_holonomic=m,
+        inertia_fn=inertia,
+        coriolis_fn=zero_force,
+        gravity_fn=zero_force,
+        actuator_fn=lambda q: torch.zeros(q.shape[0], n, m),
         constraint_fn=jacobian,
     )
     # y = [q, q_dot] (2n), d = [q_dot, q_ddot, lambda] (2n + m).
@@ -249,8 +251,12 @@ def test_pcml_module_dynamic_activation() -> None:
     dae = HeatConductionDAE(alpha=1.0)
     backbone = torch.nn.Sequential(torch.nn.Linear(2, 8), torch.nn.Tanh(), torch.nn.Linear(8, 1))
     mod = PCMLModule(
-        constraints=dae, backbone=backbone, input_dim=2,
-        n_output=1, n_deriv=4, n_lambda=dae.spec.n_differential + dae.spec.n_inequality,
+        constraints=dae,
+        backbone=backbone,
+        input_dim=2,
+        n_output=1,
+        n_deriv=4,
+        n_lambda=dae.spec.n_differential + dae.spec.n_inequality,
         eta=0.01,
     )
     assert mod.mode == "soft"
@@ -268,8 +274,13 @@ def test_pcml_module_soft_forward_runs() -> None:
     backbone = torch.nn.Sequential(torch.nn.Linear(2, 8), torch.nn.Tanh(), torch.nn.Linear(8, 1))
     n_lambda = dae.spec.n_differential + dae.spec.n_inequality
     mod = PCMLModule(
-        constraints=dae, backbone=backbone, input_dim=2,
-        n_output=1, n_deriv=4, n_lambda=n_lambda, eta=0.01,
+        constraints=dae,
+        backbone=backbone,
+        input_dim=2,
+        n_output=1,
+        n_deriv=4,
+        n_lambda=n_lambda,
+        eta=0.01,
     )
     x = torch.zeros(4, 1)
     t = torch.zeros(4, 1)

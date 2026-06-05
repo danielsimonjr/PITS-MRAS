@@ -116,9 +116,7 @@ def test_taylor_approx_order2_incorporates_second_derivatives() -> None:
 # --------------------------------------------------------------------------- #
 def test_lagrangian_head_shapes_and_inequality_nonneg() -> None:
     torch.manual_seed(0)
-    head = LagrangianMultiplierHead(
-        context_dim=8, n_lambda_eq=3, n_lambda_ineq=2, hidden_dim=16
-    )
+    head = LagrangianMultiplierHead(context_dim=8, n_lambda_eq=3, n_lambda_ineq=2, hidden_dim=16)
     ctx = torch.randn(5, 8)
     lam = head(ctx)
     assert lam.shape == (5, 5)  # 3 equality + 2 inequality

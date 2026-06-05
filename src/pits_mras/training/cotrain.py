@@ -71,9 +71,7 @@ logger = logging.getLogger(__name__)
 _POSITIVITY_WEIGHT = 1e-3
 
 
-def _synthetic_plant_step(
-    x_p: Tensor, u: Tensor, A_m: Tensor, B_m: Tensor, dt: float
-) -> Tensor:
+def _synthetic_plant_step(x_p: Tensor, u: Tensor, A_m: Tensor, B_m: Tensor, dt: float) -> Tensor:
     """Advance a synthetic plant ``x_dot = A_m x + B_m u`` by one Euler step.
 
     Uses the reference-model matrices as a stand-in plant so the closed loop is
@@ -161,10 +159,7 @@ def cotraining_loop(
     p_opt_norm = torch.linalg.norm(p_opt)
 
     # Set up the CBF filter from the critic if requested and not yet attached.
-    use_cbf = (
-        safety_cfg.enable_cbf
-        and controller.use_safety_filter
-    )
+    use_cbf = safety_cfg.enable_cbf and controller.use_safety_filter
     if use_cbf and controller.safety_filter is None:
         controller.setup_safety_filter(
             safety_margin=safety_cfg.safety_margin,
@@ -245,7 +240,11 @@ def cotraining_loop(
                 )
                 pcml_module.update_activation(float(l_phys.detach()))
                 _, l_pcml, _ = pcml_module(
-                    zeros_xt, zeros_xt, y_hat_p, d_hat_p, lam_hat_p,
+                    zeros_xt,
+                    zeros_xt,
+                    y_hat_p,
+                    d_hat_p,
+                    lam_hat_p,
                     y_true=f_target[:, :n_out],
                 )
                 l_total = l_total + loss_cfg.lambda_pcml * l_pcml
@@ -254,9 +253,7 @@ def cotraining_loop(
             # ── CBF constraint loss ──
             l_cbf_val = 0.0
             if use_cbf and controller.safety_filter is not None:
-                l_cbf = controller.safety_filter.cbf_constraint_loss(
-                    e.detach(), u_safe.detach()
-                )
+                l_cbf = controller.safety_filter.cbf_constraint_loss(e.detach(), u_safe.detach())
                 l_total = l_total + 0.1 * l_cbf
                 l_cbf_val = float(l_cbf.detach())
 
@@ -310,9 +307,7 @@ def cotraining_loop(
                 l_irl = irl_out["loss"]
                 critic_optimizer.zero_grad()
                 l_irl.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    controller.critic.parameters(), max_norm=1.0
-                )
+                torch.nn.utils.clip_grad_norm_(controller.critic.parameters(), max_norm=1.0)
                 critic_optimizer.step()
                 l_irl_val = float(l_irl.detach())
                 # Policy-improvement read-out: K <- R^{-1} B^T P_hat (diagnostic).
@@ -339,12 +334,8 @@ def cotraining_loop(
             u_full = torch.zeros(batch_size, input_dim)
             u_full[:, :control_dim] = u_safe.detach()
             x_hist = torch.cat([x_hist[:, 1:, :], x_p.unsqueeze(1)], dim=1).detach()
-            u_hist = torch.cat(
-                [u_hist[:, 1:, :], u_full.unsqueeze(1)], dim=1
-            ).detach()
-            e_hist = torch.cat(
-                [e_hist[:, 1:, :], e_curr.detach().unsqueeze(1)], dim=1
-            ).detach()
+            u_hist = torch.cat([u_hist[:, 1:, :], u_full.unsqueeze(1)], dim=1).detach()
+            e_hist = torch.cat([e_hist[:, 1:, :], e_curr.detach().unsqueeze(1)], dim=1).detach()
             x_p = _synthetic_plant_step(x_p, u_full, A_m, B_m, dt)
             x_m = ref_model.step(x_m, r, dt).detach()
 

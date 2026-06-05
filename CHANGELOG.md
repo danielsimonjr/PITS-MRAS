@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-06-05
+
+Sprint item ROADMAP #10 (tooling / typing). Suite green (234); ruff + mypy clean.
+
+### Changed
+
+- **Linter/formatter migrated from flake8 + black + isort to Ruff** (mypy kept).
+  `pyproject.toml` now carries `[tool.ruff]` (line-length 100, target py310),
+  `[tool.ruff.lint]` (`select = ["E","F","W","I"]`, `ignore = ["E203"]`; the `I`
+  rules replace isort), and `[tool.ruff.format]`; `[tool.black]`/`[tool.isort]`
+  removed. `setup.cfg` (flake8-only) deleted. CI runs `ruff check .` +
+  `ruff format --check .`. `requirements-dev.txt` swaps flake8/black/isort → ruff.
+  Configured as a strict drop-in (equivalent ruleset); applying `ruff format`
+  reformatted 44 files — pure formatting (token-stream-verified), no behaviour
+  change, full suite green afterward.
+
+### Added
+
+- **Fail-loud config validation.** `PITSMRASConfig.from_yaml` now raises
+  `ValueError` (naming the offending key) on an unknown top-level section or an
+  unknown nested field, instead of silently ignoring it. 3 new tests.
+- **jaxtyping shape annotations** (dev-only, under `TYPE_CHECKING`) on the
+  tensor helpers in `utils/lyapunov.py` (`quadratic_basis`, `pack_symmetric`,
+  `unpack_symmetric`); `jaxtyping` added to `requirements-dev.txt`. Not a runtime
+  dependency.
+
 ## [0.4.7] - 2026-06-05
 
 Sprint item todo#1 (CDG import-parser fix) plus a release-hygiene fix for the

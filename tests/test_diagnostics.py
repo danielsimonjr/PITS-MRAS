@@ -69,9 +69,7 @@ def test_energy_drift_relative_batched() -> None:
     q = torch.tensor([[2.0, 4.0], [10.0, 5.0]])
     eps = 1e-8
     drift = energy_drift(q, relative=True, eps=eps)
-    expected = torch.tensor(
-        [[0.0, 2.0 / (2.0 + eps)], [0.0, -5.0 / (10.0 + eps)]]
-    )
+    expected = torch.tensor([[0.0, 2.0 / (2.0 + eps)], [0.0, -5.0 / (10.0 + eps)]])
     torch.testing.assert_close(drift, expected)
 
 

@@ -64,9 +64,7 @@ def test_version() -> None:
 
     assert re.fullmatch(r"\d+\.\d+\.\d+", pits_mras.__version__), pits_mras.__version__
 
-    setup_text = (Path(__file__).resolve().parents[1] / "setup.py").read_text(
-        encoding="utf-8"
-    )
+    setup_text = (Path(__file__).resolve().parents[1] / "setup.py").read_text(encoding="utf-8")
     match = re.search(r'version\s*=\s*"([^"]+)"', setup_text)
     assert match is not None, "version= not found in setup.py"
     assert pits_mras.__version__ == match.group(1)

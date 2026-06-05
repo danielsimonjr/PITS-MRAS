@@ -71,11 +71,7 @@ class SoftPCMLLoss(nn.Module):
         l_eq = (eq**2).mean() if eq.numel() > 0 else zero
         l_ineq = (F.relu(ineq) ** 2).mean() if ineq.numel() > 0 else zero
 
-        total = (
-            self.lambda_diff * l_diff
-            + self.lambda_eq * l_eq
-            + self.lambda_ineq * l_ineq
-        )
+        total = self.lambda_diff * l_diff + self.lambda_eq * l_eq + self.lambda_ineq * l_ineq
         violation = self.constraints.violation(x, t, y_pred, d_pred)
         return total, {
             "diff": l_diff,
@@ -215,11 +211,7 @@ class KKTProjectionLayer(nn.Module):
         if self.n_eq > 0:
             parts.append(self.constraints.equality(x, t, y))
         c = torch.cat(parts, dim=-1) if parts else z.new_zeros(z.shape[0], 0)
-        g = (
-            self.constraints.inequality(x, t, y)
-            if self.n_g > 0
-            else z.new_zeros(z.shape[0], 0)
-        )
+        g = self.constraints.inequality(x, t, y) if self.n_g > 0 else z.new_zeros(z.shape[0], 0)
         b = z.shape[0]
         jc = z.new_zeros(b, self.n_c, self.n_y + self.n_d)
         for k in range(self.n_c):
@@ -250,19 +242,13 @@ class KKTProjectionLayer(nn.Module):
 
         stat_y = y - y_hat
         if self.n_c > 0:
-            stat_y = stat_y + torch.bmm(
-                jc_y.transpose(-1, -2), lam_eq.unsqueeze(-1)
-            ).squeeze(-1)
+            stat_y = stat_y + torch.bmm(jc_y.transpose(-1, -2), lam_eq.unsqueeze(-1)).squeeze(-1)
         if self.n_g > 0:
-            stat_y = stat_y + torch.bmm(
-                jg.transpose(-1, -2), lam_ineq.unsqueeze(-1)
-            ).squeeze(-1)
+            stat_y = stat_y + torch.bmm(jg.transpose(-1, -2), lam_ineq.unsqueeze(-1)).squeeze(-1)
         blocks: List[Tensor] = [stat_y]
         if self.n_d > 0:
             if self.n_c > 0:
-                stat_d = torch.bmm(
-                    jc_d.transpose(-1, -2), lam_eq.unsqueeze(-1)
-                ).squeeze(-1)
+                stat_d = torch.bmm(jc_d.transpose(-1, -2), lam_eq.unsqueeze(-1)).squeeze(-1)
             else:
                 stat_d = z.new_zeros(z.shape[0], self.n_d)
             blocks.append(stat_d)
@@ -274,9 +260,7 @@ class KKTProjectionLayer(nn.Module):
             blocks.append(r - lam_ineq - s)
         return torch.cat(blocks, dim=-1)
 
-    def _assemble_J(
-        self, z: Tensor, jc_y: Tensor, jc_d: Tensor, jg: Tensor
-    ) -> Tensor:
+    def _assemble_J(self, z: Tensor, jc_y: Tensor, jc_d: Tensor, jg: Tensor) -> Tensor:
         b = z.shape[0]
         J = z.new_zeros(b, self.N, self.N)
         eye_y = torch.eye(self.n_y, device=z.device, dtype=z.dtype).expand(b, -1, -1)
@@ -303,9 +287,7 @@ class KKTProjectionLayer(nn.Module):
             s = z[:, self.os : self.os + self.n_g]
             r = torch.sqrt(lam_ineq**2 + s**2 + 1e-12)
             rfb = slice(self.os, self.os + self.n_g)
-            J[:, rfb, self.oineq : self.oineq + self.n_g] = torch.diag_embed(
-                lam_ineq / r - 1.0
-            )
+            J[:, rfb, self.oineq : self.oineq + self.n_g] = torch.diag_embed(lam_ineq / r - 1.0)
             J[:, rfb, self.os : self.os + self.n_g] = torch.diag_embed(s / r - 1.0)
         return J
 
@@ -314,9 +296,7 @@ class KKTProjectionLayer(nn.Module):
     ) -> Tensor:
         b = y_hat.shape[0]
         lam_eq = (
-            lam_hat[:, : self.n_c]
-            if lam_hat.shape[1] >= self.n_c
-            else y_hat.new_zeros(b, self.n_c)
+            lam_hat[:, : self.n_c] if lam_hat.shape[1] >= self.n_c else y_hat.new_zeros(b, self.n_c)
         )
         lam_ineq = (
             lam_hat[:, self.n_c : self.n_c + self.n_g]
@@ -352,9 +332,7 @@ class KKTProjectionLayer(nn.Module):
                 converged = True
                 break
             J = self._assemble_J(z, jc_y, jc_d, jg)
-            delta = torch.linalg.solve(
-                J + self.reg * eye_N, Fv.unsqueeze(-1)
-            ).squeeze(-1)
+            delta = torch.linalg.solve(J + self.reg * eye_N, Fv.unsqueeze(-1)).squeeze(-1)
             if self.use_line_search:
                 # Backtrack alpha until the L-inf residual strictly decreases (the
                 # Newton direction is a descent direction for the merit while the
@@ -366,9 +344,7 @@ class KKTProjectionLayer(nn.Module):
                 alpha = self.newton_step
                 for _h in range(self.line_search_max_halvings + 1):
                     z_trial = z - alpha * delta
-                    c_t, g_t, jcy_t, jcd_t, jg_t = self._constraints_and_jac(
-                        x, t, z_trial
-                    )
+                    c_t, g_t, jcy_t, jcd_t, jg_t = self._constraints_and_jac(x, t, z_trial)
                     F_t = self._assemble_F(yh, z_trial, c_t, g_t, jcy_t, jcd_t, jg_t)
                     res_trial = float(F_t.abs().max())
                     if res_trial < res:
@@ -414,9 +390,7 @@ class KKTProjectionLayer(nn.Module):
             c, g, jc_y, jc_d, jg = self._constraints_and_jac(x, t, z_star)
         J = self._assemble_J(z_star, jc_y, jc_d, jg).detach()
         F_live = self._assemble_F(y_hat, z_star, c, g, jc_y, jc_d, jg)
-        z_out = z_star - torch.linalg.solve(
-            J + self.reg * eye_N, F_live.unsqueeze(-1)
-        ).squeeze(-1)
+        z_out = z_star - torch.linalg.solve(J + self.reg * eye_N, F_live.unsqueeze(-1)).squeeze(-1)
 
         y_tilde = z_out[:, : self.n_y]
         d_tilde = (
@@ -505,11 +479,7 @@ class PCMLModule(nn.Module):
             y_tilde, d_tilde, _ = self.projection(x, t, y_hat, d_hat, lam_hat)
             if y_true is not None:
                 l_data = F.mse_loss(y_tilde, y_true)
-                l_deriv = (
-                    F.mse_loss(d_tilde, d_hat)
-                    if self.n_deriv > 0
-                    else y_hat.new_zeros(())
-                )
+                l_deriv = F.mse_loss(d_tilde, d_hat) if self.n_deriv > 0 else y_hat.new_zeros(())
                 loss = l_data + self.omega * l_deriv
             else:
                 l_data = y_hat.new_zeros(())

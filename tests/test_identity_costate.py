@@ -23,8 +23,8 @@ Phase-4 status:
 import numpy as np
 import torch
 
-from pits_mras.controllers.reference_models import LinearReferenceModel
 from pits_mras.controllers.mras import MRASController
+from pits_mras.controllers.reference_models import LinearReferenceModel
 from pits_mras.models.critic import CostateHead, QuadraticCritic
 from pits_mras.utils.lyapunov import solve_care
 

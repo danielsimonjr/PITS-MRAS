@@ -81,9 +81,7 @@ def train_irl_critic_gd(
     from pits_mras.losses.irl import IRLBellmanLoss
 
     generator = torch.Generator().manual_seed(seed)
-    errors, _ = _generate_optimal_trajectories(
-        ref_model, n_trajectories, traj_len, dt, generator
-    )
+    errors, _ = _generate_optimal_trajectories(ref_model, n_trajectories, traj_len, dt, generator)
     n_windows = traj_len - window_size
     if n_windows <= 0:
         raise ValueError("traj_len must exceed window_size")
@@ -168,9 +166,7 @@ def _build_least_squares_system(
     # Cumulative trapezoidal integral of the running cost along time.
     cumulative = torch.zeros_like(costs)
     for t in range(1, traj_len):
-        cumulative[:, t] = cumulative[:, t - 1] + 0.5 * dt * (
-            costs[:, t] + costs[:, t - 1]
-        )
+        cumulative[:, t] = cumulative[:, t - 1] + 0.5 * dt * (costs[:, t] + costs[:, t - 1])
 
     rows: list[Tensor] = []
     targets: list[Tensor] = []

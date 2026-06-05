@@ -6,6 +6,8 @@ the ``from_yaml`` / ``to_yaml`` round-trip.
 
 import dataclasses
 
+import pytest
+
 from pits_mras.config import (
     LossConfig,
     MRASConfig,
@@ -126,6 +128,40 @@ def test_yaml_round_trip(tmp_path) -> None:
     # Untouched defaults survive.
     assert loaded.network.input_dim == 10
     assert loaded.training.pretrain_epochs == 5000
+
+
+def test_from_yaml_accepts_valid_keys(tmp_path) -> None:
+    """A YAML with only known top-level/nested keys loads without error."""
+    path = tmp_path / "valid.yaml"
+    path.write_text(
+        "network:\n" "  hidden_dim: 256\n" "mras:\n" "  gamma_mras: 0.5\n",
+        encoding="utf-8",
+    )
+    cfg = PITSMRASConfig.from_yaml(str(path))
+    assert cfg.network.hidden_dim == 256
+    assert cfg.mras.gamma_mras == 0.5
+
+
+def test_from_yaml_rejects_unknown_top_level_key(tmp_path) -> None:
+    """An unknown top-level section raises ValueError naming the key."""
+    path = tmp_path / "bad_top.yaml"
+    path.write_text(
+        "network:\n" "  hidden_dim: 256\n" "bogus_section:\n" "  foo: 1\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="bogus_section"):
+        PITSMRASConfig.from_yaml(str(path))
+
+
+def test_from_yaml_rejects_unknown_nested_key(tmp_path) -> None:
+    """An unknown nested field raises ValueError naming the key and its section."""
+    path = tmp_path / "bad_nested.yaml"
+    path.write_text(
+        "network:\n" "  hidden_dim: 256\n" "  not_a_field: 7\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="not_a_field"):
+        PITSMRASConfig.from_yaml(str(path))
 
 
 def test_to_yaml_serializes_all_sections(tmp_path) -> None:

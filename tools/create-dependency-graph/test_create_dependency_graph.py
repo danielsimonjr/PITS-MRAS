@@ -63,7 +63,7 @@ def test_import_with_trailing_noqa_comment_not_swallowed(tmp_path):
     target = _write(
         tmp_path,
         "src/pkg/runner.py",
-        '''\
+        """\
         from __future__ import annotations
 
 
@@ -72,11 +72,13 @@ def test_import_with_trailing_noqa_comment_not_swallowed(tmp_path):
 
             x = lateral_tyre_step(1)
             return x + 2
-        ''',
+        """,
     )
     _write(tmp_path, "src/pkg/plant.py", "def lateral_tyre_step(x): return x\n")
     all_rel = {
-        "src/pkg/__init__.py", "src/pkg/runner.py", "src/pkg/plant.py",
+        "src/pkg/__init__.py",
+        "src/pkg/runner.py",
+        "src/pkg/plant.py",
     }
     roots = cdg.discover_package_roots(root, set(cdg.DEFAULT_EXCLUDE_DIRS))
     pf = cdg.parse_file(target, root, roots, all_rel)
@@ -171,8 +173,11 @@ def test_parse_classifies_imports_and_exports(tmp_path):
     _write(tmp_path, "src/pkg/models/decoders.py", "class Decoder: pass\n")
 
     all_rel = {
-        "src/pkg/__init__.py", "src/pkg/models/__init__.py",
-        "src/pkg/models/critic.py", "src/pkg/config.py", "src/pkg/models/decoders.py",
+        "src/pkg/__init__.py",
+        "src/pkg/models/__init__.py",
+        "src/pkg/models/critic.py",
+        "src/pkg/config.py",
+        "src/pkg/models/decoders.py",
     }
     roots = cdg.discover_package_roots(root, set(cdg.DEFAULT_EXCLUDE_DIRS))
     assert roots.get("pkg") == "src/pkg"
@@ -197,8 +202,11 @@ def test_parse_classifies_imports_and_exports(tmp_path):
 
 def test_init_barrel_reexports(tmp_path):
     root = str(tmp_path)
-    _write(tmp_path, "src/pkg/__init__.py",
-           "from .models.critic import QuadraticCritic\n__all__ = ['QuadraticCritic']\n")
+    _write(
+        tmp_path,
+        "src/pkg/__init__.py",
+        "from .models.critic import QuadraticCritic\n__all__ = ['QuadraticCritic']\n",
+    )
     _write(tmp_path, "src/pkg/models/__init__.py", "")
     _write(tmp_path, "src/pkg/models/critic.py", "class QuadraticCritic: pass\n")
     all_rel = {"src/pkg/__init__.py", "src/pkg/models/__init__.py", "src/pkg/models/critic.py"}
@@ -212,8 +220,11 @@ def test_init_barrel_reexports(tmp_path):
 def test_init_barrel_reexports_absolute_imports(tmp_path):
     """An ABSOLUTE intra-package from-import in __init__.py is also a re-export."""
     root = str(tmp_path)
-    _write(tmp_path, "src/pkg/__init__.py",
-           "from pkg.models.critic import QuadraticCritic\n__all__ = ['QuadraticCritic']\n")
+    _write(
+        tmp_path,
+        "src/pkg/__init__.py",
+        "from pkg.models.critic import QuadraticCritic\n__all__ = ['QuadraticCritic']\n",
+    )
     _write(tmp_path, "src/pkg/models/__init__.py", "")
     _write(tmp_path, "src/pkg/models/critic.py", "class QuadraticCritic: pass\n")
     all_rel = {"src/pkg/__init__.py", "src/pkg/models/__init__.py", "src/pkg/models/critic.py"}
@@ -231,8 +242,9 @@ def _pf(path, deps, type_only_to=()):
     f = cdg.ParsedFile(path=path, name=os.path.splitext(os.path.basename(path))[0])
     for target in deps:
         f.internal_dependencies.append(
-            cdg.InternalDep(file=target, module=target, imports=["X"],
-                            type_only=target in type_only_to)
+            cdg.InternalDep(
+                file=target, module=target, imports=["X"], type_only=target in type_only_to
+            )
         )
     return f
 
@@ -279,9 +291,7 @@ def test_analyze_test_coverage_maps_are_sorted_for_reproducibility():
     mods = ("zeta", "alpha", "mid", "beta", "gamma")  # deliberately unsorted
     for m in mods:
         init.internal_dependencies.append(
-            cdg.InternalDep(
-                file=f"src/pkg/{m}.py", module=f".{m}", imports=[m], re_export=True
-            )
+            cdg.InternalDep(file=f"src/pkg/{m}.py", module=f".{m}", imports=[m], re_export=True)
         )
     srcs = [cdg.ParsedFile(path=f"src/pkg/{m}.py", name=m) for m in mods]
     test = _pf("tests/test_all.py", ["src/pkg/__init__.py"])  # imports the barrel

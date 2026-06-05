@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.7",
+    "version": "0.4.8",
     "lastUpdated": "2026-06-05",
     "totalFiles": 41,
     "totalModules": 10,
@@ -2353,9 +2353,21 @@
             "imports": [
               "Tensor"
             ]
+          },
+          {
+            "package": "jaxtyping",
+            "imports": [
+              "Float"
+            ]
           }
         ],
         "stdlibDependencies": [
+          {
+            "module": "__future__",
+            "imports": [
+              "annotations"
+            ]
+          },
           {
             "module": "functools",
             "imports": [
@@ -2365,6 +2377,7 @@
           {
             "module": "typing",
             "imports": [
+              "TYPE_CHECKING",
               "Optional",
               "Tuple",
               "Union"
@@ -2540,7 +2553,7 @@
   "statistics": {
     "totalPythonFiles": 41,
     "totalModules": 10,
-    "totalLinesOfCode": 5831,
+    "totalLinesOfCode": 5786,
     "totalExports": 126,
     "totalClasses": 45,
     "totalInterfaces": 1,

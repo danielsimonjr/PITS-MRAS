@@ -101,9 +101,7 @@ def _default_f_target(state_dim: int, control_dim: int) -> FTargetFn:
     b = torch.randn(state_dim, control_dim, generator=generator) * 0.3
 
     def f_target(state: Tensor, control: Tensor) -> Tensor:
-        return torch.einsum("ij,bj->bi", a, state) + torch.einsum(
-            "ij,bj->bi", b, control
-        )
+        return torch.einsum("ij,bj->bi", a, state) + torch.einsum("ij,bj->bi", b, control)
 
     return f_target
 
@@ -121,6 +119,7 @@ def _sample_collocation(
     Returns a dict of the six PITNN ``forward`` arguments plus the convenience
     ``x_p_curr``/``u_curr`` used to build the regression target.
     """
+
     def uni(*shape: int) -> Tensor:
         return torch.rand(*shape, generator=generator) * 2.0 - 1.0
 

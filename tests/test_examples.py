@@ -33,9 +33,7 @@ _EXAMPLE_MODULES = [
 def _import_run(module_name: str) -> Any:
     """Load an example module from file and return its ``run`` callable."""
     script_path = _EXAMPLES_DIR / f"{module_name}.py"
-    spec = importlib.util.spec_from_file_location(
-        f"_pits_example_run_{module_name}", script_path
-    )
+    spec = importlib.util.spec_from_file_location(f"_pits_example_run_{module_name}", script_path)
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

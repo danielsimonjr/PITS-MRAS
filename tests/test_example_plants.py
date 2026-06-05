@@ -13,9 +13,7 @@ import pathlib
 
 import torch
 
-_PLANTS_PATH = (
-    pathlib.Path(__file__).resolve().parent.parent / "examples" / "plants.py"
-)
+_PLANTS_PATH = pathlib.Path(__file__).resolve().parent.parent / "examples" / "plants.py"
 
 
 def _load_plants():

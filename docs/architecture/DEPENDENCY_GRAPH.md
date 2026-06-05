@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.7 | **Last Updated**: 2026-06-05
+**Version**: 0.4.8 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -865,12 +865,14 @@ The codebase is organized into the following modules:
 | `torch` | `(module)` |
 | `scipy.linalg` | `schur, solve_continuous_are, solve_continuous_lyapunov` |
 | `torch` | `Tensor` |
+| `jaxtyping` | `Float` |
 
 **Standard-library Dependencies:**
 | Module | Import |
 |--------|--------|
+| `__future__` | `annotations` |
 | `functools` | `lru_cache` |
-| `typing` | `Optional, Tuple, Union` |
+| `typing` | `TYPE_CHECKING, Optional, Tuple, Union` |
 
 **Exports:**
 - Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `solve_gare`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric`
@@ -1015,7 +1017,7 @@ graph TD
 |----------|-------|
 | Total Python Files | 41 |
 | Total Modules | 10 |
-| Total Lines of Code | 5831 |
+| Total Lines of Code | 5786 |
 | Total Public Exports | 126 |
 | Total Re-exports | 46 |
 | Total Classes | 45 |
@@ -1030,4 +1032,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.7
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.8

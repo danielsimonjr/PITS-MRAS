@@ -35,7 +35,6 @@ from __future__ import annotations
 import math
 from typing import Any
 
-
 # Wind-gust amplitude (strong lateral disturbance) and period [s].
 _GUST_AMPLITUDE = 20.0
 _GUST_PERIOD = 2.0
@@ -72,11 +71,17 @@ def _build_engine(use_safety_filter: bool) -> Any:
 
     cfg = PITSMRASConfig()
     cfg.network = NetworkConfig(
-        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=2,
+        hidden_dim=16,
+        output_dim=2,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     cfg.physics = PhysicsConfig(
-        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=1,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     pitnn = PITNN(cfg.network, cfg.physics)
 
@@ -91,9 +96,7 @@ def _build_engine(use_safety_filter: bool) -> Any:
     if use_safety_filter:
         controller.setup_safety_filter(safety_margin=_SAFETY_MARGIN, decay_rate=2.0)
 
-    engine = RealtimeInferenceEngine(
-        pitnn, controller, ref_model, horizon=50, device="cpu"
-    )
+    engine = RealtimeInferenceEngine(pitnn, controller, ref_model, horizon=50, device="cpu")
     # Expose the safety matrix P for the constraint-violation metric.
     engine._cbf_P = ref_model.P_opt.detach().cpu().numpy()  # type: ignore[attr-defined]
     return engine
@@ -141,9 +144,7 @@ def _simulate(engine: Any, steps: int) -> dict[str, list]:
         # Nonlinear single-track lateral plant with tyre-force saturation
         # (tanh); linearizes to the reference model near the lane centre.
         u = float(out["u_safe"].detach().cpu().reshape(-1)[0])
-        x_p = lateral_tyre_step(
-            x_p, u, dt, tyre_stiffness=2.0, damping=3.0, gust=gust
-        )
+        x_p = lateral_tyre_step(x_p, u, dt, tyre_stiffness=2.0, damping=3.0, gust=gust)
 
     return {
         "lateral_offset": lateral_offset,
@@ -180,9 +181,7 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
     fig.suptitle("Autonomous vehicle lane-hold under a strong wind gust: CBF vs no-CBF")
 
     axes[0].plot(tgrid, with_cbf["lateral_offset"], label="with CBF")
-    axes[0].plot(
-        tgrid, without_cbf["lateral_offset"], label="without CBF", linestyle="--"
-    )
+    axes[0].plot(tgrid, without_cbf["lateral_offset"], label="without CBF", linestyle="--")
     axes[0].axhline(0.0, color="gray", linewidth=0.8)
     axes[0].set_title("(a) lateral offset (lane departure)")
     axes[0].set_xlabel("t [s]")
@@ -190,16 +189,16 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
     axes[0].legend()
 
     axes[1].plot(tgrid, with_cbf["error_norm"], label="with CBF")
-    axes[1].plot(
-        tgrid, without_cbf["error_norm"], label="without CBF", linestyle="--"
-    )
+    axes[1].plot(tgrid, without_cbf["error_norm"], label="without CBF", linestyle="--")
     axes[1].set_title(r"(b) tracking error $\|e(t)\|$")
     axes[1].set_xlabel("t [s]")
     axes[1].set_ylabel(r"$\|e\|$")
     axes[1].legend()
 
     axes[2].step(
-        tgrid, [int(c) for c in with_cbf["cbf_active"]], where="post",
+        tgrid,
+        [int(c) for c in with_cbf["cbf_active"]],
+        where="post",
         color="tab:red",
     )
     axes[2].set_title("(c) CBF activation flag (with-CBF branch)")
@@ -214,9 +213,7 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
             plt.show()
 
     max_dep_cbf = max((abs(x) for x in with_cbf["lateral_offset"]), default=0.0)
-    max_dep_nocbf = max(
-        (abs(x) for x in without_cbf["lateral_offset"]), default=0.0
-    )
+    max_dep_nocbf = max((abs(x) for x in without_cbf["lateral_offset"]), default=0.0)
     viol_cbf = sum(with_cbf["violation"]) * dt
     viol_nocbf = sum(without_cbf["violation"]) * dt
 
@@ -231,7 +228,8 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
         "safeset_violation_no_cbf": float(viol_nocbf),
         "cbf_activation_rate": (
             sum(with_cbf["cbf_active"]) / len(with_cbf["cbf_active"])
-            if with_cbf["cbf_active"] else 0.0
+            if with_cbf["cbf_active"]
+            else 0.0
         ),
         "steps": steps,
         "figure": fig,

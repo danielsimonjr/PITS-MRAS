@@ -10,7 +10,7 @@ import math
 import numpy as np
 import torch
 
-from pits_mras.config import LossConfig, PCMLConfig, PITSMRASConfig, PhysicsConfig, NetworkConfig
+from pits_mras.config import LossConfig, NetworkConfig, PCMLConfig, PhysicsConfig, PITSMRASConfig
 from pits_mras.constraints import HeatConductionDAE
 from pits_mras.controllers.mras import MRASController
 from pits_mras.controllers.reference_models import LinearReferenceModel
@@ -57,8 +57,12 @@ def test_total_loss_includes_pcml_component() -> None:
 # --------------------------------------------------------------------------- #
 def _small_pitnn(lagrangian_head=None) -> PITNN:
     net = NetworkConfig(
-        input_dim=6, hidden_dim=16, output_dim=4, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=6,
+        hidden_dim=16,
+        output_dim=4,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     phys = PhysicsConfig(n_generalized_coords=2)
     return PITNN(net, phys, lagrangian_head=lagrangian_head)
@@ -97,13 +101,16 @@ def test_pitnn_with_lagrangian_head_emits_lam_hat() -> None:
 def test_pcml_hard_forward_on_heat_constraints() -> None:
     torch.manual_seed(0)
     dae = HeatConductionDAE(alpha=1.0, T_min=-100.0, T_max=100.0)
-    backbone = torch.nn.Sequential(
-        torch.nn.Linear(2, 8), torch.nn.Tanh(), torch.nn.Linear(8, 1)
-    )
+    backbone = torch.nn.Sequential(torch.nn.Linear(2, 8), torch.nn.Tanh(), torch.nn.Linear(8, 1))
     n_lambda = dae.spec.n_differential + dae.spec.n_inequality
     mod = PCMLModule(
-        constraints=dae, backbone=backbone, input_dim=2,
-        n_output=1, n_deriv=4, n_lambda=n_lambda, eta=0.5,
+        constraints=dae,
+        backbone=backbone,
+        input_dim=2,
+        n_output=1,
+        n_deriv=4,
+        n_lambda=n_lambda,
+        eta=0.5,
     )
     mod.update_activation(0.1)  # below eta -> hard mode
     assert mod.mode == "hard"
@@ -125,11 +132,17 @@ def test_pcml_hard_forward_on_heat_constraints() -> None:
 def _small_cfg() -> PITSMRASConfig:
     cfg = PITSMRASConfig()
     cfg.network = NetworkConfig(
-        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=2,
+        hidden_dim=16,
+        output_dim=2,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     cfg.physics = PhysicsConfig(
-        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=1,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     return cfg
 
@@ -142,13 +155,17 @@ def _ref_model() -> LinearReferenceModel:
 
 def _heat_pcml(eta: float) -> PCMLModule:
     dae = HeatConductionDAE(alpha=1.0, T_min=-1e3, T_max=1e3)
-    backbone = torch.nn.Sequential(
-        torch.nn.Linear(2, 8), torch.nn.Tanh(), torch.nn.Linear(8, 1)
-    )
+    backbone = torch.nn.Sequential(torch.nn.Linear(2, 8), torch.nn.Tanh(), torch.nn.Linear(8, 1))
     n_lambda = dae.spec.n_differential + dae.spec.n_inequality
     return PCMLModule(
-        constraints=dae, backbone=backbone, input_dim=2,
-        n_output=1, n_deriv=4, n_lambda=n_lambda, eta=eta, max_newton_iter=8,
+        constraints=dae,
+        backbone=backbone,
+        input_dim=2,
+        n_output=1,
+        n_deriv=4,
+        n_lambda=n_lambda,
+        eta=eta,
+        max_newton_iter=8,
     )
 
 
@@ -159,8 +176,15 @@ def test_cotrain_with_pcml_module_runs() -> None:
     ctrl = MRASController(rm, state_dim=2, control_dim=1, ref_dim=1, plant_dim=2)
     pcml = _heat_pcml(eta=1e-12)  # stays in soft mode for the loop
     metrics = cotraining_loop(
-        pitnn, ctrl, rm, cfg, n_episodes=1, n_steps=3, batch_size=2,
-        seed=0, pcml_module=pcml,
+        pitnn,
+        ctrl,
+        rm,
+        cfg,
+        n_episodes=1,
+        n_steps=3,
+        batch_size=2,
+        seed=0,
+        pcml_module=pcml,
     )
     assert "pcml_loss" in metrics
     assert len(metrics["pcml_loss"]) == 3
@@ -175,9 +199,7 @@ def test_realtime_with_pcml_projection_emits_violation() -> None:
     ctrl.setup_safety_filter()
     pcml = _heat_pcml(eta=1.0)
     pcml.update_activation(0.0)  # force hard mode -> projection path
-    engine = RealtimeInferenceEngine(
-        pitnn, ctrl, rm, horizon=5, pcml_module=pcml
-    )
+    engine = RealtimeInferenceEngine(pitnn, ctrl, rm, horizon=5, pcml_module=pcml)
     out = engine.step(torch.zeros(2), torch.ones(1), dt=0.01)
     assert "pcml_violation" in out
     assert math.isfinite(out["pcml_violation"])

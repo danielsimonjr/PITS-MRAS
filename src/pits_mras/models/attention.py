@@ -112,9 +112,7 @@ class PhysicsInformedAttention(nn.Module):
         context = (alpha.unsqueeze(-1) * H_enc).sum(dim=1)  # [batch, d_k]
         return context, alpha
 
-    def attention_regularization_loss(
-        self, alpha: Tensor, lambda_sparse: float = 0.01
-    ) -> Tensor:
+    def attention_regularization_loss(self, alpha: Tensor, lambda_sparse: float = 0.01) -> Tensor:
         r"""Regularize attention weights: balance entropy with sparsity.
 
         :math:`L_{attn} = -\mathrm{entropy}(\alpha) + \lambda_{sparse}\,\|\alpha\|_1`,

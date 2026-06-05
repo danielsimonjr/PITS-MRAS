@@ -73,9 +73,7 @@ def test_port_hamiltonian_energy_loss_positive_when_violated() -> None:
 def test_hamiltonian_positivity_loss() -> None:
     """Loss = mean(ReLU(-H)); zero when all H >= 0, positive otherwise."""
     H_pos = torch.tensor([1.0, 2.0, 0.0], dtype=torch.float64)
-    assert torch.allclose(
-        hamiltonian_positivity_loss(H_pos), torch.zeros((), dtype=torch.float64)
-    )
+    assert torch.allclose(hamiltonian_positivity_loss(H_pos), torch.zeros((), dtype=torch.float64))
     H_neg = torch.tensor([1.0, -2.0, -4.0], dtype=torch.float64)
     # mean(ReLU(-H)) = mean([0, 2, 4]) = 2.0
     assert torch.allclose(

@@ -39,11 +39,17 @@ _EXAMPLE_SCRIPTS = ["robotic_manipulator", "autonomous_vehicle", "building_hvac"
 def _make_config() -> PITSMRASConfig:
     cfg = PITSMRASConfig()
     cfg.network = NetworkConfig(
-        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=2,
+        hidden_dim=16,
+        output_dim=2,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     cfg.physics = PhysicsConfig(
-        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=1,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     return cfg
 
@@ -97,9 +103,7 @@ def test_package_imports() -> None:
 def test_example_script_imports(script_name: str) -> None:
     """Each example script imports without error."""
     script_path = _EXAMPLES_DIR / f"{script_name}.py"
-    spec = importlib.util.spec_from_file_location(
-        f"_pits_example_{script_name}", script_path
-    )
+    spec = importlib.util.spec_from_file_location(f"_pits_example_{script_name}", script_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -118,9 +122,7 @@ def test_full_forward_pass_no_crash() -> None:
     controller = _make_controller(ref_model)
     controller.setup_safety_filter()
 
-    engine = RealtimeInferenceEngine(
-        pitnn, controller, ref_model, horizon=10, device="cpu"
-    )
+    engine = RealtimeInferenceEngine(pitnn, controller, ref_model, horizon=10, device="cpu")
     x_p = torch.zeros(2)
     r = torch.ones(1) * 0.1
     for step in range(10):
@@ -156,8 +158,15 @@ def test_cotrain_one_episode() -> None:
 
     p_before = controller.critic.W_c.weight.detach().clone()
     metrics = cotraining_loop(
-        pitnn, controller, ref_model, cfg,
-        n_episodes=1, n_steps=8, batch_size=4, irl_window=3, seed=0,
+        pitnn,
+        controller,
+        ref_model,
+        cfg,
+        n_episodes=1,
+        n_steps=8,
+        batch_size=4,
+        irl_window=3,
+        seed=0,
     )
     assert isinstance(metrics, dict)
     _all_finite(metrics)

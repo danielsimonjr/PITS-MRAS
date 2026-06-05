@@ -10,6 +10,7 @@ NOTE (reasonable-minimal): the impl plan §6 does not spell out closed-form
 stability sub-losses, so the standard mathematically-correct forms are used
 and the aggregator weights default to 1.0 (tunable).
 """
+
 from __future__ import annotations
 
 from typing import Iterable
@@ -40,7 +41,7 @@ class ParameterBoundednessLoss(nn.Module):
         params = list(params)
         total = torch.zeros((), device=params[0].device, dtype=params[0].dtype)
         for p in params:
-            total = total + (p ** 2).sum()
+            total = total + (p**2).sum()
         return total
 
 

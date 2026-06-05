@@ -7,6 +7,7 @@ stability, IRL and HJB losses, aggregated by :class:`TotalLoss`.
 weights from :class:`~pits_mras.config.LossConfig` and returns a dict with the
 total plus per-component logging scalars (keys ``loss/physics`` etc.).
 """
+
 from __future__ import annotations
 
 import torch

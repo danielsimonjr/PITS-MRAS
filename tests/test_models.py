@@ -77,9 +77,7 @@ def test_attention_shapes_and_alpha_sums_to_one() -> None:
     """context is [batch, d_k]; alpha is [batch, T] and sums to 1 per row."""
     torch.manual_seed(0)
     batch, T, d_k, e_dim, n_state, c_dim = 4, 7, 16, 3, 5, 2
-    attn = PhysicsInformedAttention(
-        d_k=d_k, e_dim=e_dim, n_state=n_state, control_dim=c_dim
-    )
+    attn = PhysicsInformedAttention(d_k=d_k, e_dim=e_dim, n_state=n_state, control_dim=c_dim)
     H_enc = torch.randn(batch, T, d_k)
     e_hist = torch.randn(batch, T, e_dim)
     x_p = torch.randn(batch, n_state)
@@ -263,11 +261,17 @@ def test_costate_head_optimal_control_shape() -> None:
 def test_pitnn_forward_returns_dict_with_shapes() -> None:
     torch.manual_seed(0)
     net_cfg = NetworkConfig(
-        input_dim=6, hidden_dim=16, output_dim=4, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=6,
+        hidden_dim=16,
+        output_dim=4,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     phys_cfg = PhysicsConfig(
-        n_generalized_coords=2, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=2,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     model = PITNN(net_cfg, phys_cfg)
     batch, T = 3, 5

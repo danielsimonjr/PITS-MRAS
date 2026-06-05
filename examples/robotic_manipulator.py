@@ -94,11 +94,17 @@ def run(
     # ---- PITNN (physics-informed dynamics + value). -------------------------
     cfg = PITSMRASConfig()
     cfg.network = NetworkConfig(
-        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=2,
+        hidden_dim=16,
+        output_dim=2,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     cfg.physics = PhysicsConfig(
-        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=1,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     pitnn = PITNN(cfg.network, cfg.physics)
 
@@ -129,9 +135,7 @@ def run(
         seed=0,
     )
 
-    engine = RealtimeInferenceEngine(
-        pitnn, controller, ref_model, horizon=50, device="cpu"
-    )
+    engine = RealtimeInferenceEngine(pitnn, controller, ref_model, horizon=50, device="cpu")
 
     # ---- Closed-loop simulation (panels (a)-(c)) with the trained critic. ---
     dt = 0.01
@@ -143,9 +147,7 @@ def run(
     for k in range(steps):
         t = k * dt
         # Sinusoidal joint-angle reference (position command for one joint).
-        r = torch.tensor(
-            [0.5 * math.sin(2.0 * math.pi * 0.5 * t)], dtype=torch.float32
-        )
+        r = torch.tensor([0.5 * math.sin(2.0 * math.pi * 0.5 * t)], dtype=torch.float32)
         out = engine.step(x_p, r, dt=dt)
 
         e = out["e"].detach().cpu().reshape(-1)
@@ -175,20 +177,14 @@ def run(
     axes[0, 1].set_xlabel("t [s]")
     axes[0, 1].set_ylabel(r"$\hat V$")
 
-    axes[1, 0].step(
-        tgrid, [int(c) for c in cbf_active], where="post", color="tab:red"
-    )
+    axes[1, 0].step(tgrid, [int(c) for c in cbf_active], where="post", color="tab:red")
     axes[1, 0].set_title("(c) CBF activation flag")
     axes[1, 0].set_xlabel("t [s]")
     axes[1, 0].set_ylabel("active")
     axes[1, 0].set_ylim(-0.1, 1.1)
 
-    axes[1, 1].plot(
-        range(len(critic_convergence)), critic_convergence, color="tab:green"
-    )
-    axes[1, 1].set_title(
-        r"(d) IRL critic training conv. $\|\hat P-P_{CARE}\|_F/\|P_{CARE}\|_F$"
-    )
+    axes[1, 1].plot(range(len(critic_convergence)), critic_convergence, color="tab:green")
+    axes[1, 1].set_title(r"(d) IRL critic training conv. $\|\hat P-P_{CARE}\|_F/\|P_{CARE}\|_F$")
     axes[1, 1].set_xlabel("training step")
     axes[1, 1].set_ylabel("rel. error")
 
@@ -204,12 +200,8 @@ def run(
         "cbf_active": cbf_active,
         "critic_convergence": critic_convergence,
         "final_error_norm": error_norm[-1] if error_norm else 0.0,
-        "final_critic_convergence": (
-            critic_convergence[-1] if critic_convergence else 0.0
-        ),
-        "cbf_activation_rate": (
-            sum(cbf_active) / len(cbf_active) if cbf_active else 0.0
-        ),
+        "final_critic_convergence": (critic_convergence[-1] if critic_convergence else 0.0),
+        "cbf_activation_rate": (sum(cbf_active) / len(cbf_active) if cbf_active else 0.0),
         "steps": steps,
         "figure": fig,
     }

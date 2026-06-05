@@ -1,8 +1,10 @@
 # Development toolchain for PITS-MRAS.
 # Runtime dependencies live in requirements.txt; these are dev/CI only.
-flake8>=6.0.0
+# Ruff replaces flake8 + black + isort (lint, format, and import-sorting).
+ruff>=0.8.0
 mypy>=1.4.0
 pytest>=7.4.0
 pytest-cov>=4.1.0
-black>=23.0.0
-isort>=5.12.0
+# jaxtyping is dev-only: shape annotations are imported under TYPE_CHECKING,
+# so it is never required at runtime (only for type-checking / IDEs).
+jaxtyping>=0.2.0

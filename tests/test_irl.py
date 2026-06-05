@@ -12,6 +12,7 @@ Two load-bearing checks (§3.2 of the impl plan):
 The IRL Bellman equation is model-free: the drift matrix ``A`` never appears
 in ``δ_IRL`` -- only the running cost integral and the value difference.
 """
+
 from __future__ import annotations
 
 import torch
@@ -38,8 +39,9 @@ def _inject_P(critic: QuadraticCritic, P: torch.Tensor) -> None:
         critic.W_c.weight.copy_(w.unsqueeze(0))
 
 
-def _lqr_2d() -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
-                       torch.Tensor, torch.Tensor]:
+def _lqr_2d() -> (
+    tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+):
     """Return (A, B, Q, R, K, P) for a controllable double-integrator LQR.
 
     ``P`` is the value matrix s.t. V(e)=eᵀPe; ``K`` the optimal gain; the
@@ -62,8 +64,7 @@ def _lqr_2d() -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
     return A, B, Q, R, K, P
 
 
-def _simulate(A_cl: torch.Tensor, e0: torch.Tensor, dt: float,
-              steps: int) -> torch.Tensor:
+def _simulate(A_cl: torch.Tensor, e0: torch.Tensor, dt: float, steps: int) -> torch.Tensor:
     """Integrate ė = A_cl e with RK4; return trajectory [steps+1, state_dim]."""
     traj = [e0]
     e = e0
@@ -85,9 +86,9 @@ class TestIRLBellman:
         steps = 1000  # window T = 1.0 s
         e0 = torch.tensor([[1.0, -0.5]], dtype=torch.float64)
         traj = _simulate(A_cl, e0, dt, steps)  # [steps+1, 1, state_dim]
-        traj = traj.squeeze(1)                 # [steps+1, state_dim]
+        traj = traj.squeeze(1)  # [steps+1, state_dim]
 
-        u = -(traj @ K.transpose(-1, -2))      # [steps+1, action_dim]
+        u = -(traj @ K.transpose(-1, -2))  # [steps+1, action_dim]
 
         critic = QuadraticCritic(2).double()
         _inject_P(critic, P)  # V̂(e) = eᵀ P e exactly
@@ -96,8 +97,8 @@ class TestIRLBellman:
         acc = IRLBellmanAccumulator(Q, R)
         integral = acc(traj.unsqueeze(0), u.unsqueeze(0), dt)  # [batch]
 
-        v_end = critic(traj[-1:])    # V̂(e(t))     [1]
-        v_start = critic(traj[:1])   # V̂(e(t−T))   [1]
+        v_end = critic(traj[-1:])  # V̂(e(t))     [1]
+        v_start = critic(traj[:1])  # V̂(e(t−T))   [1]
         # Integral Bellman eq: ∫ r dτ = V(t−T) − V(t)  =>  δ = ∫ − (V_start − V_end).
         delta = integral - (v_start - v_end)
         # Residual is RK4 truncation only (~1e-4 at dt=1e-3); assert it vanishes.

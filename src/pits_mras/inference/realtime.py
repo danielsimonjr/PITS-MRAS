@@ -122,9 +122,7 @@ class RealtimeInferenceEngine:
             e_hist = torch.stack(list(self._e_hist)).unsqueeze(0)
 
             # Reference-model step (batched) + tracking error (C_p = I).
-            self._x_m = self.ref_model.step(
-                self._x_m.unsqueeze(0), r.unsqueeze(0), dt
-            ).squeeze(0)
+            self._x_m = self.ref_model.step(self._x_m.unsqueeze(0), r.unsqueeze(0), dt).squeeze(0)
             e = x_p - self._x_m  # [state_dim]
 
             # PITNN forward (real six-arg signature). The port-Hamiltonian
@@ -171,9 +169,7 @@ class RealtimeInferenceEngine:
             # ``torch.autograd.grad`` (∇V̂); re-enable grad just for this call,
             # then detach so no training graph escapes the ``no_grad`` step.
             with torch.enable_grad():
-                ctrl_out = self.controller(
-                    e.unsqueeze(0), r.unsqueeze(0), x_p.unsqueeze(0)
-                )
+                ctrl_out = self.controller(e.unsqueeze(0), r.unsqueeze(0), x_p.unsqueeze(0))
             u_safe = ctrl_out["u"].detach().squeeze(0)  # [control_dim]
 
             # CBF activation: the safety filter populates "slack" only when the

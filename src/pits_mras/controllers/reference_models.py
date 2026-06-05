@@ -68,8 +68,7 @@ class LinearReferenceModel(nn.Module):
 
         if not check_hurwitz(A_m):
             raise ValueError(
-                "A_m must be Hurwitz (all eigenvalues have strictly negative "
-                "real parts)."
+                "A_m must be Hurwitz (all eigenvalues have strictly negative " "real parts)."
             )
 
         # Policy-evaluation P (Identity 1): A_m^T P + P A_m = -Q.
@@ -82,9 +81,7 @@ class LinearReferenceModel(nn.Module):
         self.register_buffer("C_m", torch.tensor(C_m, dtype=torch.float32))
         self.register_buffer("Q", torch.tensor(Q, dtype=torch.float32))
         self.register_buffer("R", torch.tensor(R, dtype=torch.float32))
-        self.register_buffer(
-            "R_inv", torch.tensor(np.linalg.inv(R), dtype=torch.float32)
-        )
+        self.register_buffer("R_inv", torch.tensor(np.linalg.inv(R), dtype=torch.float32))
         self.register_buffer("P", torch.tensor(P, dtype=torch.float32))
         self.register_buffer("P_opt", torch.tensor(P_opt, dtype=torch.float32))
         self.register_buffer("K_opt", torch.tensor(K_opt, dtype=torch.float32))

@@ -109,9 +109,7 @@ class QuadraticCritic(nn.Module):
         """
         n = self.state_dim
         if P.shape != (n, n):
-            raise ValueError(
-                f"set_P expects a [{n}, {n}] matrix, got {tuple(P.shape)}."
-            )
+            raise ValueError(f"set_P expects a [{n}, {n}] matrix, got {tuple(P.shape)}.")
         P = P.to(device=self.W_c.weight.device, dtype=self.W_c.weight.dtype)
         with torch.no_grad():
             # Canonical packing (matches extract_P's unpack inverse).

@@ -5,6 +5,7 @@ attention weighting and a smoothness penalty).  The ROADMAP-named
 ``MultiStepPredictionLoss``, ``AttentionRegularizationLoss`` and
 ``TemporalSmoothnessLoss`` are composable building blocks usable on their own.
 """
+
 from __future__ import annotations
 
 import torch
@@ -26,7 +27,7 @@ class MultiStepPredictionLoss(nn.Module):
         attention_weights: torch.Tensor | None = None,
     ) -> torch.Tensor:
         err = predictions - targets
-        sq = (err ** 2).sum(dim=-1)  # [batch, horizon]
+        sq = (err**2).sum(dim=-1)  # [batch, horizon]
         if attention_weights is not None:
             weighted = (sq * attention_weights).sum(dim=-1)  # [batch]
         else:
@@ -39,7 +40,7 @@ class TemporalSmoothnessLoss(nn.Module):
 
     def forward(self, predictions: torch.Tensor) -> torch.Tensor:
         dpred = predictions[:, 1:, :] - predictions[:, :-1, :]
-        return (dpred ** 2).sum(dim=-1).mean()
+        return (dpred**2).sum(dim=-1).mean()
 
 
 class AttentionRegularizationLoss(nn.Module):

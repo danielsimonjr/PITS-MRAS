@@ -116,11 +116,7 @@ def rc_thermal_step(
     t_zone = float(state[0])
     t_mass = float(state[1])
     u_sat = max(-u_max, min(u_max, u))
-    t_zone_dot = (
-        a_zone_mass * (t_mass - t_zone)
-        - a_zone_ambient * t_zone
-        + heater_gain * u_sat
-    )
+    t_zone_dot = a_zone_mass * (t_mass - t_zone) - a_zone_ambient * t_zone + heater_gain * u_sat
     t_mass_dot = a_mass_zone * (t_zone - t_mass)
     t_zone_n = t_zone + dt * t_zone_dot
     t_mass_n = t_mass + dt * t_mass_dot

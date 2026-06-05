@@ -32,11 +32,17 @@ _HORIZON = 5
 def _make_config() -> PITSMRASConfig:
     cfg = PITSMRASConfig()
     cfg.network = NetworkConfig(
-        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=2,
+        hidden_dim=16,
+        output_dim=2,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     cfg.physics = PhysicsConfig(
-        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=1,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     return cfg
 
@@ -55,13 +61,15 @@ def _make_engine() -> RealtimeInferenceEngine:
     pitnn = PITNN(cfg.network, cfg.physics)
     ref_model = _make_ref_model()
     controller = MRASController(
-        reference_model=ref_model, state_dim=2, control_dim=1, ref_dim=1,
-        plant_dim=2, use_safety_filter=True,
+        reference_model=ref_model,
+        state_dim=2,
+        control_dim=1,
+        ref_dim=1,
+        plant_dim=2,
+        use_safety_filter=True,
     )
     controller.setup_safety_filter()
-    return RealtimeInferenceEngine(
-        pitnn, controller, ref_model, horizon=_HORIZON, device="cpu"
-    )
+    return RealtimeInferenceEngine(pitnn, controller, ref_model, horizon=_HORIZON, device="cpu")
 
 
 # --------------------------------------------------------------------------- #
@@ -76,11 +84,11 @@ def test_step_returns_documented_dict_with_shapes() -> None:
     for key in ("u_safe", "e", "v_hat", "h_cbf", "f_hat", "cbf_active"):
         assert key in out, f"missing key {key!r}"
 
-    assert out["u_safe"].shape == (1,)       # control_dim
-    assert out["e"].shape == (2,)            # state_dim
-    assert out["f_hat"].shape == (2,)        # output_dim
-    assert out["v_hat"].shape == ()          # scalar value
-    assert out["h_cbf"].shape == ()          # scalar CBF value
+    assert out["u_safe"].shape == (1,)  # control_dim
+    assert out["e"].shape == (2,)  # state_dim
+    assert out["f_hat"].shape == (2,)  # output_dim
+    assert out["v_hat"].shape == ()  # scalar value
+    assert out["h_cbf"].shape == ()  # scalar CBF value
 
 
 def test_cbf_active_is_bool() -> None:
@@ -119,7 +127,9 @@ def test_controller_state_dataclass_defaults() -> None:
 def test_parallel_engine_starts_and_stops_cleanly() -> None:
     engine = _make_engine()
     par = ParallelInferenceEngine(
-        engine, x_p=torch.zeros(2), r=torch.ones(1) * 0.1,
+        engine,
+        x_p=torch.zeros(2),
+        r=torch.ones(1) * 0.1,
     )
     par.start()
     # Let the threads tick a few cycles.
@@ -144,7 +154,10 @@ def test_parallel_adaptation_update_runs_irl_step() -> None:
     atomically swaps it in; an unfilled window is a no-op."""
     engine = _make_engine()
     par = ParallelInferenceEngine(
-        engine, x_p=torch.zeros(2), r=torch.zeros(1), irl_window=4,
+        engine,
+        x_p=torch.zeros(2),
+        r=torch.zeros(1),
+        irl_window=4,
     )
     # Empty window -> nothing to fit.
     assert par._adaptation_update() is False
@@ -194,7 +207,10 @@ def test_parallel_engine_adapts_during_run() -> None:
 
     engine = _make_engine()
     par = ParallelInferenceEngine(
-        engine, x_p=torch.zeros(2), r=torch.ones(1) * 0.1, irl_window=4,
+        engine,
+        x_p=torch.zeros(2),
+        r=torch.ones(1) * 0.1,
+        irl_window=4,
     )
     par.start()
     # Poll until the adaptation thread has applied a swap (robust to scheduling /

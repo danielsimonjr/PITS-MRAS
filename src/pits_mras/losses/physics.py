@@ -7,6 +7,7 @@ Implements §6.1 verbatim:
 with λ-weighted energy / PDE / boundary-condition / symmetry residual terms.
 The PDE, BC and symmetry residuals are optional (default ``None`` -> zero).
 """
+
 from __future__ import annotations
 
 import torch
@@ -42,12 +43,12 @@ class PhysicsLoss(nn.Module):
         sym_residual: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         energy_residual = dH_dt - (P_control - P_diss)
-        loss_energy = (energy_residual ** 2).mean()
+        loss_energy = (energy_residual**2).mean()
 
         zero = torch.zeros((), device=dH_dt.device, dtype=dH_dt.dtype)
-        loss_pde = (pde_residual ** 2).mean() if pde_residual is not None else zero
-        loss_bc = (bc_residual ** 2).mean() if bc_residual is not None else zero
-        loss_sym = (sym_residual ** 2).mean() if sym_residual is not None else zero
+        loss_pde = (pde_residual**2).mean() if pde_residual is not None else zero
+        loss_bc = (bc_residual**2).mean() if bc_residual is not None else zero
+        loss_sym = (sym_residual**2).mean() if sym_residual is not None else zero
 
         loss = (
             self.lambda_energy * loss_energy

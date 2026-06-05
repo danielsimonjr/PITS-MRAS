@@ -49,9 +49,7 @@ def test_reference_model_buffers_and_dtype() -> None:
     assert torch.allclose(resid, torch.zeros_like(resid), atol=1e-4)
 
     # K_opt matches solve_care to within tolerance (Kleinman == CARE).
-    P_care, K_care = solve_care(
-        rm.A_m.numpy(), rm.B_m.numpy(), rm.Q.numpy(), rm.R.numpy()
-    )
+    P_care, K_care = solve_care(rm.A_m.numpy(), rm.B_m.numpy(), rm.Q.numpy(), rm.R.numpy())
     assert np.allclose(rm.K_opt.numpy(), K_care, atol=1e-4)
     assert np.allclose(rm.P_opt.numpy(), P_care, atol=1e-4)
 
@@ -110,9 +108,7 @@ def test_mras_nominal_control_law() -> None:
     r = torch.randn(3, 2)
     x_plant = torch.randn(3, 2)
     out = ctrl(e, r, x_plant, apply_safety=False)
-    expected = (
-        -e @ ctrl.K_fb.T + r @ ctrl.K_ff.T + ctrl.compensator(x_plant)
-    )
+    expected = -e @ ctrl.K_fb.T + r @ ctrl.K_ff.T + ctrl.compensator(x_plant)
     assert torch.allclose(out["u_nom"], expected, atol=1e-6)
 
 
@@ -207,9 +203,7 @@ def test_mras_lqr_warm_start_sets_K_fb() -> None:
     Q = torch.eye(2)
     R = torch.eye(2)
     P_t, K_t = ctrl.lqr_warm_start(Q, R)
-    P_care, K_care = solve_care(
-        rm.A_m.numpy(), rm.B_m.numpy(), Q.numpy(), R.numpy()
-    )
+    P_care, K_care = solve_care(rm.A_m.numpy(), rm.B_m.numpy(), Q.numpy(), R.numpy())
     assert np.allclose(ctrl.K_fb.numpy(), K_care, atol=1e-4)
     assert np.allclose(K_t.numpy(), K_care, atol=1e-4)
     assert np.allclose(P_t.numpy(), P_care, atol=1e-4)

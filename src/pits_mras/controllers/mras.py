@@ -78,9 +78,7 @@ class MRASController(nn.Module):
         self.use_safety_filter = use_safety_filter
         self.safety_filter: Optional[CLFCBFSafetyFilter] = None
 
-    def setup_safety_filter(
-        self, safety_margin: float = 10.0, decay_rate: float = 1.0
-    ) -> None:
+    def setup_safety_filter(self, safety_margin: float = 10.0, decay_rate: float = 1.0) -> None:
         """Instantiate the CBF filter from the critic's current ``P``."""
         P = self.critic.extract_P()
         self.safety_filter = CLFCBFSafetyFilter(
@@ -176,9 +174,7 @@ class MRASController(nn.Module):
         B = self.reference_model.B_m  # [state_dim, control_dim]
         return u @ R + (e @ P_hat) @ B  # R u + B^T P_hat e (row form)
 
-    def dpg_actor_step(
-        self, e: Tensor, r: Tensor, x_plant: Tensor, gamma_c: float = 0.1
-    ) -> Tensor:
+    def dpg_actor_step(self, e: Tensor, r: Tensor, x_plant: Tensor, gamma_c: float = 0.1) -> Tensor:
         r"""Deterministic-policy-gradient actor update (Identity 4, IP §3.6).
 
         Adds the DPG term :math:`\Gamma_c\,\nabla_\theta u \cdot \nabla_a\hat Q`

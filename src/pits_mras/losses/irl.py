@@ -19,6 +19,7 @@ value (it gives ``2(V(t−T) − V(t))``).  We follow the integral Bellman equat
 (the correctness contract) so the load-bearing "residual ≈ 0 at the true value"
 property holds.  The squared loss is sign-insensitive regardless.
 """
+
 from __future__ import annotations
 
 import torch
@@ -69,9 +70,9 @@ class IRLBellmanLoss(nn.Module):
         dt: float,
     ) -> dict[str, torch.Tensor]:
         integral = self.accumulator(e, u, dt)  # [batch]
-        v_end = critic(e[:, -1, :])            # V̂(e(t))    [batch]
-        v_start = critic(e[:, 0, :])           # V̂(e(t−T))  [batch]
+        v_end = critic(e[:, -1, :])  # V̂(e(t))    [batch]
+        v_start = critic(e[:, 0, :])  # V̂(e(t−T))  [batch]
         # ∫ r dτ = V(t−T) − V(t)  =>  δ = ∫ − [V̂(t−T) − V̂(t)]  (see module doc).
-        delta = integral - (v_start - v_end)   # [batch]
-        loss = 0.5 * (delta ** 2).mean()
+        delta = integral - (v_start - v_end)  # [batch]
+        loss = 0.5 * (delta**2).mean()
         return {"loss": loss, "delta": delta}

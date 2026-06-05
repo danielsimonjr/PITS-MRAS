@@ -1,17 +1,33 @@
 # Tooling configuration for PITS-MRAS (per Implementation Plan §12).
 # Note: packaging is still driven by setup.py (src-layout). This file holds
-# only tool config; flake8 config lives in setup.cfg (it ignores pyproject.toml).
+# only tool config. Ruff replaces flake8 + black + isort (lint, format, and
+# import-sorting in one tool); mypy and pytest config also live here.
 
 # Python floor is 3.10 (not the plan's stated 3.9): the current mypy release
 # dropped `python_version = 3.9` support, and torch>=2.0.0 supports 3.10+.
-[tool.black]
+[tool.ruff]
 line-length = 100
-target-version = ["py310", "py311", "py312"]
+target-version = "py310"
 
-[tool.isort]
-profile = "black"
-line_length = 100
-src_paths = ["src", "tests"]
+[tool.ruff.lint]
+# E/W = pycodestyle (flake8 core), F = pyflakes, I = isort import-sorting.
+# E203 ignored to match the prior flake8 setup (Black/Ruff slice-colon style).
+# W503 (line-break-before-binary-op) is NOT carried over: Ruff does not define
+# it; under flake8 it was an off-by-default no-op style preference.
+select = ["E", "F", "W", "I"]
+ignore = ["E203"]
+
+[tool.ruff.lint.per-file-ignores]
+# jaxtyping shape annotations (e.g. Float[Tensor, "*batch n"]) are string
+# forward-refs that pyflakes tries to parse as Python: it flags the shape
+# strings as F722 (syntax error in forward annotation) and the symbolic dim
+# names inside them (e.g. the ``n`` in ``n*(n+1)//2``) as F821 (undefined
+# name). These are the standard jaxtyping/pyflakes false positives; scope the
+# suppression to the single file that carries shape annotations.
+"src/pits_mras/utils/lyapunov.py" = ["F722", "F821"]
+
+[tool.ruff.format]
+# Black-compatible defaults; line-length inherits from [tool.ruff].
 
 [tool.mypy]
 python_version = "3.10"

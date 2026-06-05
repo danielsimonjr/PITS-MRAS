@@ -174,13 +174,11 @@ class PortHamiltonianDecoder(nn.Module):
         """
         qp = torch.cat([q, p], dim=-1).requires_grad_(True)  # [batch, 2*n_q]
         q_in = qp[:, : self.n_q]
-        p_in = qp[:, self.n_q:]
+        p_in = qp[:, self.n_q :]
 
         # 1. Hamiltonian and its gradient (create_graph for higher-order grads).
         H_val = self.H_net(q_in, p_in)  # [batch, 1]
-        grad_H = torch.autograd.grad(
-            H_val.sum(), qp, create_graph=True
-        )[0]  # [batch, 2*n_q]
+        grad_H = torch.autograd.grad(H_val.sum(), qp, create_graph=True)[0]  # [batch, 2*n_q]
 
         # 2. Interconnection matrix J (always skew-symmetric).
         J = self.get_J(q)  # [batch, 2n_q, 2n_q]
@@ -197,7 +195,7 @@ class PortHamiltonianDecoder(nn.Module):
         #    q_dot is kept in the signature for backward compatibility but is
         #    not used here. Built out-of-place via torch.cat.
         R_theta = self.L_net(q)  # [batch, n_q, n_q]
-        grad_H_p = grad_H[:, self.n_q:]  # [batch, n_q] = dH/dp (the velocity)
+        grad_H_p = grad_H[:, self.n_q :]  # [batch, n_q] = dH/dp (the velocity)
         f_diss_p = -(R_theta @ grad_H_p.unsqueeze(-1)).squeeze(-1)  # [batch, n_q]
         f_diss = torch.cat([torch.zeros_like(q), f_diss_p], dim=-1)
 
@@ -216,13 +214,11 @@ class PortHamiltonianDecoder(nn.Module):
         #    uses the SAME velocity channel (dH/dp) as f_diss, so that
         #    P_diss == -grad_H . f_diss and the residual cancels analytically.
         P_control = (B_val * u_scalar * grad_H).sum(dim=-1)  # [batch]
-        P_diss = (
-            grad_H_p.unsqueeze(1) @ R_theta @ grad_H_p.unsqueeze(-1)
-        ).reshape(-1)  # [batch]  (dH/dp)^T R (dH/dp) >= 0
+        P_diss = (grad_H_p.unsqueeze(1) @ R_theta @ grad_H_p.unsqueeze(-1)).reshape(
+            -1
+        )  # [batch]  (dH/dp)^T R (dH/dp) >= 0
         # dH/dt ~= f_hat . grad_H (chain rule).
         dH_dt = (f_hat * grad_H).sum(dim=-1)  # [batch]
-        energy_loss = port_hamiltonian_energy_loss(
-            H_val.squeeze(-1), dH_dt, P_control, P_diss
-        )
+        energy_loss = port_hamiltonian_energy_loss(H_val.squeeze(-1), dH_dt, P_control, P_diss)
         energy_loss = energy_loss + hamiltonian_positivity_loss(H_val.squeeze(-1))
         return f_hat, H_val, P_diss, energy_loss

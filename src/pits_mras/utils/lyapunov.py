@@ -17,13 +17,22 @@ Phase-1 sanity gate (IP §13): ``solve_lyapunov(-I, I)`` must return
 ``[[0.5, 0], [0, 0.5]]``.
 """
 
+from __future__ import annotations
+
 from functools import lru_cache
-from typing import Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 import numpy as np
 import torch
 from scipy.linalg import schur, solve_continuous_are, solve_continuous_lyapunov
 from torch import Tensor
+
+if TYPE_CHECKING:
+    # jaxtyping is a DEV-ONLY dependency: with ``from __future__ import
+    # annotations`` all annotations are strings, so ``Float`` is never needed at
+    # runtime — only for type-checkers / IDEs. ``Tensor`` is already imported at
+    # runtime above (used in signatures elsewhere).
+    from jaxtyping import Float
 
 
 def _canonical_device_key(device: Union[str, torch.device]) -> str:
@@ -126,8 +135,7 @@ def kleinman_iteration(
         if delta < tol:
             return P, K
     raise RuntimeError(
-        f"Kleinman iteration did not converge in {max_iter} steps "
-        f"(final Δ‖K‖_F = {delta:.4e})."
+        f"Kleinman iteration did not converge in {max_iter} steps " f"(final Δ‖K‖_F = {delta:.4e})."
     )
 
 
@@ -222,9 +230,7 @@ def check_hurwitz(A: np.ndarray, tol: float = 1e-6) -> bool:
     return bool(np.all(np.real(np.linalg.eigvals(A)) < -tol))
 
 
-def lyapunov_derivative(
-    e: Tensor, P: Tensor, A_m: Tensor, B: Tensor, u: Tensor
-) -> Tensor:
+def lyapunov_derivative(e: Tensor, P: Tensor, A_m: Tensor, B: Tensor, u: Tensor) -> Tensor:
     r"""Compute :math:`\dot V = 2 e^\top P (A_m e + B u)` analytically.
 
     For a purely linear error dynamics :math:`\dot e = A_m e + B u`, this is
@@ -239,7 +245,7 @@ def lyapunov_derivative(
     return V_dot
 
 
-def quadratic_basis(e: Tensor) -> Tensor:
+def quadratic_basis(e: Float[Tensor, "*batch n"]) -> Float[Tensor, "*batch n*(n+1)//2"]:
     r"""Upper-triangular Kronecker product basis for quadratic forms.
 
     For a linear critic :math:`\hat V(e) = W^\top \phi(e)`, this basis gives
@@ -256,7 +262,7 @@ def quadratic_basis(e: Tensor) -> Tensor:
     return e[..., i] * e[..., j]  # [..., n*(n+1)//2]
 
 
-def pack_symmetric(P: Tensor) -> Tensor:
+def pack_symmetric(P: Float[Tensor, "n n"]) -> Float[Tensor, "n*(n+1)//2"]:
     r"""Pack a symmetric ``[n, n]`` matrix into its quadratic-basis coefficients.
 
     The single source of truth for the basis convention shared by
@@ -275,7 +281,7 @@ def pack_symmetric(P: Tensor) -> Tensor:
     return P[i, j] + torch.where(off, P[j, i], torch.zeros_like(P[i, j]))
 
 
-def unpack_symmetric(vec: Tensor, n: int) -> Tensor:
+def unpack_symmetric(vec: Float[Tensor, "n*(n+1)//2"], n: int) -> Float[Tensor, "n n"]:
     r"""Inverse of :func:`pack_symmetric`: basis coefficients -> symmetric ``[n, n]``.
 
     Diagonal entries take the coefficient directly; off-diagonal coefficients are

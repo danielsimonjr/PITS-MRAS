@@ -53,9 +53,7 @@ def energy_drift(quantity: Tensor, relative: bool = True, eps: float = 1e-8) -> 
     return drift
 
 
-def max_energy_drift(
-    quantity: Tensor, relative: bool = True, eps: float = 1e-8
-) -> Tensor:
+def max_energy_drift(quantity: Tensor, relative: bool = True, eps: float = 1e-8) -> Tensor:
     r"""Maximum absolute drift of a conserved quantity over time.
 
     The worst-case excursion of ``quantity`` from its initial value, i.e.
@@ -115,9 +113,7 @@ def valid_prediction_time(
     return idx.to(rel_err.dtype) * dt
 
 
-def rollout_jacobian_spectral_radius(
-    step_fn: Callable[[Tensor], Tensor], x: Tensor
-) -> Tensor:
+def rollout_jacobian_spectral_radius(step_fn: Callable[[Tensor], Tensor], x: Tensor) -> Tensor:
     r"""Spectral radius of the one-step rollout Jacobian at state ``x``.
 
     Computes the Jacobian :math:`J = \partial(\text{step\_fn}) / \partial x`

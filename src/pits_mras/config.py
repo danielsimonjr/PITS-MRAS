@@ -156,18 +156,38 @@ class PITSMRASConfig:
 
     @classmethod
     def from_yaml(cls, path: str) -> "PITSMRASConfig":
-        """Build a config from a YAML file, overlaying nested fields on defaults."""
+        """Build a config from a YAML file, overlaying nested fields on defaults.
+
+        Validation is fail-loud: an unknown top-level section, or an unknown
+        field within a known section, raises :class:`ValueError` naming the
+        offending key rather than silently dropping it. Valid keys are taken
+        from :func:`dataclasses.fields` of the master config and each
+        sub-dataclass.
+        """
         with open(path) as f:
             d = yaml.safe_load(f)
         # Recursively build nested dataclasses from dict.
         cfg = cls()
         if not d:
             return cfg
+        valid_sections = {f.name for f in dataclasses.fields(cfg)}
         for key, val in d.items():
-            if hasattr(cfg, key) and isinstance(val, dict):
-                sub = getattr(cfg, key)
-                for k, v in val.items():
-                    setattr(sub, k, v)
+            if key not in valid_sections:
+                raise ValueError(
+                    f"Unknown config section '{key}' in {path}. "
+                    f"Valid sections: {sorted(valid_sections)}."
+                )
+            sub = getattr(cfg, key)
+            if not isinstance(val, dict):
+                continue
+            valid_fields = {f.name for f in dataclasses.fields(sub)}
+            for k, v in val.items():
+                if k not in valid_fields:
+                    raise ValueError(
+                        f"Unknown field '{k}' in config section '{key}' of {path}. "
+                        f"Valid fields: {sorted(valid_fields)}."
+                    )
+                setattr(sub, k, v)
         return cfg
 
     def to_yaml(self, path: str) -> None:

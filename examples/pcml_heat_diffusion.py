@@ -109,8 +109,14 @@ def run(steps: int = 250, show: bool = False) -> dict[str, Any]:
     # ---- Hard PCML: KKT projection onto the heat-equation manifold. ---------
     n_lambda = dae.spec.n_differential + dae.spec.n_inequality
     pcml = PCMLModule(
-        constraints=dae, backbone=backbone, input_dim=2,
-        n_output=1, n_deriv=4, n_lambda=n_lambda, eta=1.0, max_newton_iter=12,
+        constraints=dae,
+        backbone=backbone,
+        input_dim=2,
+        n_output=1,
+        n_deriv=4,
+        n_lambda=n_lambda,
+        eta=1.0,
+        max_newton_iter=12,
     )
     pcml.update_activation(0.0)  # force hard mode
 

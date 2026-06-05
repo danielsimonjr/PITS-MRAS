@@ -25,6 +25,7 @@ zero at the CARE solution.  We therefore implement the ½-scaled form (ROADMAP
 §6 "factor-of-½ convention" caveat).  ``half_grad=False`` recovers the literal
 un-halved §3.5 text for callers who store ``V̂ = ½eᵀPe`` instead.
 """
+
 from __future__ import annotations
 
 import torch
@@ -75,15 +76,13 @@ class HJBResidualLoss(nn.Module):
         eQe = torch.einsum("bi,ij,bj->b", e, self.Q, e)
         uRu = torch.einsum("bi,ij,bj->b", u_star, self.R, u_star)
 
-        drift = torch.einsum("ij,bj->bi", self.A_m, e) + torch.einsum(
-            "ij,bj->bi", self.B, u_star
-        )
+        drift = torch.einsum("ij,bj->bi", self.A_m, e) + torch.einsum("ij,bj->bi", self.B, u_star)
         if f_corr is not None:
             drift = drift + f_corr
         grad_dot_f = (grad_v * drift).sum(dim=-1)
 
         residual = eQe + uRu + grad_dot_f
-        loss = self.weight * (residual ** 2).mean()
+        loss = self.weight * (residual**2).mean()
         return {"loss": loss, "residual": residual, "u_star": u_star}
 
 

@@ -76,11 +76,17 @@ def _run_pits(steps: int) -> dict[str, list]:
 
     cfg = PITSMRASConfig()
     cfg.network = NetworkConfig(
-        input_dim=2, hidden_dim=16, output_dim=2, lstm_layers=1,
-        attention_heads=2, embedding_dim=8,
+        input_dim=2,
+        hidden_dim=16,
+        output_dim=2,
+        lstm_layers=1,
+        attention_heads=2,
+        embedding_dim=8,
     )
     cfg.physics = PhysicsConfig(
-        n_generalized_coords=1, hamiltonian_hidden=16, dissipation_hidden=8,
+        n_generalized_coords=1,
+        hamiltonian_hidden=16,
+        dissipation_hidden=8,
     )
     pitnn = PITNN(cfg.network, cfg.physics)
 
@@ -93,9 +99,7 @@ def _run_pits(steps: int) -> dict[str, list]:
         use_safety_filter=True,
     )
     controller.setup_safety_filter()
-    engine = RealtimeInferenceEngine(
-        pitnn, controller, ref_model, horizon=50, device="cpu"
-    )
+    engine = RealtimeInferenceEngine(pitnn, controller, ref_model, horizon=50, device="cpu")
 
     dt = 0.01
     x0, x1 = 0.0, 0.0
@@ -186,9 +190,7 @@ def run(steps: int = 100, show: bool = False) -> dict[str, Any]:
 
     pits_energy = pits["energy_cum"][-1] if pits["energy_cum"] else 0.0
     base_energy = base["energy_cum"][-1] if base["energy_cum"] else 0.0
-    savings = (
-        (base_energy - pits_energy) / base_energy if base_energy > 0.0 else 0.0
-    )
+    savings = (base_energy - pits_energy) / base_energy if base_energy > 0.0 else 0.0
 
     return {
         "temp_error": pits["temp_error"],
