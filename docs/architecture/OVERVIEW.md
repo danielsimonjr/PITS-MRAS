@@ -95,7 +95,7 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 | `src/pits_mras/controllers` | 4 | Reference models, CLF-CBF safety filter, and the actor-critic MRAS controller. |
 | `src/pits_mras/inference` | 3 | Real-time closed-loop inference engine and the parallel multi-thread deployment architecture (IP §9). |
 | `src/pits_mras/losses` | 6 | Loss functions (Phase 3): physics, temporal, stability, IRL-Bellman, HJB-residual, plus the `TotalLoss` aggregator. |
-| `src/pits_mras/models` | 7 | Physics-informed attention, port-Hamiltonian decoders, critic/costate heads, PCML/Lagrangian heads, and the top-level `PITNN`. |
+| `src/pits_mras/models` | 7 | Physics-informed attention, port-Hamiltonian decoders, critic/costate/adversary heads, PCML/Lagrangian heads, and the top-level `PITNN`. |
 | `src/pits_mras/training` | 4 | Physics pre-training curriculum, IRL co-training loop, and the offline IRL critic trainer (IP §8). |
 | `src/pits_mras/utils` | 4 | Lyapunov/Riccati engine, port-Hamiltonian utilities, and the persistence-of-excitation monitor (IP §4.3–4.5). |
 | `examples` | 4 | Runnable end-to-end demos (CLI entry points): robotic manipulator, autonomous vehicle, building HVAC, and a coordinate-bearing hard-PCML heat-diffusion demo. |
@@ -107,8 +107,9 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
   `kleinman_iteration`, `solve_care`, `check_hurwitz`, `lyapunov_derivative`,
   `quadratic_basis`, and the canonical `pack_symmetric`/`unpack_symmetric`
   basis helpers (built on `scipy.linalg`).
-- **`models/critic.py`** — `QuadraticCritic` (`V̂ = Wᵀφ(e)`) and `CostateHead`
-  (`λ̂ = ∇V̂`, `u* = −R⁻¹Bᵀλ̂`); tagged "Identity 1 & 2."
+- **`models/critic.py`** — `QuadraticCritic` (`V̂ = Wᵀφ(e)`), `CostateHead`
+  (`λ̂ = ∇V̂`, `u* = −R⁻¹Bᵀλ̂`), and `AdversaryHead` (H∞ worst-case `w* = γ⁻²DᵀPe`,
+  v0.4.5); tagged "Identity 1 & 2."
 - **`models/pcml.py`** — `SoftPCMLLoss`, `TaylorNeighborhoodApproximation`,
   `KKTProjectionLayer`, `PCMLModule` (the soft/hard mode manager).
 - **`controllers/mras.py`** — `MRASController`, combining classical MRAS
