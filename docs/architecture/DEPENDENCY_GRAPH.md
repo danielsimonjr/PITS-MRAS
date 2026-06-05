@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.12 | **Last Updated**: 2026-06-05
+**Version**: 0.4.13 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -899,7 +899,7 @@ The codebase is organized into the following modules:
 | `typing` | `TYPE_CHECKING, Optional, Tuple, Union` |
 
 **Exports:**
-- Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `solve_gare`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric`
+- Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `solve_gare`, `check_hurwitz`, `differentiable_care`, `differentiable_gare`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric`
 
 ---
 
@@ -1062,13 +1062,13 @@ graph TD
 |----------|-------|
 | Total Python Files | 43 |
 | Total Modules | 10 |
-| Total Lines of Code | 6420 |
-| Total Public Exports | 132 |
+| Total Lines of Code | 6632 |
+| Total Public Exports | 134 |
 | Total Re-exports | 46 |
 | Total Classes | 48 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 37 |
+| Total Functions | 39 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 12 |
@@ -1077,4 +1077,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.12
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.13

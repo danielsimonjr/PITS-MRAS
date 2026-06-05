@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.13] - 2026-06-05
+
+Sprint item ROADMAP #6 (differentiable CARE/GARE via implicit differentiation) —
+the enabler for a future neural H∞ min-max loop (#1). Additive; suite green (289);
+ruff + mypy clean.
+
+### Added
+
+- **`differentiable_care(A, B, Q, R)`** and **`differentiable_gare(A, B, Q, R,
+  gamma, D=None)`** (`utils/lyapunov.py`) — return the stabilizing `P` as a
+  differentiable tensor so gradients flow w.r.t. the input matrices, WITHOUT
+  differentiating through the scipy solver. Forward solves with the existing
+  `solve_care`/`solve_gare` under `no_grad`; backward uses the implicit function
+  theorem on the Riccati residual `AᵀP + PA − P M P + Q = 0` (`M = BR⁻¹Bᵀ` for
+  CARE, `− γ⁻²DDᵀ` added for GARE): the adjoint state solves
+  `A_cl S + S A_clᵀ + sym(∂L/∂P) = 0` (`A_cl = A − MP` Hurwitz at the solution),
+  giving `∂L/∂Q = S`, `∂L/∂A = 2PS`, `∂L/∂B`, `∂L/∂R`, `∂L/∂D`. Both backward
+  passes are **`torch.autograd.gradcheck`-verified** (float64), including the
+  `D`-defaults-to-`B` double-dependence on `B`. 10 new tests
+  (`tests/test_differentiable_riccati.py`). Existing `solve_care`/`solve_gare`
+  are unchanged.
+
 ## [0.4.12] - 2026-06-05
 
 Sprint item ROADMAP #5 (vectorize the KKT constraint-Jacobian). Behaviour-

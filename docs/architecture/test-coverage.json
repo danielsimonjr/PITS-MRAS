@@ -2,7 +2,7 @@
   "metadata": {
     "generatedAt": "2026-06-05",
     "totalSourceFiles": 43,
-    "totalTestFiles": 27,
+    "totalTestFiles": 28,
     "testedCount": 35,
     "untestedCount": 8,
     "coveragePercent": "81.4"
@@ -249,6 +249,7 @@
     ],
     "src/pits_mras/utils/lyapunov.py": [
       "tests/test_controllers.py",
+      "tests/test_differentiable_riccati.py",
       "tests/test_hinf.py",
       "tests/test_identity_costate.py",
       "tests/test_identity_lyapunov_value.py",
@@ -276,6 +277,9 @@
     ],
     "tests/test_diagnostics.py": [
       "src/pits_mras/utils/diagnostics.py"
+    ],
+    "tests/test_differentiable_riccati.py": [
+      "src/pits_mras/utils/lyapunov.py"
     ],
     "tests/test_example_plants.py": [],
     "tests/test_examples.py": [],

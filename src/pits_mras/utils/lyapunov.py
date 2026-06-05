@@ -230,6 +230,218 @@ def check_hurwitz(A: np.ndarray, tol: float = 1e-6) -> bool:
     return bool(np.all(np.real(np.linalg.eigvals(A)) < -tol))
 
 
+# --------------------------------------------------------------------------- #
+# Differentiable CARE / GARE via the implicit function theorem (ROADMAP #6).
+#
+# Forward: solve the (G)ARE with the scipy-backed direct solvers under
+# ``torch.no_grad`` — gradients do NOT flow through the iterative/Schur solve.
+# Backward: differentiate the Riccati *residual* ``F(P, theta) = 0`` implicitly.
+#
+# CARE residual:  F = A^T P + P A - P M P + Q = 0,  M = B R^-1 B^T
+# GARE residual:  F = A^T P + P A - P M P + Q = 0,  M = B R^-1 B^T - g^-2 D D^T
+# (identical residual once M absorbs the disturbance term).
+#
+# Forward-sensitivity (differentiate F = 0):
+#   A_cl^T dP + dP A_cl + dTheta = 0,   A_cl = A - M P,
+#   dTheta = dA^T P + P dA - P dM P + dQ.
+# So dP = -Lyap^{-1}(dTheta), Lyap(X) := A_cl^T X + X A_cl.
+#
+# Adjoint (reverse mode): given upstream Gbar = dL/dP (symmetrize), solve the
+# adjoint Lyapunov equation
+#       A_cl S + S A_cl^T + Gbar = 0
+# (note the *non-transposed* A_cl on the left — Lyap is self-adjoint up to this
+# transpose swap), then assemble, with S symmetric:
+#   dL/dQ = S
+#   dL/dA = 2 P S
+#   dL/dM = -(P S P)                       (symmetric)
+# and chain dL/dM through M = B R^-1 B^T (- g^-2 D D^T):
+#   Let G = dL/dM (symmetric), Ri = R^-1.
+#   dL/dB = 2 G B Ri
+#   dL/dR = -(Ri B^T G B Ri)               (symmetrized)
+#   dL/dD = -2 g^-2 G D                     (GARE only)
+# The exact factors/transposes are verified by ``torch.autograd.gradcheck``.
+# --------------------------------------------------------------------------- #
+
+
+def _solve_adjoint_lyapunov(A_cl: np.ndarray, Gbar: np.ndarray) -> np.ndarray:
+    """Solve ``A_cl S + S A_cl^T + Gbar = 0`` for the (symmetric) adjoint state S.
+
+    ``scipy.linalg.solve_continuous_lyapunov(a, q)`` solves ``a X + X a^H = q``,
+    so we pass ``a = A_cl`` and ``q = -Gbar``. ``A_cl`` is Hurwitz at the
+    stabilizing solution, so the solve is well posed.
+    """
+    S = solve_continuous_lyapunov(A_cl, -Gbar)
+    return 0.5 * (S + S.T)
+
+
+def _riccati_backward(
+    grad_P: Tensor,
+    A: np.ndarray,
+    B: np.ndarray,
+    R: np.ndarray,
+    P: np.ndarray,
+    M: np.ndarray,
+    D: Optional[np.ndarray],
+    gamma: Optional[float],
+    d_is_b: bool = False,
+) -> Tuple[Tensor, Tensor, Tensor, Tensor, Optional[Tensor]]:
+    """Assemble input gradients from the adjoint state (shared CARE/GARE core).
+
+    Returns ``(dA, dB, dQ, dR, dD)`` as tensors (``dD`` is ``None`` for CARE).
+    When ``d_is_b`` (GARE with ``D`` defaulted to ``B``), the disturbance term's
+    sensitivity is folded into ``dB`` rather than returned as a separate ``dD``.
+    """
+    Gbar = grad_P.detach().cpu().numpy().astype(np.float64)
+    Gbar = 0.5 * (Gbar + Gbar.T)  # P is symmetric -> only the symmetric part acts
+    A_cl = A - M @ P
+    S = _solve_adjoint_lyapunov(A_cl, Gbar)
+
+    dQ = S
+    dA = 2.0 * (P @ S)
+    G = -(P @ S @ P)  # dL/dM, symmetric
+    G = 0.5 * (G + G.T)
+
+    Ri = np.linalg.inv(R)
+    dB = 2.0 * (G @ B @ Ri)  # M's B R^-1 B^T term
+    dR = -(Ri @ B.T @ G @ B @ Ri)
+    dR = 0.5 * (dR + dR.T)
+
+    dD: Optional[np.ndarray] = None
+    if D is not None and gamma is not None:
+        # M's -g^-2 D D^T term -> dL/dD = -2 g^-2 G D.
+        dD_term = -2.0 * (1.0 / gamma**2) * (G @ D)
+        if d_is_b:
+            dB = dB + dD_term  # D == B: fold disturbance sensitivity into dB
+        else:
+            dD = dD_term
+
+    def _t(x: np.ndarray, ref: Tensor) -> Tensor:
+        return torch.as_tensor(x, dtype=ref.dtype, device=ref.device)
+
+    dA_t = _t(dA, grad_P)
+    dB_t = _t(dB, grad_P)
+    dQ_t = _t(dQ, grad_P)
+    dR_t = _t(dR, grad_P)
+    dD_t = _t(dD, grad_P) if dD is not None else None
+    return dA_t, dB_t, dQ_t, dR_t, dD_t
+
+
+class _CARESolve(torch.autograd.Function):
+    """Differentiable CARE solve (implicit differentiation of the residual)."""
+
+    @staticmethod
+    def forward(  # type: ignore[override]
+        ctx: "torch.autograd.function.FunctionCtx",
+        A: Tensor,
+        B: Tensor,
+        Q: Tensor,
+        R: Tensor,
+    ) -> Tensor:
+        An = A.detach().cpu().numpy().astype(np.float64)
+        Bn = B.detach().cpu().numpy().astype(np.float64)
+        Qn = Q.detach().cpu().numpy().astype(np.float64)
+        Rn = R.detach().cpu().numpy().astype(np.float64)
+        Qn = 0.5 * (Qn + Qn.T)
+        Rn = 0.5 * (Rn + Rn.T)
+        with torch.no_grad():
+            Pn, _ = solve_care(An, Bn, Qn, Rn)
+        Pn = 0.5 * (Pn + Pn.T)
+        Mn = Bn @ np.linalg.inv(Rn) @ Bn.T
+        ctx.np_cache = (An, Bn, Rn, Pn, Mn)  # type: ignore[attr-defined]
+        return torch.as_tensor(Pn, dtype=A.dtype, device=A.device)
+
+    @staticmethod
+    def backward(  # type: ignore[override]
+        ctx: "torch.autograd.function.FunctionCtx", grad_P: Tensor
+    ) -> Tuple[Optional[Tensor], ...]:
+        An, Bn, Rn, Pn, Mn = ctx.np_cache  # type: ignore[attr-defined]
+        dA, dB, dQ, dR, _ = _riccati_backward(grad_P, An, Bn, Rn, Pn, Mn, D=None, gamma=None)
+        return dA, dB, dQ, dR
+
+
+class _GARESolve(torch.autograd.Function):
+    """Differentiable GARE solve (implicit differentiation of the residual)."""
+
+    @staticmethod
+    def forward(  # type: ignore[override]
+        ctx: "torch.autograd.function.FunctionCtx",
+        A: Tensor,
+        B: Tensor,
+        Q: Tensor,
+        R: Tensor,
+        gamma: float,
+        D: Optional[Tensor],
+    ) -> Tensor:
+        An = A.detach().cpu().numpy().astype(np.float64)
+        Bn = B.detach().cpu().numpy().astype(np.float64)
+        Qn = Q.detach().cpu().numpy().astype(np.float64)
+        Rn = R.detach().cpu().numpy().astype(np.float64)
+        Dn = Bn if D is None else D.detach().cpu().numpy().astype(np.float64)
+        Qn = 0.5 * (Qn + Qn.T)
+        Rn = 0.5 * (Rn + Rn.T)
+        with torch.no_grad():
+            Pn, _, _ = solve_gare(An, Bn, Qn, Rn, gamma, Dn)
+        Pn = 0.5 * (Pn + Pn.T)
+        Mn = Bn @ np.linalg.inv(Rn) @ Bn.T - (1.0 / gamma**2) * Dn @ Dn.T
+        ctx.np_cache = (An, Bn, Rn, Pn, Mn, Dn, float(gamma))  # type: ignore[attr-defined]
+        ctx.has_D = D is not None  # type: ignore[attr-defined]
+        return torch.as_tensor(Pn, dtype=A.dtype, device=A.device)
+
+    @staticmethod
+    def backward(  # type: ignore[override]
+        ctx: "torch.autograd.function.FunctionCtx", grad_P: Tensor
+    ) -> Tuple[Optional[Tensor], ...]:
+        An, Bn, Rn, Pn, Mn, Dn, gamma = ctx.np_cache  # type: ignore[attr-defined]
+        has_D = ctx.has_D  # type: ignore[attr-defined]
+        dA, dB, dQ, dR, dD = _riccati_backward(
+            grad_P, An, Bn, Rn, Pn, Mn, D=Dn, gamma=gamma, d_is_b=not has_D
+        )
+        # gamma is a non-tensor input -> None; D grad only if D was supplied.
+        dD_out = dD if has_D else None
+        return dA, dB, dQ, dR, None, dD_out
+
+
+def differentiable_care(A: Tensor, B: Tensor, Q: Tensor, R: Tensor) -> Tensor:
+    r"""Differentiable stabilizing CARE solution ``P``.
+
+    Returns the stabilizing :math:`P` of
+    :math:`A^\top P + P A - P B R^{-1} B^\top P + Q = 0` as a torch tensor whose
+    gradient flows back to ``A``, ``B``, ``Q``, ``R`` via the implicit function
+    theorem (the forward solve uses scipy under ``torch.no_grad``; gradients are
+    NOT taken through the iterative solver). ``Q`` and ``R`` are symmetrized
+    internally, so unconstrained perturbations are handled correctly.
+
+    This is the enabler for a neural H-infinity min-max loop (ROADMAP #1): a
+    learned plant/cost can be trained end-to-end through the Riccati solution.
+    """
+    return _CARESolve.apply(A, B, Q, R)  # type: ignore[no-any-return]
+
+
+def differentiable_gare(
+    A: Tensor,
+    B: Tensor,
+    Q: Tensor,
+    R: Tensor,
+    gamma: float,
+    D: Optional[Tensor] = None,
+) -> Tensor:
+    r"""Differentiable stabilizing GARE solution ``P`` (H-infinity).
+
+    Returns the stabilizing :math:`P` of
+    :math:`A^\top P + P A + Q - P M P = 0` with
+    :math:`M = B R^{-1} B^\top - \gamma^{-2} D D^\top`, as a torch tensor whose
+    gradient flows back to ``A``, ``B``, ``Q``, ``R`` (and ``D`` if supplied) via
+    the implicit function theorem. ``gamma`` is a scalar hyper-parameter (no
+    gradient). ``D`` defaults to ``B`` (matched disturbance); when defaulted, no
+    separate ``D`` gradient is produced. ``Q`` and ``R`` are symmetrized
+    internally.
+
+    The robust gains can be derived from ``P`` with differentiable ops:
+    ``K = R^{-1} B^\top P`` and ``L = gamma^{-2} D^\top P``.
+    """
+    return _GARESolve.apply(A, B, Q, R, gamma, D)  # type: ignore[no-any-return]
+
+
 def lyapunov_derivative(e: Tensor, P: Tensor, A_m: Tensor, B: Tensor, u: Tensor) -> Tensor:
     r"""Compute :math:`\dot V = 2 e^\top P (A_m e + B u)` analytically.
 

@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.12",
+    "version": "0.4.13",
     "lastUpdated": "2026-06-05",
     "totalFiles": 43,
     "totalModules": 10,
-    "totalExports": 132
+    "totalExports": 134
   },
   "entryPoints": [
     {
@@ -2464,6 +2464,8 @@
           "solve_care",
           "solve_gare",
           "check_hurwitz",
+          "differentiable_care",
+          "differentiable_gare",
           "lyapunov_derivative",
           "quadratic_basis",
           "pack_symmetric",
@@ -2475,6 +2477,8 @@
           "solve_care",
           "solve_gare",
           "check_hurwitz",
+          "differentiable_care",
+          "differentiable_gare",
           "lyapunov_derivative",
           "quadratic_basis",
           "pack_symmetric",
@@ -2675,12 +2679,12 @@
   "statistics": {
     "totalPythonFiles": 43,
     "totalModules": 10,
-    "totalLinesOfCode": 6420,
-    "totalExports": 132,
+    "totalLinesOfCode": 6632,
+    "totalExports": 134,
     "totalClasses": 48,
     "totalInterfaces": 1,
     "totalEnums": 0,
-    "totalFunctions": 37,
+    "totalFunctions": 39,
     "totalTypeGuards": 0,
     "totalConstants": 0,
     "totalReExports": 46,
