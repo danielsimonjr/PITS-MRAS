@@ -619,11 +619,14 @@ def analyze_test_coverage(
 
     tested = [p for p, t in coverage.items() if t]
     untested = [p for p, t in coverage.items() if not t]
+    # Sort every list value so the serialized reports are deterministic across
+    # runs (the per-test source lists are built from set iteration, whose order
+    # is not stable -- otherwise regenerating churns test-coverage.json).
     return {
         "sourceFiles": [f.path for f in files],
         "testFiles": [f.path for f in test_files],
-        "coverageMap": coverage,
-        "testToSourceMap": test_to_source,
+        "coverageMap": {k: sorted(v) for k, v in coverage.items()},
+        "testToSourceMap": {k: sorted(v) for k, v in test_to_source.items()},
         "testedFiles": tested,
         "untestedFiles": untested,
     }

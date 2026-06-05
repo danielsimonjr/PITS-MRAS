@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tooling
+
+- **`create-dependency-graph` output is now reproducible.** `analyze_test_coverage`
+  built the per-test source lists from set iteration, whose order is not stable,
+  so `test-coverage.json` churned on every regeneration even with no code change.
+  The `coverageMap` / `testToSourceMap` list values are now sorted, making the
+  generated reports idempotent (verified: two consecutive runs are byte-identical).
+  New regression test `test_analyze_test_coverage_maps_are_sorted_for_reproducibility`.
+
 ## [0.4.5] - 2026-06-04
 
 Sixth and final v0.4.x sub-project: the H∞ robust-control **core** (partly

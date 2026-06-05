@@ -225,3 +225,26 @@ def test_analyze_test_coverage_direct_and_barrel():
     cov = cdg.analyze_test_coverage([init, core], [test])
     # Coverage traces through the barrel to core.py.
     assert "src/pkg/core.py" in cov["testedFiles"]
+
+
+def test_analyze_test_coverage_maps_are_sorted_for_reproducibility():
+    """coverageMap / testToSourceMap list values are sorted, so regenerating the
+    reports is idempotent (no set-iteration ordering churn between runs)."""
+    init = cdg.ParsedFile(path="src/pkg/__init__.py", name="__init__")
+    mods = ("zeta", "alpha", "mid", "beta", "gamma")  # deliberately unsorted
+    for m in mods:
+        init.internal_dependencies.append(
+            cdg.InternalDep(
+                file=f"src/pkg/{m}.py", module=f".{m}", imports=[m], re_export=True
+            )
+        )
+    srcs = [cdg.ParsedFile(path=f"src/pkg/{m}.py", name=m) for m in mods]
+    test = _pf("tests/test_all.py", ["src/pkg/__init__.py"])  # imports the barrel
+
+    cov = cdg.analyze_test_coverage([init, *srcs], [test])
+
+    t2s = cov["testToSourceMap"]["tests/test_all.py"]
+    assert t2s == sorted(t2s), "testToSourceMap values must be sorted (deterministic)"
+    assert {f"src/pkg/{m}.py" for m in mods} <= set(t2s)
+    for sources in cov["coverageMap"].values():
+        assert sources == sorted(sources), "coverageMap values must be sorted"
