@@ -6,7 +6,7 @@ classes are re-exported for convenient import.
 """
 
 from pits_mras.models.attention import PhysicsInformedAttention
-from pits_mras.models.critic import CostateHead, QuadraticCritic
+from pits_mras.models.critic import AdversaryHead, CostateHead, QuadraticCritic
 from pits_mras.models.decoders import (
     DissipationNet,
     HamiltonianNet,
@@ -21,5 +21,6 @@ __all__ = [
     "PortHamiltonianDecoder",
     "QuadraticCritic",
     "CostateHead",
+    "AdversaryHead",
     "PITNN",
 ]

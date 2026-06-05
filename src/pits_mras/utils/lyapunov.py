@@ -22,7 +22,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
-from scipy.linalg import solve_continuous_are, solve_continuous_lyapunov
+from scipy.linalg import schur, solve_continuous_are, solve_continuous_lyapunov
 from torch import Tensor
 
 
@@ -141,6 +141,80 @@ def solve_care(
     P = solve_continuous_are(A, B, Q, R)
     K = np.linalg.solve(R, B.T @ P)
     return P, K
+
+
+def solve_gare(
+    A: np.ndarray,
+    B: np.ndarray,
+    Q: np.ndarray,
+    R: np.ndarray,
+    gamma: float,
+    D: Optional[np.ndarray] = None,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    r"""Solve the H-infinity Game Algebraic Riccati Equation (GARE).
+
+    For the system :math:`\dot x = Ax + Bu + Dw` with cost
+    :math:`\int (x^\top Q x + u^\top R u - \gamma^2 \lVert w\rVert^2)\,dt`, the
+    H-infinity value :math:`V = x^\top P x` uses the stabilizing solution of
+
+    .. math::
+        A^\top P + P A + Q - P\,(B R^{-1} B^\top - \gamma^{-2} D D^\top)\,P = 0.
+
+    Solved directly via the Hamiltonian--Schur method (no iteration): the
+    stabilizing :math:`P` comes from the stable invariant subspace of the
+    Hamiltonian :math:`H = [[A, -M], [-Q, -A^\top]]`,
+    :math:`M = B R^{-1} B^\top - \gamma^{-2} D D^\top`.
+
+    Args:
+        A, B, Q, R: system + cost matrices (as in :func:`solve_care`).
+        gamma: disturbance-attenuation level. Larger ``gamma`` is easier (as
+            ``gamma -> inf`` the GARE reduces to the CARE); ``gamma`` must exceed
+            the H-infinity-achievable bound or no stabilizing PD solution exists.
+        D: disturbance input matrix ``[n, n_w]``. Defaults to ``B`` (matched /
+            input-channel disturbance).
+
+    Returns:
+        ``(P, K, L)``: the stabilizing ``P``, the robust control gain
+        ``K = R^{-1} B^\top P`` (so ``u* = -K x``), and the worst-case
+        disturbance gain ``L = gamma^{-2} D^\top P`` (so ``w* = L x``).
+
+    Raises:
+        ValueError: if ``gamma`` is infeasible -- the Hamiltonian has no proper
+            n-dimensional stable subspace, or the resulting ``P`` is not PD, or
+            the worst-case closed loop ``A - M P`` is not Hurwitz.
+    """
+    if D is None:
+        D = B
+    n = A.shape[0]
+    r_inv = np.linalg.inv(R)
+    M = B @ r_inv @ B.T - (1.0 / gamma**2) * D @ D.T
+    ham = np.block([[A, -M], [-Q, -A.T]])
+    # Ordered real Schur: eigenvalues with negative real part (the stable
+    # subspace) sorted into the leading n columns.
+    _, Z, sdim = schur(ham, output="real", sort="lhp")
+    if sdim != n:
+        raise ValueError(
+            f"H-infinity GARE infeasible at gamma={gamma:.4g}: the Hamiltonian "
+            f"has {sdim} stable eigenvalues, expected {n} (gamma is at or below "
+            "the achievable attenuation bound)."
+        )
+    u11 = Z[:n, :n]
+    u21 = Z[n:, :n]
+    P = u21 @ np.linalg.inv(u11)
+    P = 0.5 * (P + P.T)
+    if np.min(np.linalg.eigvalsh(P)) <= 0:
+        raise ValueError(
+            f"H-infinity GARE infeasible at gamma={gamma:.4g}: solution P is not "
+            "positive definite."
+        )
+    if not check_hurwitz(A - M @ P):
+        raise ValueError(
+            f"H-infinity GARE infeasible at gamma={gamma:.4g}: the worst-case "
+            "closed loop A - M P is not Hurwitz."
+        )
+    K = r_inv @ B.T @ P
+    L = (1.0 / gamma**2) * D.T @ P
+    return P, K, L
 
 
 def check_hurwitz(A: np.ndarray, tol: float = 1e-6) -> bool:

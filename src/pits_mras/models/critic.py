@@ -178,3 +178,38 @@ class CostateHead(nn.Module):
         scale = 0.5 if self.half_grad else 1.0
         u_opt = -scale * (lambda_hat @ self.B_mat) @ self.R_inv.T  # [batch, control_dim]
         return lambda_hat, u_opt
+
+
+class AdversaryHead(nn.Module):
+    r"""H-infinity worst-case-disturbance (adversary) head -- analytic, by
+    construction from the critic gradient.
+
+    For the H-infinity value :math:`\hat V = e^\top P e`, the disturbance that
+    maximizes the game Hamiltonian is
+
+    .. math::
+        w^* = \tfrac{1}{2\gamma^2} D^\top \nabla\hat V = \gamma^{-2} D^\top P e,
+
+    where :math:`D` is the disturbance input matrix (``\dot x = Ax+Bu+Dw``) and
+    :math:`\gamma` the attenuation level. Like :class:`CostateHead`, the adversary
+    is never an independent network -- it IS the (scaled, ``D``-projected) critic
+    gradient, so it is consistent with the critic by construction. Pair it with a
+    critic warm-started to the GARE solution (see
+    :func:`~pits_mras.utils.lyapunov.solve_gare`, then ``critic.set_P(P)``).
+    """
+
+    D: Tensor
+
+    def __init__(self, critic: QuadraticCritic, D: Tensor, gamma: float) -> None:
+        super().__init__()
+        self.critic = critic
+        self.gamma = gamma
+        self.register_buffer("D", D)  # [state_dim, dist_dim]
+
+    def forward(self, e: Tensor) -> Tensor:
+        r"""Return the worst-case disturbance ``w*`` ``[batch, dist_dim]``.
+
+        ``w* = (1 / 2γ²) ∇V̂ · D = γ⁻² Dᵀ P e`` (``∇V̂ = 2 P e`` by construction).
+        """
+        grad_v = self.critic.gradient(e)  # ∇V̂ = 2 P e  [batch, state_dim]
+        return (1.0 / (2.0 * self.gamma**2)) * (grad_v @ self.D)  # [batch, dist_dim]
