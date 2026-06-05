@@ -15,6 +15,15 @@ release sections further down is DONE.
 None blocking — the v0.4.0 goal is fully delivered and all gates are green. These
 are genuine optional follow-ons, in rough priority order:
 
+> **2026-06-05 — ROADMAP refreshed.** `docs/ROADMAP.md` was rewritten: the stale,
+> fully-implemented 9-phase build plan was removed (CHANGELOG + `docs/architecture/`
+> are the durable record), and **10 research-derived improvement proposals** (a
+> 4-agent deep-research pass, grounded against the source) were added, grouped by
+> capabilities / efficiencies / simplicities, plus a "Known gaps" section (G8 MIMO,
+> SAC/Connection 5, TD-MPC2/Connection 9, G7 no `data/` loader). Item 2 below (v0.5.0
+> H∞ neural min-max) is now ROADMAP proposal #1. The proposals are candidates, not
+> scheduled. See memory `project_pits_mras_improvement_research.md`.
+
 1. **CDG tool — import-parsing accuracy bug** (tooling). The dependency-graph
    tool captures **64 malformed `externalDependencies` import strings**: a
    function-level `from x import y  # noqa: E402` is swallowed *together with the

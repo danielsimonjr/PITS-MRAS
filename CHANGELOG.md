@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs
+
+- **`docs/ROADMAP.md` rewritten as a forward-looking roadmap.** Removed the stale,
+  fully-implemented nine-phase build plan (it still described the repo as
+  "scaffold-only"; CHANGELOG and `docs/architecture/` are the durable record of
+  shipped work) and added **10 research-derived improvement proposals** grouped by
+  capabilities / efficiencies / simplicities, each anchored to a source file and a
+  primary reference. Added a "Known gaps / deferred" section (G8 MIMO control
+  simplification, Connection 5 SAC, Connection 9 TD-MPC2, G7 no `data/` loader,
+  re-verified against the source) and an "already implemented" honesty note. Fixed
+  the dangling footer cross-reference (`docs/ARCHITECTURE.md` →
+  `docs/architecture/ARCHITECTURE.md`).
+
 ### Tooling
 
 - **`create-dependency-graph` output is now reproducible.** `analyze_test_coverage`
