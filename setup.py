@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="pits_mras",
-    version="0.4.5",
+    version="0.4.6",
     author="PITS-MRAS Contributors",
     author_email="your.email@example.com",
     description="Physics-Informed Time-Series Model-Reference Adaptive Systems",

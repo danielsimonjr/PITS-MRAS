@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.5",
-    "lastUpdated": "2026-06-04",
-    "totalFiles": 40,
+    "version": "0.4.6",
+    "lastUpdated": "2026-06-05",
+    "totalFiles": 41,
     "totalModules": 10,
-    "totalExports": 122
+    "totalExports": 126
   },
   "entryPoints": [
     {
@@ -2407,6 +2407,44 @@
         "internalDependencies": [],
         "exports": []
       },
+      "src/pits_mras/utils/diagnostics.py": {
+        "description": "Long-horizon rollout-stability + conservation-drift diagnostics (ROADMAP #4).",
+        "externalDependencies": [
+          {
+            "package": "torch",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
+              "Tensor"
+            ]
+          }
+        ],
+        "stdlibDependencies": [
+          {
+            "module": "typing",
+            "imports": [
+              "Callable"
+            ]
+          }
+        ],
+        "internalDependencies": [],
+        "exports": [
+          "energy_drift",
+          "max_energy_drift",
+          "valid_prediction_time",
+          "rollout_jacobian_spectral_radius"
+        ],
+        "functions": [
+          "energy_drift",
+          "max_energy_drift",
+          "valid_prediction_time",
+          "rollout_jacobian_spectral_radius"
+        ]
+      },
       "src/pits_mras/utils/hamiltonian.py": {
         "description": "Port-Hamiltonian utilities (IP \u00a74.4).",
         "externalDependencies": [
@@ -2648,6 +2686,7 @@
         "name": "Src / pits_mras / utils",
         "files": [
           "src/pits_mras/utils/__init__.py",
+          "src/pits_mras/utils/diagnostics.py",
           "src/pits_mras/utils/hamiltonian.py",
           "src/pits_mras/utils/lyapunov.py",
           "src/pits_mras/utils/pe_monitor.py"
@@ -2656,14 +2695,14 @@
     ]
   },
   "statistics": {
-    "totalPythonFiles": 40,
+    "totalPythonFiles": 41,
     "totalModules": 10,
-    "totalLinesOfCode": 5687,
-    "totalExports": 122,
+    "totalLinesOfCode": 5831,
+    "totalExports": 126,
     "totalClasses": 45,
     "totalInterfaces": 1,
     "totalEnums": 0,
-    "totalFunctions": 30,
+    "totalFunctions": 34,
     "totalTypeGuards": 0,
     "totalConstants": 0,
     "totalReExports": 46,

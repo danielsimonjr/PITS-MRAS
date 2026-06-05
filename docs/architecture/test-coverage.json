@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "generatedAt": "2026-06-04",
-    "totalSourceFiles": 40,
-    "totalTestFiles": 23,
-    "testedCount": 32,
+    "generatedAt": "2026-06-05",
+    "totalSourceFiles": 41,
+    "totalTestFiles": 24,
+    "testedCount": 33,
     "untestedCount": 8,
-    "coveragePercent": "80.0"
+    "coveragePercent": "80.5"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -47,6 +47,7 @@
     "src/pits_mras/training/irl_trainer.py",
     "src/pits_mras/training/pretrain.py",
     "src/pits_mras/utils/__init__.py",
+    "src/pits_mras/utils/diagnostics.py",
     "src/pits_mras/utils/hamiltonian.py",
     "src/pits_mras/utils/lyapunov.py",
     "src/pits_mras/utils/pe_monitor.py"
@@ -230,6 +231,9 @@
     "src/pits_mras/utils/__init__.py": [
       "tests/test_lyapunov_utils.py"
     ],
+    "src/pits_mras/utils/diagnostics.py": [
+      "tests/test_diagnostics.py"
+    ],
     "src/pits_mras/utils/hamiltonian.py": [
       "tests/test_hamiltonian_utils.py"
     ],
@@ -253,6 +257,9 @@
       "src/pits_mras/controllers/mras.py",
       "src/pits_mras/controllers/reference_models.py",
       "src/pits_mras/utils/lyapunov.py"
+    ],
+    "tests/test_diagnostics.py": [
+      "src/pits_mras/utils/diagnostics.py"
     ],
     "tests/test_example_plants.py": [],
     "tests/test_examples.py": [],

@@ -1,16 +1,16 @@
 # Test Coverage Analysis
 
-**Generated**: 2026-06-04
+**Generated**: 2026-06-05
 
 ## Summary
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 40 |
-| Total Test Files | 23 |
-| Source Files with Tests | 32 |
+| Total Source Files | 41 |
+| Total Test Files | 24 |
+| Source Files with Tests | 33 |
 | Source Files without Tests | 8 |
-| Coverage | 80.0% |
+| Coverage | 80.5% |
 
 ---
 
@@ -62,6 +62,7 @@
 | `src/pits_mras/training/irl_trainer.py` | `test_identity_lyapunov_value.py`, `test_imports.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/training/pretrain.py` | `test_imports.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/utils/__init__.py` | `test_lyapunov_utils.py` |
+| `src/pits_mras/utils/diagnostics.py` | `test_diagnostics.py` |
 | `src/pits_mras/utils/hamiltonian.py` | `test_hamiltonian_utils.py` |
 | `src/pits_mras/utils/lyapunov.py` | `test_controllers.py`, `test_hinf.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_lyapunov_utils.py` |
 | `src/pits_mras/utils/pe_monitor.py` | `test_pe_monitor.py` |

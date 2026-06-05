@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.5 | **Last Updated**: 2026-06-04
+**Version**: 0.4.6 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -19,7 +19,7 @@ The codebase is organized into the following modules:
 - **src/pits_mras/losses**: 6 files
 - **src/pits_mras/models**: 7 files
 - **src/pits_mras/training**: 4 files
-- **src/pits_mras/utils**: 4 files
+- **src/pits_mras/utils**: 5 files
 
 ---
 
@@ -808,6 +808,24 @@ The codebase is organized into the following modules:
 
 ---
 
+### `src/pits_mras/utils/diagnostics.py` - Long-horizon rollout-stability + conservation-drift diagnostics (ROADMAP #4).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `typing` | `Callable` |
+
+**Exports:**
+- Functions: `energy_drift`, `max_energy_drift`, `valid_prediction_time`, `rollout_jacobian_spectral_radius`
+
+---
+
 ### `src/pits_mras/utils/hamiltonian.py` - Port-Hamiltonian utilities (IP §4.4).
 
 **Third-party Dependencies:**
@@ -935,9 +953,10 @@ graph TD
 
     subgraph Src / pits_mras / utils
         N35[__init__]
-        N36[hamiltonian]
-        N37[lyapunov]
-        N38[pe_monitor]
+        N36[diagnostics]
+        N37[hamiltonian]
+        N38[lyapunov]
+        N39[pe_monitor]
     end
 
     N0 --> N7
@@ -968,8 +987,8 @@ graph TD
     N13 --> N14
     N13 --> N15
     N13 --> N27
-    N13 --> N37
-    N14 --> N37
+    N13 --> N38
+    N14 --> N38
 ```
 
 ---
@@ -978,15 +997,15 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 40 |
+| Total Python Files | 41 |
 | Total Modules | 10 |
-| Total Lines of Code | 5687 |
-| Total Public Exports | 122 |
+| Total Lines of Code | 5831 |
+| Total Public Exports | 126 |
 | Total Re-exports | 46 |
 | Total Classes | 45 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 30 |
+| Total Functions | 34 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 10 |
@@ -995,4 +1014,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-04  |  *Version*: 0.4.5
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.6

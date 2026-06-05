@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-06-05
+
+First item of the improvement sprint (ROADMAP #4). Additive/backward-compatible;
+suite green (231); flake8 + mypy clean.
+
+### Added
+
+- **Rollout-stability + conservation-drift diagnostics** (`utils/diagnostics.py`,
+  importable via `from pits_mras.utils.diagnostics import ...`) — three pure,
+  torch-only functions that validate physics consistency and stability over a
+  multi-step rollout (the port-Hamiltonian decoder enforces the per-step energy
+  residual, but nothing previously checked long-horizon behaviour):
+  - `energy_drift` / `max_energy_drift` — drift of a conserved quantity (e.g. the
+    Hamiltonian) from its initial value along a rollout (absolute or relative).
+  - `valid_prediction_time` — the Valid Prediction Time (VPT): elapsed time before
+    a rollout's normalized L2 error first exceeds a tolerance.
+  - `rollout_jacobian_spectral_radius` — spectral radius of the one-step Jacobian
+    (the local error-amplification factor; `> 1` ⇒ geometric error growth).
+  20 new unit tests (`tests/test_diagnostics.py`).
+
 ### Docs
 
 - **`docs/ROADMAP.md` rewritten as a forward-looking roadmap.** Removed the stale,

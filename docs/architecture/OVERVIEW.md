@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.4.5` · 40 source files · 10 modules · 5,687 LOC · 122 exports
-(46 re-exports) · 45 classes · 1 Protocol/ABC · 30 functions · 0 circular
+**Version `0.4.6` · 41 source files · 10 modules · 5,831 LOC · 126 exports
+(46 re-exports) · 45 classes · 1 Protocol/ABC · 34 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -85,7 +85,7 @@ the v0.2.0 behavior is unchanged unless PCML is explicitly wired in.
 
 ## 2. Module Map
 
-Ten modules, 40 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
+Ten modules, 41 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
 subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 | Module | Files | Purpose |
@@ -172,16 +172,16 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.4.5` |
-| Total Python files | 40 |
+| Version | `0.4.6` |
+| Total Python files | 41 |
 | Modules | 10 |
-| Total lines of code | 5,687 |
-| Total exports | 122 |
+| Total lines of code | 5,831 |
+| Total exports | 126 |
 | Re-exports (barrel) | 46 |
 | Classes | 45 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
-| Functions | 30 |
+| Functions | 34 |
 | Constants | 0 |
 | Type-checking-only imports | 10 |
 | Runtime circular dependencies | 0 |
