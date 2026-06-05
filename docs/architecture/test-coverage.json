@@ -1,11 +1,11 @@
 {
   "metadata": {
     "generatedAt": "2026-06-05",
-    "totalSourceFiles": 42,
-    "totalTestFiles": 25,
-    "testedCount": 34,
+    "totalSourceFiles": 43,
+    "totalTestFiles": 26,
+    "testedCount": 35,
     "untestedCount": 8,
-    "coveragePercent": "81.0"
+    "coveragePercent": "81.4"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -30,6 +30,7 @@
     "src/pits_mras/inference/parallel.py",
     "src/pits_mras/inference/realtime.py",
     "src/pits_mras/losses/__init__.py",
+    "src/pits_mras/losses/adaptive_weighting.py",
     "src/pits_mras/losses/hjb.py",
     "src/pits_mras/losses/irl.py",
     "src/pits_mras/losses/physics.py",
@@ -138,6 +139,9 @@
     "src/pits_mras/losses/__init__.py": [
       "tests/test_losses.py",
       "tests/test_pcml_integration.py"
+    ],
+    "src/pits_mras/losses/adaptive_weighting.py": [
+      "tests/test_adaptive_weighting.py"
     ],
     "src/pits_mras/losses/hjb.py": [
       "tests/test_losses.py",
@@ -254,6 +258,9 @@
   },
   "testToSourceMap": {
     "tests/__init__.py": [],
+    "tests/test_adaptive_weighting.py": [
+      "src/pits_mras/losses/adaptive_weighting.py"
+    ],
     "tests/test_config.py": [
       "src/pits_mras/config.py"
     ],

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.11] - 2026-06-05
+
+Sprint item ROADMAP #8 (adaptive / causal loss weighting). Opt-in, default-off;
+the v0.4.10 characterization test stays green (behaviour unchanged when disabled).
+Suite green (274); ruff + mypy clean.
+
+### Added
+
+- **Adaptive loss-weighting utilities** (`losses/adaptive_weighting.py`, torch-only):
+  - `ReLoBRaLo` — Relative Loss Balancing with Random Lookback (Bischof & Kraus,
+    arXiv:2110.09813): cheap multi-term balancer using only loss *values* (no
+    extra backward passes); weights sum to `num_losses`. Reproducible Bernoulli
+    lookback via an optional `torch.Generator` (the no-generator fallback is
+    counter-based and never touches global RNG).
+  - `causal_weights` — causal training weights `exp(-eps·cumsum_{k<i} residual_k)`
+    (Wang, Sankaran, Perdikaris, arXiv:2203.07404) for time-ordered residuals;
+    all-weights→1 signals temporal convergence.
+  20 new tests.
+- **`LossConfig.adaptive_weighting: bool = False`** — opt-in flag. When `True`,
+  `cotraining_loop` uses `ReLoBRaLo` to rebalance the PITNN-objective terms
+  (physics / PCML / CBF) each step instead of the fixed lambdas; when `False`
+  (default) the loop is byte-identical to before.
+
 ## [0.4.10] - 2026-06-05
 
 Sprint item ROADMAP #9 (simplicity refactor of the co-training loop). Pure

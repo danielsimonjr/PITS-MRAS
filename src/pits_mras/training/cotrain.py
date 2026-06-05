@@ -55,6 +55,7 @@ from typing import TYPE_CHECKING, Deque
 import torch
 from torch import Tensor
 
+from pits_mras.losses.adaptive_weighting import ReLoBRaLo
 from pits_mras.losses.hjb import HJBResidualLoss
 from pits_mras.losses.irl import IRLBellmanLoss
 
@@ -100,6 +101,8 @@ def _pitnn_objective_step(
     safety_filter: "CLFCBFSafetyFilter | None",
     batch_size: int,
     x_p: Tensor,
+    balancer: "ReLoBRaLo | None" = None,
+    generator: torch.Generator | None = None,
 ) -> tuple[float, float, float]:
     """Build the PITNN objective ``L_total`` and take ONE PITNN optimizer step.
 
@@ -108,6 +111,13 @@ def _pitnn_objective_step(
     the *PITNN* optimizer; the critic-only regularizers (HJB / positivity / IRL)
     are stepped separately by the caller through ``critic_optimizer``.
 
+    When ``balancer`` is ``None`` (default) the terms are combined with the FIXED
+    ``loss_cfg`` lambdas — byte-for-byte the historical behaviour. When a
+    :class:`ReLoBRaLo` is supplied (opt-in, ROADMAP #8), the *present* term values
+    are fed to it and the returned weights replace the fixed lambdas, rebalancing
+    the objective each step (the set of terms is unchanged; only their weights
+    are). The balancer's weight count must equal the number of active terms.
+
     The PITNN gradients are zeroed, ``L_total.backward()`` is run, and the PITNN
     optimizer is stepped. ``critic_optimizer.zero_grad()`` is also called first so
     the critic graph stays clean (``L_total`` is a pure PITNN objective; any
@@ -115,9 +125,15 @@ def _pitnn_objective_step(
 
     Returns ``(l_total_val, l_pcml_val, l_cbf_val)`` as plain floats for logging.
     """
+    # Collect the active terms as (tensor, fixed_lambda) in a stable order so the
+    # balancer's per-term weights line up across steps: physics, [pcml], [cbf].
+    terms: list[Tensor] = []
+    fixed_lambdas: list[float] = []
+
     # ── physics term ──
     l_phys = (pitnn_output["f_hat"][:, :state_dim] - f_target).pow(2).mean()
-    l_total = loss_cfg.lambda_physics * l_phys
+    terms.append(l_phys)
+    fixed_lambdas.append(loss_cfg.lambda_physics)
 
     # ── PCML constraint loss (opt-in; §3.1 dynamic activation) ──
     l_pcml_val = 0.0
@@ -142,15 +158,28 @@ def _pitnn_objective_step(
             lam_hat_p,
             y_true=f_target[:, :n_out],
         )
-        l_total = l_total + loss_cfg.lambda_pcml * l_pcml
+        terms.append(l_pcml)
+        fixed_lambdas.append(loss_cfg.lambda_pcml)
         l_pcml_val = float(l_pcml.detach())
 
     # ── CBF constraint loss (opt-in via the safety filter) ──
     l_cbf_val = 0.0
     if use_cbf and safety_filter is not None:
         l_cbf = safety_filter.cbf_constraint_loss(e.detach(), u_safe.detach())
-        l_total = l_total + loss_cfg.lambda_cbf * l_cbf
+        terms.append(l_cbf)
+        fixed_lambdas.append(loss_cfg.lambda_cbf)
         l_cbf_val = float(l_cbf.detach())
+
+    # ── aggregate: fixed lambdas (default) or adaptive ReLoBRaLo weights ──
+    if balancer is None:
+        weights = fixed_lambdas
+    else:
+        term_vals = [float(t.detach()) for t in terms]
+        weights = balancer.weights(term_vals, generator=generator).tolist()
+
+    l_total = weights[0] * terms[0]
+    for w_i, t_i in zip(weights[1:], terms[1:]):
+        l_total = l_total + w_i * t_i
 
     optimizer_pitnn.zero_grad()
     critic_optimizer.zero_grad()  # l_total is a pure PITNN objective
@@ -379,6 +408,20 @@ def cotraining_loop(
     optimizer_pitnn = torch.optim.Adam(pitnn.parameters(), lr=pitnn_lr)
     critic_optimizer = torch.optim.Adam(controller.critic.parameters(), lr=critic_lr)
 
+    # ── Opt-in adaptive (ReLoBRaLo) balancing of the PITNN objective terms ──
+    # (ROADMAP #8). Default off -> ``balancer is None`` -> fixed-lambda path,
+    # which is behaviour-preserving (characterization test). The number of active
+    # terms is physics (+pcml when pcml_module, +cbf when use_cbf). A dedicated
+    # seeded generator drives the random lookback so runs are reproducible and no
+    # global RNG state is consumed.
+    balancer: "ReLoBRaLo | None" = None
+    balancer_gen: torch.Generator | None = None
+    if loss_cfg.adaptive_weighting:
+        n_terms = 1 + (pcml_module is not None) + use_cbf
+        balancer = ReLoBRaLo(num_losses=n_terms)
+        balancer_gen = torch.Generator()
+        balancer_gen.manual_seed(0 if seed is None else seed)
+
     metrics: dict[str, list[float]] = {
         "irl_loss": [],
         "hjb_loss": [],
@@ -444,6 +487,8 @@ def cotraining_loop(
                 safety_filter=controller.safety_filter,
                 batch_size=batch_size,
                 x_p=x_p,
+                balancer=balancer,
+                generator=balancer_gen,
             )
 
             # ── Step 2: HJB residual regularizer -> critic optimizer (opt-in).

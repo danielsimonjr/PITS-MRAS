@@ -6,11 +6,11 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 42 |
-| Total Test Files | 25 |
-| Source Files with Tests | 34 |
+| Total Source Files | 43 |
+| Total Test Files | 26 |
+| Source Files with Tests | 35 |
 | Source Files without Tests | 8 |
-| Coverage | 81.0% |
+| Coverage | 81.4% |
 
 ---
 
@@ -45,6 +45,7 @@
 | `src/pits_mras/inference/parallel.py` | `test_inference.py` |
 | `src/pits_mras/inference/realtime.py` | `test_imports.py`, `test_inference.py`, `test_pcml_integration.py`, `test_smoke.py` |
 | `src/pits_mras/losses/__init__.py` | `test_losses.py`, `test_pcml_integration.py` |
+| `src/pits_mras/losses/adaptive_weighting.py` | `test_adaptive_weighting.py` |
 | `src/pits_mras/losses/hjb.py` | `test_losses.py`, `test_pcml_integration.py` |
 | `src/pits_mras/losses/irl.py` | `test_irl.py`, `test_losses.py`, `test_pcml_integration.py` |
 | `src/pits_mras/losses/physics.py` | `test_losses.py`, `test_pcml_integration.py` |

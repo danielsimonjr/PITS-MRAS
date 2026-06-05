@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.10",
+    "version": "0.4.11",
     "lastUpdated": "2026-06-05",
-    "totalFiles": 42,
+    "totalFiles": 43,
     "totalModules": 10,
-    "totalExports": 130
+    "totalExports": 132
   },
   "entryPoints": [
     {
@@ -1378,6 +1378,48 @@
           "TotalLoss"
         ]
       },
+      "src/pits_mras/losses/adaptive_weighting.py": {
+        "description": "Adaptive / causal loss weighting utilities (ROADMAP #8).",
+        "externalDependencies": [
+          {
+            "package": "torch",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
+              "Tensor"
+            ]
+          }
+        ],
+        "stdlibDependencies": [
+          {
+            "module": "__future__",
+            "imports": [
+              "annotations"
+            ]
+          },
+          {
+            "module": "typing",
+            "imports": [
+              "Sequence"
+            ]
+          }
+        ],
+        "internalDependencies": [],
+        "exports": [
+          "ReLoBRaLo",
+          "causal_weights"
+        ],
+        "classes": [
+          "ReLoBRaLo"
+        ],
+        "functions": [
+          "causal_weights"
+        ]
+      },
       "src/pits_mras/losses/hjb.py": {
         "description": "HJB residual loss (Phase 3).",
         "externalDependencies": [
@@ -2030,6 +2072,13 @@
         ],
         "internalDependencies": [
           {
+            "file": "src/pits_mras/losses/adaptive_weighting.py",
+            "module": "pits_mras.losses.adaptive_weighting",
+            "imports": [
+              "ReLoBRaLo"
+            ]
+          },
+          {
             "file": "src/pits_mras/losses/hjb.py",
             "module": "pits_mras.losses.hjb",
             "imports": [
@@ -2574,6 +2623,7 @@
         "name": "Src / pits_mras / losses",
         "files": [
           "src/pits_mras/losses/__init__.py",
+          "src/pits_mras/losses/adaptive_weighting.py",
           "src/pits_mras/losses/hjb.py",
           "src/pits_mras/losses/irl.py",
           "src/pits_mras/losses/physics.py",
@@ -2616,14 +2666,14 @@
     ]
   },
   "statistics": {
-    "totalPythonFiles": 42,
+    "totalPythonFiles": 43,
     "totalModules": 10,
-    "totalLinesOfCode": 6134,
-    "totalExports": 130,
-    "totalClasses": 47,
+    "totalLinesOfCode": 6379,
+    "totalExports": 132,
+    "totalClasses": 48,
     "totalInterfaces": 1,
     "totalEnums": 0,
-    "totalFunctions": 36,
+    "totalFunctions": 37,
     "totalTypeGuards": 0,
     "totalConstants": 0,
     "totalReExports": 46,

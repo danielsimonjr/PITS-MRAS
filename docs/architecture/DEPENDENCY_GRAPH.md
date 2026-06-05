@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.10 | **Last Updated**: 2026-06-05
+**Version**: 0.4.11 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -16,7 +16,7 @@ The codebase is organized into the following modules:
 - **src/pits_mras/constraints**: 4 files
 - **src/pits_mras/controllers**: 4 files
 - **src/pits_mras/inference**: 3 files
-- **src/pits_mras/losses**: 6 files
+- **src/pits_mras/losses**: 7 files
 - **src/pits_mras/models**: 7 files
 - **src/pits_mras/training**: 4 files
 - **src/pits_mras/utils**: 6 files
@@ -472,6 +472,26 @@ The codebase is organized into the following modules:
 
 ---
 
+### `src/pits_mras/losses/adaptive_weighting.py` - Adaptive / causal loss weighting utilities (ROADMAP #8).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Sequence` |
+
+**Exports:**
+- Classes: `ReLoBRaLo`
+- Functions: `causal_weights`
+
+---
+
 ### `src/pits_mras/losses/hjb.py` - HJB residual loss (Phase 3).
 
 **Third-party Dependencies:**
@@ -750,6 +770,7 @@ The codebase is organized into the following modules:
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
+| `src/pits_mras/losses/adaptive_weighting.py` | `ReLoBRaLo` | Import |
 | `src/pits_mras/losses/hjb.py` | `HJBResidualLoss` | Import |
 | `src/pits_mras/losses/irl.py` | `IRLBellmanLoss` | Import |
 | `src/pits_mras/config.py` | `LossConfig, PITSMRASConfig` | Import (TYPE_CHECKING) |
@@ -968,11 +989,11 @@ graph TD
 
     subgraph Src / pits_mras / losses
         N19[__init__]
-        N20[hjb]
-        N21[irl]
-        N22[physics]
-        N23[stability]
-        N24[...1 more]
+        N20[adaptive_weighting]
+        N21[hjb]
+        N22[irl]
+        N23[physics]
+        N24[...2 more]
     end
 
     subgraph Src / pits_mras / models
@@ -1038,15 +1059,15 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 42 |
+| Total Python Files | 43 |
 | Total Modules | 10 |
-| Total Lines of Code | 6134 |
-| Total Public Exports | 130 |
+| Total Lines of Code | 6379 |
+| Total Public Exports | 132 |
 | Total Re-exports | 46 |
-| Total Classes | 47 |
+| Total Classes | 48 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 36 |
+| Total Functions | 37 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 12 |
@@ -1055,4 +1076,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.10
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.11
