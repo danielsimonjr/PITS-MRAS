@@ -227,8 +227,14 @@ def _logical_import_lines(content: str) -> List[Tuple[int, str]]:
         if stripped.startswith("import ") or stripped.startswith("from "):
             start = i
             buf = line
-            # Join continuations: open paren or trailing backslash.
-            while ("(" in buf and ")" not in buf.split("#")[0]) or buf.rstrip().endswith("\\"):
+            # Join continuations: an unclosed paren or a trailing backslash. The
+            # paren check uses the code portion only (text before any ``#``), so a
+            # parenthesis inside a trailing comment (e.g. ``# noqa (sibling mod)``)
+            # does not look like an open paren and swallow the following lines.
+            while True:
+                code = buf.split("#")[0]
+                if not (("(" in code and ")" not in code) or code.rstrip().endswith("\\")):
+                    break
                 i += 1
                 if i >= n:
                     break
@@ -266,7 +272,12 @@ def _in_typechecking(line_idx: int, ranges: List[Tuple[int, int]]) -> bool:
 
 
 def _split_import_names(names_blob: str) -> List[str]:
-    """Parse the names in ``a, b as c, d`` -> ['a', 'c', 'd'] (alias kept)."""
+    """Parse the names in ``a, b as c, d`` -> ['a', 'c', 'd'] (alias kept).
+
+    A trailing ``# ...`` comment (e.g. ``foo  # noqa: E402``) is stripped first so
+    the comment text is never mistaken for an imported name.
+    """
+    names_blob = names_blob.split("#", 1)[0]
     out: List[str] = []
     for item in names_blob.replace("(", "").replace(")", "").split(","):
         item = item.strip()

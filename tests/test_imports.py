@@ -51,7 +51,22 @@ def test_module_imports(module_name: str) -> None:
 
 
 def test_version() -> None:
-    """Top-level package exposes a version string matching setup.py."""
+    """Top-level package exposes a semver version string matching setup.py.
+
+    Version-agnostic by design: it asserts the *format* (semver) and
+    *consistency* with ``setup.py`` rather than a hardcoded literal, so a
+    release bump does not require editing this test.
+    """
+    import re
+    from pathlib import Path
+
     import pits_mras
 
-    assert pits_mras.__version__ == "0.4.5"
+    assert re.fullmatch(r"\d+\.\d+\.\d+", pits_mras.__version__), pits_mras.__version__
+
+    setup_text = (Path(__file__).resolve().parents[1] / "setup.py").read_text(
+        encoding="utf-8"
+    )
+    match = re.search(r'version\s*=\s*"([^"]+)"', setup_text)
+    assert match is not None, "version= not found in setup.py"
+    assert pits_mras.__version__ == match.group(1)

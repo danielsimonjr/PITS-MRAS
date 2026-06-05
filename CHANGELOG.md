@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-06-05
+
+Sprint item todo#1 (CDG import-parser fix) plus a release-hygiene fix for the
+version-string tests. Suite green; flake8 + mypy clean.
+
+### Fixed
+
+- **`create-dependency-graph` no longer swallows code after a commented import.**
+  A function-level `from x import y  # noqa: E402 ...` was mis-parsed: the logical-
+  line joiner tested `"(" in buf` against the *whole* line (including the comment)
+  but `")"` only against the code before `#`, so a paren inside the comment made it
+  greedily join the rest of the file into one "import name"; `_split_import_names`
+  also didn't strip the trailing comment. Both fixed (comment-stripped before the
+  paren-balance and name-split checks). The `examples/` per-file import tables in
+  `dependency-graph.json` / `DEPENDENCY_GRAPH.md` are now clean (e.g. `plants` deps
+  show `lateral_tyre_step` / `rc_thermal_step`, not code blobs), and imports that
+  were previously eaten (matplotlib, numpy, stdlib) are now correctly recorded.
+  Two regression tests added.
+- **Version-assertion tests are now bump-robust.** `test_imports.test_version` and
+  `test_smoke.test_package_imports` hardcoded `"0.4.5"`, so any release bump broke
+  them (it red-lit the v0.4.6 CI). They now assert the semver *format* and
+  *consistency* with `setup.py` instead of a literal, so future bumps don't require
+  editing tests.
+
 ## [0.4.6] - 2026-06-05
 
 First item of the improvement sprint (ROADMAP #4). Additive/backward-compatible;

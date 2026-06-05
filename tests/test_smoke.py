@@ -85,9 +85,12 @@ def _all_finite(series_dict: dict) -> None:
 # Phase-0 scaffold gates.
 # --------------------------------------------------------------------------- #
 def test_package_imports() -> None:
-    """The top-level package imports and exposes its version."""
+    """The top-level package imports and exposes a semver version string."""
+    import re
+
     pkg = importlib.import_module("pits_mras")
-    assert pkg.__version__ == "0.4.5"
+    assert isinstance(pkg.__version__, str)
+    assert re.fullmatch(r"\d+\.\d+\.\d+", pkg.__version__), pkg.__version__
 
 
 @pytest.mark.parametrize("script_name", _EXAMPLE_SCRIPTS)

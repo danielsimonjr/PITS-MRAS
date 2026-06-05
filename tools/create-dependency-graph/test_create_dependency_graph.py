@@ -48,6 +48,51 @@ def test_logical_import_lines_joins_parenthesized():
     assert "Alpha" in joined and "Beta" in joined and ")" in joined
 
 
+def test_import_with_trailing_noqa_comment_not_swallowed(tmp_path):
+    """A from-import with a trailing ``# noqa`` comment whose text contains a
+    parenthesis must not swallow the following function body into the import.
+
+    Regression for examples/{autonomous_vehicle,building_hvac}.py, where
+    ``from plants import lateral_tyre_step  # noqa: E402  (sibling module)``
+    caused the logical-line joiner to keep eating physical lines (the comment's
+    ``(`` looked like an unclosed paren) and the name splitter to absorb the
+    comment + following code into one giant "import name".
+    """
+    root = str(tmp_path)
+    _write(tmp_path, "src/pkg/__init__.py", "")
+    target = _write(
+        tmp_path,
+        "src/pkg/runner.py",
+        '''\
+        from __future__ import annotations
+
+
+        def go():
+            from pkg.plant import lateral_tyre_step  # noqa: E402  (sibling module)
+
+            x = lateral_tyre_step(1)
+            return x + 2
+        ''',
+    )
+    _write(tmp_path, "src/pkg/plant.py", "def lateral_tyre_step(x): return x\n")
+    all_rel = {
+        "src/pkg/__init__.py", "src/pkg/runner.py", "src/pkg/plant.py",
+    }
+    roots = cdg.discover_package_roots(root, set(cdg.DEFAULT_EXCLUDE_DIRS))
+    pf = cdg.parse_file(target, root, roots, all_rel)
+
+    dep = [d for d in pf.internal_dependencies if d.file == "src/pkg/plant.py"]
+    assert dep, "the sibling import should resolve to plant.py"
+    # The imported names must be EXACTLY the symbol -- not a long blob that has
+    # absorbed the comment text or the following code lines.
+    assert dep[0].imports == ["lateral_tyre_step"]
+
+
+def test_split_import_names_strips_trailing_comment():
+    assert cdg._split_import_names("foo  # noqa: E402  (sibling module)") == ["foo"]
+    assert cdg._split_import_names("a, b  # comment, with, commas") == ["a", "b"]
+
+
 def test_typechecking_ranges_detected():
     content = textwrap.dedent(
         """\

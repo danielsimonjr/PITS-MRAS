@@ -1,6 +1,6 @@
 metadata:
   name: pits_mras
-  version: 0.4.6
+  version: 0.4.7
   lastUpdated: '2026-06-05'
   totalFiles: 41
   totalModules: 10
@@ -64,81 +64,13 @@ modules:
         - (module)
       - package: plants
         imports:
-        - 'lateral_tyre_step  # noqa: E402  sibling examples module      dt = 0.01     x_p = torch.zeros2     P = engine._cbf_P  #
-          noqa: SLF001  safety matrix stashed by _build_engine     lateral_offset: list[float] = []     error_norm: list[float]
-          = []     cbf_active: list[bool] = []     violation: list[float] = []      for k in rangesteps:         t = k * dt         #
-          Strong lateral wind gust acting on the plant NOT the reference; the         # controller is asked to hold the lane
-          centre against it.         gust = _GUST_AMPLITUDE * math.sin2.0 * math.pi * t / _GUST_PERIOD         out = engine.stepx_p'
-        - torch.zeros1
-        - dtype=torch.float32
-        - dt=dt          e = out["e"].detach.cpu.reshape-1         error_norm.appendfloattorch.linalg.vector_norme         cbf_active.appendboolout["cbf_active"]         e_np
-          = e.numpy         violation.appendmax0.0
-        - 'floate_np @ P @ e_np - _SAFETY_MARGIN         # Record the lateral offset at the CURRENT time before the plant
-          step'
-        - '# so all series align on the same tgrid.         lateral_offset.appendfloatx_p[0]          # Nonlinear single-track
-          lateral plant with tyre-force saturation         # tanh; linearizes to the reference model near the lane centre.         u
-          = floatout["u_safe"].detach.cpu.reshape-1[0]         x_p = lateral_tyre_step             x_p'
-        - u
-        - dt
-        - tyre_stiffness=2.0
-        - damping=3.0
-        - 'gust=gust               return {         "lateral_offset": lateral_offset'
-        - '"error_norm": error_norm'
-        - '"cbf_active": cbf_active'
-        - '"violation": violation'
-        - '}   def runsteps: int = 100'
-        - 'show: bool = False -> dict[str'
-        - 'Any]:     """Run with-CBF vs without-CBF lateral control under a wind gust.      Args:         steps: number of
-          fixed-``dt`` control steps to simulate.         show: when ``True`` display + save the figure; otherwise headless
-          Agg.      Returns:         Dict with per-step series for both branches'
-        - scalar summary metrics
-        - 'and         the comparison ``Figure`` under ``"figure"``.     """     import matplotlib      if not show:         matplotlib.use"Agg"      with_cbf
-          = _simulate_build_engineuse_safety_filter=True'
-        - steps     without_cbf = _simulate_build_engineuse_safety_filter=False
-        - plt      dt = 0.01     tgrid = [k * dt for k in rangesteps]     fig
-        - axes = plt.subplots1
-        - '3'
-        - figsize=15
-        - '4.5     fig.suptitle"Autonomous vehicle lane-hold under a strong wind gust: CBF vs no-CBF"      axes[0].plottgrid'
-        - with_cbf["lateral_offset"]
-        - label="with CBF"     axes[0].plot         tgrid
-        - without_cbf["lateral_offset"]
-        - label="without CBF"
-        - linestyle="--"          axes[0].axhline0.0
-        - color="gray"
-        - linewidth=0.8     axes[0].set_title"a lateral offset lane departure"     axes[0].set_xlabel"t [s]"     axes[0].set_ylabel"offset
-          [m]"     axes[0].legend      axes[1].plottgrid
-        - with_cbf["error_norm"]
-        - label="with CBF"     axes[1].plot         tgrid
-        - without_cbf["error_norm"]
-        - label="without CBF"
-        - linestyle="--"          axes[1].set_titler"b tracking error $\|et\|$"     axes[1].set_xlabel"t [s]"     axes[1].set_ylabelr"$\|e\|$"     axes[1].legend      axes[2].step         tgrid
-        - '[intc for c in with_cbf["cbf_active"]]'
-        - where="post"
-        - color="tab:red"
-        - axes[2].set_title"c CBF activation flag with-CBF branch"     axes[2].set_xlabel"t [s]"     axes[2].set_ylabel"active"     axes[2].set_ylim-0.1
-        - '1.1      fig.tight_layout     if show:         fig.savefig"autonomous_vehicle.png"'
-        - 'dpi=120         if matplotlib.get_backend.lower != "agg":             plt.show      max_dep_cbf = maxabsx for x
-          in with_cbf["lateral_offset"]'
-        - default=0.0     max_dep_nocbf = max         absx for x in without_cbf["lateral_offset"]
-        - 'default=0.0          viol_cbf = sumwith_cbf["violation"] * dt     viol_nocbf = sumwithout_cbf["violation"] * dt      return
-          {         "error_norm": with_cbf["error_norm"]'
-        - '"error_norm_no_cbf": without_cbf["error_norm"]'
-        - '"lateral_offset_cbf": with_cbf["lateral_offset"]'
-        - '"lateral_offset_no_cbf": without_cbf["lateral_offset"]'
-        - '"max_departure_cbf": floatmax_dep_cbf'
-        - '"max_departure_no_cbf": floatmax_dep_nocbf'
-        - '"safeset_violation_cbf": floatviol_cbf'
-        - '"safeset_violation_no_cbf": floatviol_nocbf'
-        - '"cbf_activation_rate":              sumwith_cbf["cbf_active"] / lenwith_cbf["cbf_active"]             if with_cbf["cbf_active"]
-          else 0.0'
-        - '"steps": steps'
-        - '"figure": fig'
-        - '}   def main -> None:     """Run the demo with the comparison figure displayed and saved."""     out = runsteps=100'
-        - 'show=True     printf"CBF activation rate = {out[''cbf_activation_rate'']:.2%}"     printf"max lateral departure  with
-          CBF = {out[''max_departure_cbf'']:.4f} m"     printf"max lateral departure   no CBF = {out[''max_departure_no_cbf'']:.4f}
-          m"     printf"safe-set violation  with CBF = {out[''safeset_violation_cbf'']:.4f}"     printf"safe-set violation   no
-          CBF = {out[''safeset_violation_no_cbf'']:.4f}"   if __name__ == "__main__":     main'
+        - lateral_tyre_step
+      - package: matplotlib
+        imports:
+        - (module)
+      - package: matplotlib.pyplot
+        imports:
+        - (module)
       stdlibDependencies:
       - module: __future__
         imports:
@@ -192,117 +124,19 @@ modules:
         - (module)
       - package: plants
         imports:
-        - 'rc_thermal_step  # noqa: E402  sibling examples module      nxt = rc_thermal_steptorch.tensor[x0'
-        - x1]
-        - dtype=torch.float32
-        - u
-        - dt     return floatnxt[0]
-        - 'floatnxt[1]   def _run_pitssteps: int -> dict[str'
-        - np     import torch      from pits_mras.config import NetworkConfig
-        - PhysicsConfig
-        - 'PITSMRASConfig     from pits_mras.controllers.mras import MRASController     from pits_mras.controllers.reference_models
-          import LinearReferenceModel     from pits_mras.inference.realtime import RealtimeInferenceEngine     from pits_mras.models
-          import PITNN      torch.manual_seed0     np.random.seed0      # Reference model = the 2-node RC network''s linearization
-          zone'
-        - mass
-        - 'so     # the LQR tracks the zone temperature. A_rc = [[-a_zm+a_za'
-        - a_zm]
-        - '# [a_mz'
-        - -a_mz]]
-        - B = [[heater_gain]
-        - '[0]] with the rc_thermal_step defaults.     a_m = np.array[[-3.0'
-        - 2.0]
-        - '[1.0'
-        - -1.0]]     b_m = np.array[[3.0]
-        - '[0.0]]     c_m = np.eye2     q_mat = np.eye2     r_mat = np.eye1     ref_model = LinearReferenceModela_m'
-        - b_m
-        - c_m
-        - q_mat
-        - r_mat      cfg = PITSMRASConfig     cfg.network = NetworkConfig         input_dim=2
-        - hidden_dim=16
-        - output_dim=2
-        - lstm_layers=1
-        - attention_heads=2
-        - embedding_dim=8
-        - cfg.physics = PhysicsConfig         n_generalized_coords=1
-        - hamiltonian_hidden=16
-        - dissipation_hidden=8
-        - pitnn = PITNNcfg.network
-        - cfg.physics      controller = MRASController         reference_model=ref_model
-        - state_dim=2
-        - control_dim=1
-        - ref_dim=1
-        - plant_dim=2
-        - use_safety_filter=True
-        - controller.setup_safety_filter     engine = RealtimeInferenceEngine         pitnn
-        - controller
-        - ref_model
-        - horizon=50
-        - device="cpu"           dt = 0.01     x0
-        - x1 = 0.0
-        - '0.0     temp_error: list[float] = []     energy_cum: list[float] = []     energy = 0.0      for k in rangesteps:         t
-          = k * dt         sp = _setpointt         r = torch.tensor[sp]'
-        - dtype=torch.float32         x_p = torch.tensor[x0
-        - x1]
-        - dtype=torch.float32         out = engine.stepx_p
-        - r
-        - dt=dt         u = floatout["u_safe"].detach.cpu.reshape-1[0]         energy += u * u * dt         energy_cum.appendenergy         x0
-        - x1 = _zone_stepx0
-        - x1
-        - u
-        - 'dt         temp_error.appendabsx0 - sp      return {"temp_error": temp_error'
-        - '"energy_cum": energy_cum}   def _run_baselinesteps: int'
-        - 'gain: float = 6.0 -> dict[str'
-        - 'list]:     """Run a simple proportional baseline controller on the same toy zone."""     dt = 0.01     x0'
-        - x1 = 0.0
-        - '0.0     temp_error: list[float] = []     energy_cum: list[float] = []     energy = 0.0      for k in rangesteps:         t
-          = k * dt         sp = _setpointt         u = gain * sp - x0  # proportional control toward the setpoint         energy
-          += u * u * dt         energy_cum.appendenergy         x0'
-        - x1 = _zone_stepx0
-        - x1
-        - u
-        - 'dt         temp_error.appendabsx0 - sp      return {"temp_error": temp_error'
-        - '"energy_cum": energy_cum}   def runsteps: int = 100'
-        - 'show: bool = False -> dict[str'
-        - 'Any]:     """Run PITS-MRAS HVAC control vs a simple proportional baseline.      Args:         steps: number of
-          fixed-``dt`` control steps to simulate.         show: when ``True`` display + save the figure; otherwise headless
-          Agg.      Returns:         Dict with per-step series for both controllers'
-        - scalar energy/error         summaries
-        - plt      dt = 0.01     tgrid = [k * dt for k in rangesteps]     fig
-        - axes = plt.subplots1
-        - '2'
-        - figsize=11
-        - '4.5     fig.suptitle"Building HVAC: PITS-MRAS vs proportional baseline"      axes[0].plottgrid'
-        - pits["temp_error"]
-        - label="PITS-MRAS"     axes[0].plottgrid
-        - base["temp_error"]
-        - label="P baseline"
-        - linestyle="--"     axes[0].set_title"zone temperature tracking error"     axes[0].set_xlabel"t [s]"     axes[0].set_ylabel"|T
-          - setpoint| [deg C]"     axes[0].legend      axes[1].plottgrid
-        - pits["energy_cum"]
-        - label="PITS-MRAS"     axes[1].plottgrid
-        - base["energy_cum"]
-        - label="P baseline"
-        - linestyle="--"     axes[1].set_titler"cumulative control energy $\sum u^2\
-        - 'dt$"     axes[1].set_xlabel"t [s]"     axes[1].set_ylabel"energy [proxy]"     axes[1].legend      fig.tight_layout     if
-          show:         fig.savefig"building_hvac.png"'
-        - 'dpi=120         if matplotlib.get_backend.lower != "agg":             plt.show      pits_energy = pits["energy_cum"][-1]
-          if pits["energy_cum"] else 0.0     base_energy = base["energy_cum"][-1] if base["energy_cum"] else 0.0     savings
-          =          base_energy - pits_energy / base_energy if base_energy > 0.0 else 0.0           return {         "temp_error":
-          pits["temp_error"]'
-        - '"error_norm": pits["temp_error"]'
-        - '"temp_error_baseline": base["temp_error"]'
-        - '"energy_cum": pits["energy_cum"]'
-        - '"energy_cum_baseline": base["energy_cum"]'
-        - '"pits_energy": floatpits_energy'
-        - '"baseline_energy": floatbase_energy'
-        - '"energy_savings_fraction": floatsavings'
-        - '"steps": steps'
-        - '"figure": fig'
-        - '}   def main -> None:     """Run the demo with the comparison figure displayed and saved."""     out = runsteps=100'
-        - 'show=True     printf"PITS-MRAS control energy = {out[''pits_energy'']:.4f}"     printf"baseline  control energy
-          = {out[''baseline_energy'']:.4f}"     printf"energy savings = {out[''energy_savings_fraction'']:.2%}"   if __name__
-          == "__main__":     main'
+        - rc_thermal_step
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: matplotlib
+        imports:
+        - (module)
+      - package: matplotlib.pyplot
+        imports:
+        - (module)
       stdlibDependencies:
       - module: __future__
         imports:
@@ -319,7 +153,29 @@ modules:
       - module: sys
         imports:
         - (module)
-      internalDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/config.py
+        module: pits_mras.config
+        imports:
+        - NetworkConfig
+        - PhysicsConfig
+        - PITSMRASConfig
+      - file: src/pits_mras/controllers/mras.py
+        module: pits_mras.controllers.mras
+        imports:
+        - MRASController
+      - file: src/pits_mras/controllers/reference_models.py
+        module: pits_mras.controllers.reference_models
+        imports:
+        - LinearReferenceModel
+      - file: src/pits_mras/inference/realtime.py
+        module: pits_mras.inference.realtime
+        imports:
+        - RealtimeInferenceEngine
+      - file: src/pits_mras/models/__init__.py
+        module: pits_mras.models
+        imports:
+        - PITNN
       exports:
       - run
       - main
@@ -403,105 +259,10 @@ modules:
         - (module)
       - package: plants
         imports:
-        - 'pendulum_step  # noqa: E402  sibling examples module      torch.manual_seed0     np.random.seed0      # ---- Reference
-          model: stable 2nd-order joint-tracking model. -------------     # State = [q'
-        - qdot] for one tracked joint coordinate; critically damped.     a_m = np.array[[0.0
-        - 1.0]
-        - '[-4.0'
-        - -4.0]]     b_m = np.array[[0.0]
-        - '[4.0]]     c_m = np.eye2     q_mat = np.eye2     r_mat = np.eye1     ref_model = LinearReferenceModela_m'
-        - b_m
-        - c_m
-        - q_mat
-        - 'r_mat      # ---- PITNN physics-informed dynamics + value. -------------------------     cfg = PITSMRASConfig     cfg.network
-          = NetworkConfig         input_dim=2'
-        - hidden_dim=16
-        - output_dim=2
-        - lstm_layers=1
-        - attention_heads=2
-        - embedding_dim=8
-        - cfg.physics = PhysicsConfig         n_generalized_coords=1
-        - hamiltonian_hidden=16
-        - dissipation_hidden=8
-        - pitnn = PITNNcfg.network
-        - 'cfg.physics      # ---- MRAS controller + CBF safety filter. -------------------------------     controller = MRASController         reference_model=ref_model'
-        - state_dim=2
-        - control_dim=1
-        - ref_dim=1
-        - plant_dim=2
-        - use_safety_filter=True
-        - 'controller.setup_safety_filter      # ---- Train the critic real panel d. ---------------------------------     #
-          The critic is warm-started to the CARE solution P_opt at construction; we     # perturb it well off P_opt'
-        - 'then fit it back with the offline gradient IRL     # trainer on optimal-closed-loop data convex -> reliable monotone     #
-          convergence'
-        - 'decoupled from control-loop stability. Panel d plots this     # genuine learning curve ``||P_hat - P_CARE||_F /
-          ||P_CARE||_F`` per step.     controller.critic.set_Ptorch.eye2'
-        - 'dtype=torch.float32 * 5.0     critic_convergence: list[float] = train_irl_critic_gd         controller.critic'
-        - ref_model
-        - n_trajectories=critic_train_trajectories
-        - steps=critic_train_steps
-        - lr=0.15
-        - seed=0
-        - engine = RealtimeInferenceEngine         pitnn
-        - controller
-        - ref_model
-        - horizon=50
-        - 'device="cpu"           # ---- Closed-loop simulation panels a-c with the trained critic. ---     dt = 0.01     x_p
-          = torch.zeros2     error_norm: list[float] = []     v_hat: list[float] = []     cbf_active: list[bool] = []      for
-          k in rangesteps:         t = k * dt         # Sinusoidal joint-angle reference position command for one joint.         r
-          = torch.tensor             [0.5 * math.sin2.0 * math.pi * 0.5 * t]'
-        - dtype=torch.float32                  out = engine.stepx_p
-        - r
-        - 'dt=dt          e = out["e"].detach.cpu.reshape-1         error_norm.appendfloattorch.linalg.vector_norme         v_hat.appendfloatout["v_hat"].detach.reshape-1[0]         cbf_active.appendboolout["cbf_active"]          #
-          Advance the nonlinear pendulum plant sin-gravity joint under the         # applied safe control. Linearizes to the
-          reference model near theta=0.         u = floatout["u_safe"].detach.cpu.reshape-1[0]         x_p = pendulum_stepx_p'
-        - u
-        - dt
-        - g_over_l=4.0
-        - plt      fig
-        - axes = plt.subplots2
-        - '2'
-        - figsize=10
-        - '7     fig.suptitle"2-DOF manipulator: PITNN-MRAS-CBF closed loop"     tgrid = [k * dt for k in rangesteps]      axes[0'
-        - 0].plottgrid
-        - error_norm     axes[0
-        - 0].set_titler"a tracking error $\|et\|$"     axes[0
-        - 0].set_xlabel"t [s]"     axes[0
-        - 0].set_ylabelr"$\|e\|$"      axes[0
-        - 1].plottgrid
-        - v_hat
-        - color="tab:orange"     axes[0
-        - 1].set_titler"b critic value $\hat Vet$"     axes[0
-        - 1].set_xlabel"t [s]"     axes[0
-        - 1].set_ylabelr"$\hat V$"      axes[1
-        - 0].step         tgrid
-        - '[intc for c in cbf_active]'
-        - where="post"
-        - color="tab:red"          axes[1
-        - 0].set_title"c CBF activation flag"     axes[1
-        - 0].set_xlabel"t [s]"     axes[1
-        - 0].set_ylabel"active"     axes[1
-        - 0].set_ylim-0.1
-        - 1.1      axes[1
-        - 1].plot         rangelencritic_convergence
-        - critic_convergence
-        - color="tab:green"          axes[1
-        - 1].set_title         r"d IRL critic training conv. $\|\hat P-P_{CARE}\|_F/\|P_{CARE}\|_F$"          axes[1
-        - 1].set_xlabel"training step"     axes[1
-        - '1].set_ylabel"rel. error"      fig.tight_layout     if show:         fig.savefig"robotic_manipulator.png"'
-        - 'dpi=120         if matplotlib.get_backend.lower != "agg":             plt.show      return {         "error_norm":
-          error_norm'
-        - '"v_hat": v_hat'
-        - '"cbf_active": cbf_active'
-        - '"critic_convergence": critic_convergence'
-        - '"final_error_norm": error_norm[-1] if error_norm else 0.0'
-        - '"final_critic_convergence":              critic_convergence[-1] if critic_convergence else 0.0'
-        - '"cbf_activation_rate":              sumcbf_active / lencbf_active if cbf_active else 0.0'
-        - '"steps": steps'
-        - '"figure": fig'
-        - '}   def main -> None:     """Run the demo with the diagnostic figure displayed and saved."""     out = runsteps=100'
-        - 'show=True     printf"final ||e|| = {out[''final_error_norm'']:.4f}"     printf"final critic convergence = {out[''final_critic_convergence'']:.4f}"     printf"CBF
-          activation rate = {out[''cbf_activation_rate'']:.2%}"   if __name__ == "__main__":     main'
+        - pendulum_step
+      - package: matplotlib.pyplot
+        imports:
+        - (module)
       stdlibDependencies:
       - module: __future__
         imports:
