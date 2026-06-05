@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.8",
+    "version": "0.4.9",
     "lastUpdated": "2026-06-05",
-    "totalFiles": 41,
+    "totalFiles": 42,
     "totalModules": 10,
-    "totalExports": 126
+    "totalExports": 130
   },
   "entryPoints": [
     {
@@ -2445,6 +2445,53 @@
         "classes": [
           "PEMonitor"
         ]
+      },
+      "src/pits_mras/utils/uq.py": {
+        "description": "Uncertainty quantification utilities (ROADMAP proposal #3).",
+        "externalDependencies": [
+          {
+            "package": "torch",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
+              "Tensor"
+            ]
+          }
+        ],
+        "stdlibDependencies": [
+          {
+            "module": "math",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "module": "typing",
+            "imports": [
+              "Callable",
+              "Sequence"
+            ]
+          }
+        ],
+        "internalDependencies": [],
+        "exports": [
+          "split_conformal_quantile",
+          "conformal_interval",
+          "DeepEnsemble",
+          "AdaptiveConformalInference"
+        ],
+        "classes": [
+          "DeepEnsemble",
+          "AdaptiveConformalInference"
+        ],
+        "functions": [
+          "split_conformal_quantile",
+          "conformal_interval"
+        ]
       }
     }
   },
@@ -2545,20 +2592,21 @@
           "src/pits_mras/utils/diagnostics.py",
           "src/pits_mras/utils/hamiltonian.py",
           "src/pits_mras/utils/lyapunov.py",
-          "src/pits_mras/utils/pe_monitor.py"
+          "src/pits_mras/utils/pe_monitor.py",
+          "src/pits_mras/utils/uq.py"
         ]
       }
     ]
   },
   "statistics": {
-    "totalPythonFiles": 41,
+    "totalPythonFiles": 42,
     "totalModules": 10,
-    "totalLinesOfCode": 5786,
-    "totalExports": 126,
-    "totalClasses": 45,
+    "totalLinesOfCode": 5971,
+    "totalExports": 130,
+    "totalClasses": 47,
     "totalInterfaces": 1,
     "totalEnums": 0,
-    "totalFunctions": 34,
+    "totalFunctions": 36,
     "totalTypeGuards": 0,
     "totalConstants": 0,
     "totalReExports": 46,

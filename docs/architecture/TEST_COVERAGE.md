@@ -6,11 +6,11 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 41 |
-| Total Test Files | 24 |
-| Source Files with Tests | 33 |
+| Total Source Files | 42 |
+| Total Test Files | 25 |
+| Source Files with Tests | 34 |
 | Source Files without Tests | 8 |
-| Coverage | 80.5% |
+| Coverage | 81.0% |
 
 ---
 
@@ -66,3 +66,4 @@
 | `src/pits_mras/utils/hamiltonian.py` | `test_hamiltonian_utils.py` |
 | `src/pits_mras/utils/lyapunov.py` | `test_controllers.py`, `test_hinf.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_lyapunov_utils.py` |
 | `src/pits_mras/utils/pe_monitor.py` | `test_pe_monitor.py` |
+| `src/pits_mras/utils/uq.py` | `test_uq.py` |

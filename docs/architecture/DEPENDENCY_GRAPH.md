@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.8 | **Last Updated**: 2026-06-05
+**Version**: 0.4.9 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -19,7 +19,7 @@ The codebase is organized into the following modules:
 - **src/pits_mras/losses**: 6 files
 - **src/pits_mras/models**: 7 files
 - **src/pits_mras/training**: 4 files
-- **src/pits_mras/utils**: 5 files
+- **src/pits_mras/utils**: 6 files
 
 ---
 
@@ -898,6 +898,26 @@ The codebase is organized into the following modules:
 
 ---
 
+### `src/pits_mras/utils/uq.py` - Uncertainty quantification utilities (ROADMAP proposal #3).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `math` | `(module)` |
+| `typing` | `Callable, Sequence` |
+
+**Exports:**
+- Classes: `DeepEnsemble`, `AdaptiveConformalInference`
+- Functions: `split_conformal_quantile`, `conformal_interval`
+
+---
+
 ## Circular Dependency Analysis
 
 **No circular dependencies detected.**
@@ -975,6 +995,7 @@ graph TD
         N37[hamiltonian]
         N38[lyapunov]
         N39[pe_monitor]
+        N40[...1 more]
     end
 
     N0 --> N7
@@ -1015,15 +1036,15 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 41 |
+| Total Python Files | 42 |
 | Total Modules | 10 |
-| Total Lines of Code | 5786 |
-| Total Public Exports | 126 |
+| Total Lines of Code | 5971 |
+| Total Public Exports | 130 |
 | Total Re-exports | 46 |
-| Total Classes | 45 |
+| Total Classes | 47 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 34 |
+| Total Functions | 36 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 10 |
@@ -1032,4 +1053,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.8
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.9

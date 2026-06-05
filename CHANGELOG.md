@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.9] - 2026-06-05
+
+Sprint item ROADMAP #3 (uncertainty quantification), plus a CI fix for the
+v0.4.8 ruff-format drift. Suite green (253); ruff + mypy clean.
+
+### Added
+
+- **Uncertainty-quantification utilities** (`utils/uq.py`, importable via
+  `from pits_mras.utils.uq import ...`) — torch/numpy only, no new runtime deps:
+  - `DeepEnsemble` — epistemic UQ from K member models: `predict_all` (→
+    `[K, batch, d]`) and `mean_and_std`.
+  - `split_conformal_quantile` — finite-sample split-conformal quantile
+    (`ceil((n+1)(1-alpha))/n` order statistic; `+inf` when alpha is too small
+    for the calibration size).
+  - `conformal_interval` — symmetric prediction interval `(pred-q, pred+q)`.
+  - `AdaptiveConformalInference` — online ACI (Gibbs & Candès 2021) for
+    non-stationary/time-series coverage. 19 new tests (`tests/test_uq.py`).
+
+### Fixed
+
+- **CI: pin `ruff==0.8.1`** in `requirements-dev.txt`. The previous `ruff>=0.8.0`
+  let CI float to a newer ruff whose formatter reformatted 5 files, so
+  `ruff format --check` passed locally (0.8.1) but failed in CI — red-lighting
+  v0.4.8. The formatter version is now pinned for reproducibility.
+
 ## [0.4.8] - 2026-06-05
 
 Sprint item ROADMAP #10 (tooling / typing). Suite green (234); ruff + mypy clean.
