@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.13",
+    "version": "0.4.14",
     "lastUpdated": "2026-06-05",
-    "totalFiles": 43,
+    "totalFiles": 44,
     "totalModules": 10,
-    "totalExports": 134
+    "totalExports": 138
   },
   "entryPoints": [
     {
@@ -1654,6 +1654,15 @@
             "reExport": true
           },
           {
+            "file": "src/pits_mras/models/koopman.py",
+            "module": "pits_mras.models.koopman",
+            "imports": [
+              "KoopmanLiftingModel",
+              "koopman_loss"
+            ],
+            "reExport": true
+          },
+          {
             "file": "src/pits_mras/models/pitnn.py",
             "module": "pits_mras.models.pitnn",
             "imports": [
@@ -1670,7 +1679,9 @@
           "QuadraticCritic",
           "CostateHead",
           "AdversaryHead",
-          "PITNN"
+          "PITNN",
+          "KoopmanLiftingModel",
+          "koopman_loss"
         ],
         "reExported": [
           "PhysicsInformedAttention",
@@ -1680,6 +1691,8 @@
           "DissipationNet",
           "HamiltonianNet",
           "PortHamiltonianDecoder",
+          "KoopmanLiftingModel",
+          "koopman_loss",
           "PITNN"
         ]
       },
@@ -1822,6 +1835,55 @@
           "HamiltonianNet",
           "DissipationNet",
           "PortHamiltonianDecoder"
+        ]
+      },
+      "src/pits_mras/models/koopman.py": {
+        "description": "Deep Koopman lifting model (ROADMAP proposal #2). NEW capability.",
+        "externalDependencies": [
+          {
+            "package": "torch",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch.nn",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
+              "Tensor"
+            ]
+          }
+        ],
+        "stdlibDependencies": [
+          {
+            "module": "__future__",
+            "imports": [
+              "annotations"
+            ]
+          },
+          {
+            "module": "typing",
+            "imports": [
+              "Dict",
+              "Tuple"
+            ]
+          }
+        ],
+        "internalDependencies": [],
+        "exports": [
+          "koopman_loss",
+          "KoopmanLiftingModel"
+        ],
+        "classes": [
+          "KoopmanLiftingModel"
+        ],
+        "functions": [
+          "koopman_loss"
         ]
       },
       "src/pits_mras/models/lagrangian_head.py": {
@@ -2649,6 +2711,7 @@
           "src/pits_mras/models/attention.py",
           "src/pits_mras/models/critic.py",
           "src/pits_mras/models/decoders.py",
+          "src/pits_mras/models/koopman.py",
           "src/pits_mras/models/lagrangian_head.py",
           "src/pits_mras/models/pcml.py",
           "src/pits_mras/models/pitnn.py"
@@ -2677,17 +2740,17 @@
     ]
   },
   "statistics": {
-    "totalPythonFiles": 43,
+    "totalPythonFiles": 44,
     "totalModules": 10,
-    "totalLinesOfCode": 6632,
-    "totalExports": 134,
-    "totalClasses": 48,
+    "totalLinesOfCode": 6895,
+    "totalExports": 138,
+    "totalClasses": 49,
     "totalInterfaces": 1,
     "totalEnums": 0,
-    "totalFunctions": 39,
+    "totalFunctions": 40,
     "totalTypeGuards": 0,
     "totalConstants": 0,
-    "totalReExports": 46,
+    "totalReExports": 48,
     "totalTypeCheckingImports": 12,
     "runtimeCircularDeps": 0,
     "typeCheckingCircularDeps": 0,

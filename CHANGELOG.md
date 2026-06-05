@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.14] - 2026-06-05
+
+Sprint item ROADMAP #2 (deep Koopman lifting model). Additive capability — not
+wired into the control loop (integration is a documented follow-on). Suite green
+(304); ruff + mypy clean.
+
+### Added
+
+- **`KoopmanLiftingModel`** + **`koopman_loss`** (`models/koopman.py`, re-exported
+  from `pits_mras.models`) — a deep Koopman model (Lusch et al. 2018) that lifts
+  the nonlinear state into a latent space with *learnable linear* dynamics
+  `(A_z, B_z)`, so the existing linear core (quadratic critic, `solve_care` /
+  `solve_gare`, CLF-CBF) can be applied on lifted coordinates.
+  - `encode` / `latent_step` (exactly `z @ A_zᵀ + u @ B_zᵀ`) / `decode` /
+    `forward`; `latent_matrices()` exposes `(A_z, B_z)` as the bridge to the
+    Riccati solvers. `include_state=True` lifts as `[x, ψ(x)]` with exact-slice
+    decode (zero reconstruction loss by construction) and a stable identity warm
+    start.
+  - `koopman_loss` = reconstruction + latent-linearity + state-prediction MSE
+    terms (weighted). 15 new tests.
+  - Control-loop integration (closing the loop on lifted coordinates via the
+    Riccati solvers) is a documented follow-on, not included here.
+
 ## [0.4.13] - 2026-06-05
 
 Sprint item ROADMAP #6 (differentiable CARE/GARE via implicit differentiation) —

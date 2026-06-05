@@ -6,11 +6,11 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 43 |
-| Total Test Files | 28 |
-| Source Files with Tests | 35 |
+| Total Source Files | 44 |
+| Total Test Files | 29 |
+| Source Files with Tests | 36 |
 | Source Files without Tests | 8 |
-| Coverage | 81.4% |
+| Coverage | 81.8% |
 
 ---
 
@@ -55,6 +55,7 @@
 | `src/pits_mras/models/attention.py` | `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/critic.py` | `test_hinf.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_imports.py`, `test_inference.py`, `test_irl.py`, `test_losses.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/decoders.py` | `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/koopman.py` | `test_inference.py`, `test_koopman.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/lagrangian_head.py` | `test_imports.py`, `test_pcml_integration.py`, `test_pcml_soft.py` |
 | `src/pits_mras/models/pcml.py` | `test_imports.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_jacobian_vectorized.py`, `test_pcml_soft.py` |
 | `src/pits_mras/models/pitnn.py` | `test_imports.py`, `test_inference.py`, `test_models.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |

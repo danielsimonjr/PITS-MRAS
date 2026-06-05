@@ -1,11 +1,11 @@
 {
   "metadata": {
     "generatedAt": "2026-06-05",
-    "totalSourceFiles": 43,
-    "totalTestFiles": 28,
-    "testedCount": 35,
+    "totalSourceFiles": 44,
+    "totalTestFiles": 29,
+    "testedCount": 36,
     "untestedCount": 8,
-    "coveragePercent": "81.4"
+    "coveragePercent": "81.8"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -40,6 +40,7 @@
     "src/pits_mras/models/attention.py",
     "src/pits_mras/models/critic.py",
     "src/pits_mras/models/decoders.py",
+    "src/pits_mras/models/koopman.py",
     "src/pits_mras/models/lagrangian_head.py",
     "src/pits_mras/models/pcml.py",
     "src/pits_mras/models/pitnn.py",
@@ -197,6 +198,12 @@
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
+    "src/pits_mras/models/koopman.py": [
+      "tests/test_inference.py",
+      "tests/test_koopman.py",
+      "tests/test_smoke.py",
+      "tests/test_training.py"
+    ],
     "src/pits_mras/models/lagrangian_head.py": [
       "tests/test_imports.py",
       "tests/test_pcml_integration.py",
@@ -331,11 +338,15 @@
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py"
     ],
     "tests/test_irl.py": [
       "src/pits_mras/losses/irl.py",
       "src/pits_mras/models/critic.py"
+    ],
+    "tests/test_koopman.py": [
+      "src/pits_mras/models/koopman.py"
     ],
     "tests/test_losses.py": [
       "src/pits_mras/config.py",
@@ -422,6 +433,7 @@
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/training/__init__.py",
       "src/pits_mras/training/cotrain.py",
@@ -436,6 +448,7 @@
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/training/cotrain.py",
       "src/pits_mras/training/irl_trainer.py",

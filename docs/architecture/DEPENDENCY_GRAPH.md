@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.13 | **Last Updated**: 2026-06-05
+**Version**: 0.4.14 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -17,7 +17,7 @@ The codebase is organized into the following modules:
 - **src/pits_mras/controllers**: 4 files
 - **src/pits_mras/inference**: 3 files
 - **src/pits_mras/losses**: 7 files
-- **src/pits_mras/models**: 7 files
+- **src/pits_mras/models**: 8 files
 - **src/pits_mras/training**: 4 files
 - **src/pits_mras/utils**: 6 files
 
@@ -603,10 +603,11 @@ The codebase is organized into the following modules:
 | `src/pits_mras/models/attention.py` | `PhysicsInformedAttention` | Re-export |
 | `src/pits_mras/models/critic.py` | `AdversaryHead, CostateHead, QuadraticCritic` | Re-export |
 | `src/pits_mras/models/decoders.py` | `DissipationNet, HamiltonianNet, PortHamiltonianDecoder` | Re-export |
+| `src/pits_mras/models/koopman.py` | `KoopmanLiftingModel, koopman_loss` | Re-export |
 | `src/pits_mras/models/pitnn.py` | `PITNN` | Re-export |
 
 **Exports:**
-- Re-exports: `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `PITNN`
+- Re-exports: `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`
 
 ---
 
@@ -666,6 +667,27 @@ The codebase is organized into the following modules:
 
 **Exports:**
 - Classes: `HamiltonianNet`, `DissipationNet`, `PortHamiltonianDecoder`
+
+---
+
+### `src/pits_mras/models/koopman.py` - Deep Koopman lifting model (ROADMAP proposal #2). NEW capability.
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch.nn` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Dict, Tuple` |
+
+**Exports:**
+- Classes: `KoopmanLiftingModel`
+- Functions: `koopman_loss`
 
 ---
 
@@ -1002,8 +1024,8 @@ graph TD
         N26[attention]
         N27[critic]
         N28[decoders]
-        N29[lagrangian_head]
-        N30[...2 more]
+        N29[koopman]
+        N30[...3 more]
     end
 
     subgraph Src / pits_mras / training
@@ -1045,13 +1067,13 @@ graph TD
     N6 --> N15
     N6 --> N18
     N6 --> N27
-    N6 --> N29
     N6 --> N31
     N8 --> N9
     N8 --> N10
     N8 --> N11
     N10 --> N9
     N11 --> N9
+    N13 --> N14
 ```
 
 ---
@@ -1060,15 +1082,15 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 43 |
+| Total Python Files | 44 |
 | Total Modules | 10 |
-| Total Lines of Code | 6632 |
-| Total Public Exports | 134 |
-| Total Re-exports | 46 |
-| Total Classes | 48 |
+| Total Lines of Code | 6895 |
+| Total Public Exports | 138 |
+| Total Re-exports | 48 |
+| Total Classes | 49 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 39 |
+| Total Functions | 40 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 12 |
@@ -1077,4 +1099,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.13
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.14

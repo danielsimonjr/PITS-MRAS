@@ -12,6 +12,7 @@ from pits_mras.models.decoders import (
     HamiltonianNet,
     PortHamiltonianDecoder,
 )
+from pits_mras.models.koopman import KoopmanLiftingModel, koopman_loss
 from pits_mras.models.pitnn import PITNN
 
 __all__ = [
@@ -23,4 +24,6 @@ __all__ = [
     "CostateHead",
     "AdversaryHead",
     "PITNN",
+    "KoopmanLiftingModel",
+    "koopman_loss",
 ]
