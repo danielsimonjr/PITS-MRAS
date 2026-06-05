@@ -1,7 +1,7 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.11",
+    "version": "0.4.12",
     "lastUpdated": "2026-06-05",
     "totalFiles": 43,
     "totalModules": 10,
@@ -1881,6 +1881,13 @@
             "imports": [
               "Tensor"
             ]
+          },
+          {
+            "package": "torch.func",
+            "imports": [
+              "jacrev",
+              "vmap"
+            ]
           }
         ],
         "stdlibDependencies": [
@@ -2668,7 +2675,7 @@
   "statistics": {
     "totalPythonFiles": 43,
     "totalModules": 10,
-    "totalLinesOfCode": 6379,
+    "totalLinesOfCode": 6420,
     "totalExports": 132,
     "totalClasses": 48,
     "totalInterfaces": 1,

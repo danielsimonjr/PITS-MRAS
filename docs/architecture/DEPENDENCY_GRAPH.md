@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.11 | **Last Updated**: 2026-06-05
+**Version**: 0.4.12 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -692,6 +692,7 @@ The codebase is organized into the following modules:
 | `torch.nn` | `(module)` |
 | `torch.nn.functional` | `(module)` |
 | `torch` | `Tensor` |
+| `torch.func` | `jacrev, vmap` |
 
 **Standard-library Dependencies:**
 | Module | Import |
@@ -1061,7 +1062,7 @@ graph TD
 |----------|-------|
 | Total Python Files | 43 |
 | Total Modules | 10 |
-| Total Lines of Code | 6379 |
+| Total Lines of Code | 6420 |
 | Total Public Exports | 132 |
 | Total Re-exports | 46 |
 | Total Classes | 48 |
@@ -1076,4 +1077,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.11
+*Last Updated*: 2026-06-05  |  *Version*: 0.4.12

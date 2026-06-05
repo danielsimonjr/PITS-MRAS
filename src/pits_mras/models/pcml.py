@@ -29,6 +29,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch.func import jacrev, vmap
 
 from pits_mras.constraints.base import PhysicsConstraints
 
@@ -198,11 +199,50 @@ class KKTProjectionLayer(nn.Module):
         self.last_converged: bool = False
         self.last_residual: float = float("inf")
 
+    def _eval_c(self, x_s: Tensor, t_s: Tensor, yd_s: Tensor) -> Tensor:
+        """Per-sample constraint residual ``c = [D; h]`` -> ``[n_c]`` (pure fn).
+
+        Inputs are single-sample vectors (no batch dim) -- the constraint
+        callables are batch-first, so we add/strip a singleton batch dim. This
+        is the function differentiated by ``jacrev`` (w.r.t. ``yd_s``) and mapped
+        over the batch by ``vmap``; it has no in-place mutation or captured
+        mutable state, so it is a valid ``torch.func`` transform target.
+        """
+        xb = x_s.unsqueeze(0)
+        tb = t_s.unsqueeze(0)
+        y = yd_s[: self.n_y].unsqueeze(0)
+        d = yd_s[self.n_y : self.n_y + self.n_d].unsqueeze(0)
+        parts: List[Tensor] = []
+        if self.n_diff > 0:
+            parts.append(self.constraints.differential(xb, tb, y, d))
+        if self.n_eq > 0:
+            parts.append(self.constraints.equality(xb, tb, y))
+        c = torch.cat(parts, dim=-1) if parts else yd_s.new_zeros(1, 0)
+        return c.squeeze(0)
+
+    def _eval_g(self, x_s: Tensor, t_s: Tensor, y_s: Tensor) -> Tensor:
+        """Per-sample inequality residual ``g`` -> ``[n_g]`` (pure fn; see ``_eval_c``)."""
+        xb = x_s.unsqueeze(0)
+        tb = t_s.unsqueeze(0)
+        y = y_s.unsqueeze(0)
+        g = self.constraints.inequality(xb, tb, y)
+        return g.squeeze(0)
+
     def _constraints_and_jac(
         self, x: Tensor, t: Tensor, z: Tensor
     ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
-        """Return ``(c, g, Jc_y, Jc_d, Jg_y)`` -- all detached constants."""
-        zc = z.detach().requires_grad_(True)
+        """Return ``(c, g, Jc_y, Jc_d, Jg_y)`` -- all detached constants.
+
+        The constraint Jacobians are built with ``torch.func`` (``jacrev`` +
+        ``vmap``) rather than a per-constraint-row ``autograd.grad`` loop: for
+        each sample ``jacrev`` returns the full ``[n_c, n_y + n_d]`` (resp.
+        ``[n_g, n_y]``) Jacobian in one reverse-mode pass, and ``vmap`` maps it
+        over the batch. The Gauss-Newton scheme treats these as constants, so the
+        result is detached (numerically identical to the old loop).
+        """
+        zc = z.detach()
+        b = z.shape[0]
+        yd = zc[:, : self.n_y + self.n_d]
         y = zc[:, : self.n_y]
         d = zc[:, self.n_y : self.n_y + self.n_d]
         parts: List[Tensor] = []
@@ -210,19 +250,20 @@ class KKTProjectionLayer(nn.Module):
             parts.append(self.constraints.differential(x, t, y, d))
         if self.n_eq > 0:
             parts.append(self.constraints.equality(x, t, y))
-        c = torch.cat(parts, dim=-1) if parts else z.new_zeros(z.shape[0], 0)
-        g = self.constraints.inequality(x, t, y) if self.n_g > 0 else z.new_zeros(z.shape[0], 0)
-        b = z.shape[0]
-        jc = z.new_zeros(b, self.n_c, self.n_y + self.n_d)
-        for k in range(self.n_c):
-            grad_k = torch.autograd.grad(c[:, k].sum(), zc, retain_graph=True)[0]
-            jc[:, k, :] = grad_k[:, : self.n_y + self.n_d]
-        jg = z.new_zeros(b, self.n_g, self.n_y)
-        for k in range(self.n_g):
-            grad_k = torch.autograd.grad(g[:, k].sum(), zc, retain_graph=True)[0]
-            jg[:, k, :] = grad_k[:, : self.n_y]
-        jc_y = jc[:, :, : self.n_y]
-        jc_d = jc[:, :, self.n_y : self.n_y + self.n_d]
+        c = torch.cat(parts, dim=-1) if parts else z.new_zeros(b, 0)
+        g = self.constraints.inequality(x, t, y) if self.n_g > 0 else z.new_zeros(b, 0)
+
+        if self.n_c > 0:
+            jc = vmap(jacrev(self._eval_c, argnums=2))(x, t, yd)  # [b, n_c, n_y + n_d]
+            jc_y = jc[:, :, : self.n_y]
+            jc_d = jc[:, :, self.n_y : self.n_y + self.n_d]
+        else:
+            jc_y = z.new_zeros(b, 0, self.n_y)
+            jc_d = z.new_zeros(b, 0, self.n_d)
+        if self.n_g > 0:
+            jg = vmap(jacrev(self._eval_g, argnums=2))(x, t, y)  # [b, n_g, n_y]
+        else:
+            jg = z.new_zeros(b, 0, self.n_y)
         return c.detach(), g.detach(), jc_y.detach(), jc_d.detach(), jg.detach()
 
     def _assemble_F(

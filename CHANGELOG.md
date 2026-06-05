@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.12] - 2026-06-05
+
+Sprint item ROADMAP #5 (vectorize the KKT constraint-Jacobian). Behaviour-
+preserving performance/clarity refactor. Suite green (279); ruff + mypy clean.
+
+### Changed
+
+- **`KKTProjectionLayer` constraint Jacobians now use `torch.func`** (`jacrev` +
+  `vmap`) instead of per-constraint Python `autograd.grad` loops. Both loops in
+  `_constraints_and_jac` (the `c = [differential; equality]` Jacobian and the
+  inequality `g` Jacobian) are replaced by vectorized whole-Jacobian passes via
+  pure per-sample helpers (`_eval_c`, `_eval_g`). Numerically identical to the
+  old loops (equivalence-tested to `rtol=1e-5`); the projection forward output
+  and the implicit-function-theorem gradient are unchanged (golden + reference-
+  loop comparison). The surrounding Newton / Fischer-Burmeister / line-search /
+  IFT logic is byte-for-byte unchanged. No new dependency (`torch.func` is built
+  into torch). 5 new equivalence tests.
+
 ## [0.4.11] - 2026-06-05
 
 Sprint item ROADMAP #8 (adaptive / causal loss weighting). Opt-in, default-off;
