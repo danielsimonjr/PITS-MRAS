@@ -15,9 +15,12 @@
 
 ## 1. Status
 
-**v0.4.5 — framework complete.** Gates green: pytest 211/0, flake8 + mypy clean, dependency
-graph 0 circular / 0 unused. The examples run; performance figures in the docs are design
-targets on illustrative nonlinear plants, **not** hardware-validated.
+**v0.5.0 — improvement sprint complete.** The 2026-06-05 sprint shipped the 10 research
+proposals (§2) across releases v0.4.6 → v0.5.0, headlined by the H∞ neural adversarial
+min-max loop (v0.5.0). Gates green: pytest 312/0 (1 documented skip), ruff + mypy clean,
+dependency graph 46 files / 7,314 LOC / 0 circular / 0 unused. The examples run; performance
+figures in the docs are design targets on illustrative nonlinear plants, **not**
+hardware-validated.
 
 ---
 
@@ -32,6 +35,27 @@ are candidates, grouped by the three improvement axes.
 
 > Proposals that the research surfaced but that are **already implemented** were excluded; see
 > §4 for that honesty list. Each proposal below was verified absent from the current source.
+
+> **✅ SPRINT COMPLETE (2026-06-05).** All 10 proposals were implemented (or evaluated and
+> deliberately declined) via the dev-workflow + subagent-driven process, each its own
+> tested, tagged release. Shipped status:
+>
+> | # | Proposal | Outcome |
+> |---|---|---|
+> | #1 | H∞ neural min-max | **v0.5.0** |
+> | #2 | Deep Koopman lifting | **v0.4.14** |
+> | #3 | UQ (ensembles + conformal) | **v0.4.9** |
+> | #4 | Rollout-stability diagnostics | **v0.4.6** |
+> | #5 | Vectorize KKT Jacobian (`torch.func`) | **v0.4.12** |
+> | #6 | Differentiable CARE/GARE | **v0.4.13** |
+> | #7 | Reference-swap critic hot-swap | **Declined** — net-negative (see below) |
+> | #8 | Adaptive/causal loss weighting | **v0.4.11** |
+> | #9 | Cotrain decompose + dead-code | **v0.4.10** |
+> | #10 | Ruff + jaxtyping + config guard | **v0.4.8** |
+>
+> The detailed proposal text is retained below for provenance (rationale + citations).
+> The still-open items are the **Known gaps** in §3 (G8 MIMO, SAC/Connection 5,
+> TD-MPC2/Connection 9, G7 no `data/` loader). See `../CHANGELOG.md` for the per-release detail.
 
 ### 2.1 Capabilities
 

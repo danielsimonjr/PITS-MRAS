@@ -15,15 +15,22 @@ release sections further down is DONE.
 None blocking — the v0.4.0 goal is fully delivered and all gates are green. These
 are genuine optional follow-ons, in rough priority order:
 
-> **2026-06-05 — Improvement sprint IN PROGRESS** (dev-workflow + subagents, full
-> autonomy, per-item version+tag, complexity-ascending). Done so far: **todo#3** CI
-> verified green; **#4** rollout diagnostics → **v0.4.6**; **todo#1** CDG import-parser
-> fix + bump-robust version tests → **v0.4.7** (also fixed the v0.4.6 CI red from
-> hardcoded version strings; **todo#4** CHANGELOG `[Unreleased]` homed into 0.4.6);
-> **#7** reference-swap critic hot-swap → **EVALUATED, WON'T IMPLEMENT** (net-negative:
-> deepcopy-under-lock is a deliberate microsecond choice on a tiny critic, and
-> `inference_mode` would break the costate's `autograd.grad` — see ROADMAP §2.2 #7).
-> Remaining: #10, #3, #8, #9, #5, #6, #2, #1.
+> **2026-06-05 — Improvement sprint COMPLETE** (dev-workflow + subagents, full
+> autonomy, per-item version+tag, complexity-ascending). All 14 items done; every
+> release CI-green (current HEAD = **v0.5.0**). Map:
+> **todo#3** CI verified · **todo#4** CHANGELOG homed (into 0.4.6) ·
+> **#4** rollout diagnostics → v0.4.6 · **todo#1** CDG parser + bump-robust version
+> tests → v0.4.7 (also fixed v0.4.6's CI red from hardcoded version strings) ·
+> **#10** Ruff+jaxtyping+config-guard → v0.4.8 · **#3** UQ → v0.4.9 (also pinned
+> ruff to fix v0.4.8's CI red from formatter drift) · **#9** cotrain decompose +
+> dead `n_heads` → v0.4.10 · **#8** adaptive/causal loss weighting → v0.4.11 ·
+> **#5** vectorize KKT Jacobian (torch.func) → v0.4.12 · **#6** differentiable
+> CARE/GARE → v0.4.13 · **#2** deep Koopman lifting → v0.4.14 · **#1** H∞ neural
+> min-max → **v0.5.0** (capstone). **#7** reference-swap critic hot-swap →
+> EVALUATED, DECLINED (net-negative; see ROADMAP §2.2 #7).
+> **Still open (ROADMAP §3 Known gaps):** G8 MIMO control simplification;
+> SAC/Connection 5; TD-MPC2/Connection 9; G7 no `data/` loader. Also natural
+> follow-on: wire Koopman lifting + the neural min-max loop into the control loop.
 
 > **2026-06-05 — ROADMAP refreshed.** `docs/ROADMAP.md` was rewritten: the stale,
 > fully-implemented 9-phase build plan was removed (CHANGELOG + `docs/architecture/`
