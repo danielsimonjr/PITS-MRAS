@@ -15,6 +15,16 @@ release sections further down is DONE.
 None blocking — the v0.4.0 goal is fully delivered and all gates are green. These
 are genuine optional follow-ons, in rough priority order:
 
+> **2026-06-05 — Improvement sprint IN PROGRESS** (dev-workflow + subagents, full
+> autonomy, per-item version+tag, complexity-ascending). Done so far: **todo#3** CI
+> verified green; **#4** rollout diagnostics → **v0.4.6**; **todo#1** CDG import-parser
+> fix + bump-robust version tests → **v0.4.7** (also fixed the v0.4.6 CI red from
+> hardcoded version strings; **todo#4** CHANGELOG `[Unreleased]` homed into 0.4.6);
+> **#7** reference-swap critic hot-swap → **EVALUATED, WON'T IMPLEMENT** (net-negative:
+> deepcopy-under-lock is a deliberate microsecond choice on a tiny critic, and
+> `inference_mode` would break the costate's `autograd.grad` — see ROADMAP §2.2 #7).
+> Remaining: #10, #3, #8, #9, #5, #6, #2, #1.
+
 > **2026-06-05 — ROADMAP refreshed.** `docs/ROADMAP.md` was rewritten: the stale,
 > fully-implemented 9-phase build plan was removed (CHANGELOG + `docs/architecture/`
 > are the durable record), and **10 research-derived improvement proposals** (a

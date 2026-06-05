@@ -92,12 +92,17 @@ are candidates, grouped by the three improvement axes.
    forward under `no_grad` and the backward via the linearized Lyapunov/Sylvester sensitivity
    (no solver unrolling). *Sources:* `dare-torch`; arXiv:2011.11430. *Effort:* **M.**
 
-7. **Reference-swap critic hot-swap in the parallel engine.**
-   `src/pits_mras/inference/parallel.py:156–170` does `copy.deepcopy(critic)` while holding
-   `_critic_lock`. Build the updated critic off-lock, then swap the reference under a minimal
-   critical section; readers use `torch.inference_mode()`. *Honest note:* impact is modest —
-   the critic is tiny — so this is a correctness/clarity win more than a speed win.
-   *Source:* RCU-style copy-on-write hot-swap. *Effort:* **S.**
+7. **Reference-swap critic hot-swap in the parallel engine.** — **EVALUATED 2026-06-05:
+   WON'T IMPLEMENT (net-negative).** The proposal (from the generic "deepcopy-under-lock is
+   an anti-pattern" guidance) does not hold here: `src/pits_mras/inference/parallel.py:153–157`
+   deepcopies the critic under `_critic_lock` as a *deliberate, documented* choice, and the
+   heavy IRL gradient step already runs off-lock (the double-buffer point). The critic is a
+   tiny quadratic head, so the under-lock copy is microseconds; moving it off-lock would churn
+   reviewed concurrency code for no measurable gain. The second half of the generic advice —
+   "readers use `torch.inference_mode()`" — is actively wrong here: the control thread's
+   costate head needs `autograd.grad` for ∇V̂ (`realtime.py` wraps the step in
+   `enable_grad()`), so `inference_mode` would break it. Left as-is, consistent with the
+   repo's pattern of recording evaluated-but-declined changes.
 
 ### 2.3 Simplicities
 
