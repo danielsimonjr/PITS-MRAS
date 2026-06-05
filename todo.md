@@ -7,9 +7,36 @@ v0.3.x simplification/debt passes, and the **complete v0.4.x feature line**
 line-search Newton, nonlinear example plants, ParallelInferenceEngine hardening,
 H∞ adversary core). See [CHANGELOG.md](CHANGELOG.md) for landed work.
 
-**Next (v0.5.0, not started):** the H∞ neural adversarial min-max training loop
-(a learned adversary network + worst-case co-training, on top of the v0.4.5
-analytic core). No other work is pending; the items below are all DONE.
+See **Open items** below for what's not-yet-done; everything in the dated
+release sections further down is DONE.
+
+## Open items (not started)
+
+None blocking — the v0.4.0 goal is fully delivered and all gates are green. These
+are genuine optional follow-ons, in rough priority order:
+
+1. **CDG tool — import-parsing accuracy bug** (tooling). The dependency-graph
+   tool captures **64 malformed `externalDependencies` import strings**: a
+   function-level `from x import y  # noqa: E402` is swallowed *together with the
+   following function body* into one giant "import" entry (the logical-line
+   joiner mishandles the trailing comment / subsequent code). Pollutes
+   `dependency-graph.json` only — the `.md` reports and the headline stats are
+   unaffected (which is why it stayed hidden). Bounded, TDD-able; the natural
+   follow-on to the v0.4.x-era reproducibility fix (`fix(tools)` c9c2f49).
+   Regenerate the graph after fixing.
+2. **v0.5.0 — H∞ neural adversarial min-max training loop** (feature). A learned
+   adversary *network* + worst-case min-max co-training on top of the v0.4.5
+   analytic core (`solve_gare` + `AdversaryHead`). A new feature line — needs its
+   own brainstorm → spec → plan → TDD. The only *planned* feature still open.
+3. **Verify CI green on GitHub** for the post-v0.4.5 pushes (local gates pass and
+   CI runs the same matrix; remote run not yet confirmed this session). Minor.
+4. **Tooling `[Unreleased]` CHANGELOG entry** (the CDG reproducibility fix) has no
+   tagged home — fine to let it roll into the next release, or cut a patch tag.
+   Decision only; no code work.
+
+Deferred/not-actionable now: the "watch" item below (#4 example-test framework
+warmup) and the Future roadmap (multi-agent, hierarchical PITS-MRAS, GPU/TPU,
+monitoring dashboard).
 
 ## Done
 
