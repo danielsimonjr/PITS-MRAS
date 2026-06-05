@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.14 | **Last Updated**: 2026-06-05
+**Version**: 0.5.0 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -17,8 +17,8 @@ The codebase is organized into the following modules:
 - **src/pits_mras/controllers**: 4 files
 - **src/pits_mras/inference**: 3 files
 - **src/pits_mras/losses**: 7 files
-- **src/pits_mras/models**: 8 files
-- **src/pits_mras/training**: 4 files
+- **src/pits_mras/models**: 9 files
+- **src/pits_mras/training**: 5 files
 - **src/pits_mras/utils**: 6 files
 
 ---
@@ -600,6 +600,7 @@ The codebase is organized into the following modules:
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
+| `src/pits_mras/models/adversary.py` | `NeuralAdversary` | Re-export |
 | `src/pits_mras/models/attention.py` | `PhysicsInformedAttention` | Re-export |
 | `src/pits_mras/models/critic.py` | `AdversaryHead, CostateHead, QuadraticCritic` | Re-export |
 | `src/pits_mras/models/decoders.py` | `DissipationNet, HamiltonianNet, PortHamiltonianDecoder` | Re-export |
@@ -607,7 +608,26 @@ The codebase is organized into the following modules:
 | `src/pits_mras/models/pitnn.py` | `PITNN` | Re-export |
 
 **Exports:**
-- Re-exports: `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`
+- Re-exports: `NeuralAdversary`, `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`
+
+---
+
+### `src/pits_mras/models/adversary.py` - Learned (neural) H-infinity adversary -- the disturbance policy (ROADMAP #1).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch.nn` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+
+**Exports:**
+- Classes: `NeuralAdversary`
 
 ---
 
@@ -766,11 +786,12 @@ The codebase is organized into the following modules:
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/training/cotrain.py` | `cotraining_loop` | Re-export |
+| `src/pits_mras/training/hinf_minmax.py` | `hinf_minmax_train, hji_residual` | Re-export |
 | `src/pits_mras/training/irl_trainer.py` | `train_irl_critic` | Re-export |
 | `src/pits_mras/training/pretrain.py` | `pretrain_pitnn` | Re-export |
 
 **Exports:**
-- Re-exports: `cotraining_loop`, `train_irl_critic`, `pretrain_pitnn`
+- Re-exports: `cotraining_loop`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`
 
 ---
 
@@ -806,6 +827,34 @@ The codebase is organized into the following modules:
 
 **Exports:**
 - Functions: `cotraining_loop`
+
+---
+
+### `src/pits_mras/training/hinf_minmax.py` - Neural H-infinity adversarial min-max training loop (ROADMAP #1, capstone).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `numpy` | `(module)` |
+| `torch` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `logging` | `(module)` |
+| `typing` | `Optional` |
+
+**Internal Dependencies:**
+| Module | Imports | Type |
+|--------|---------|------|
+| `src/pits_mras/models/adversary.py` | `NeuralAdversary` | Import |
+| `src/pits_mras/models/critic.py` | `CostateHead, QuadraticCritic` | Import |
+| `src/pits_mras/utils/lyapunov.py` | `solve_gare` | Import |
+
+**Exports:**
+- Functions: `hji_residual`, `hinf_minmax_train`
 
 ---
 
@@ -1021,27 +1070,28 @@ graph TD
 
     subgraph Src / pits_mras / models
         N25[__init__]
-        N26[attention]
-        N27[critic]
-        N28[decoders]
-        N29[koopman]
-        N30[...3 more]
+        N26[adversary]
+        N27[attention]
+        N28[critic]
+        N29[decoders]
+        N30[...4 more]
     end
 
     subgraph Src / pits_mras / training
         N31[__init__]
         N32[cotrain]
-        N33[irl_trainer]
-        N34[pretrain]
+        N33[hinf_minmax]
+        N34[irl_trainer]
+        N35[pretrain]
     end
 
     subgraph Src / pits_mras / utils
-        N35[__init__]
-        N36[diagnostics]
-        N37[hamiltonian]
-        N38[lyapunov]
-        N39[pe_monitor]
-        N40[...1 more]
+        N36[__init__]
+        N37[diagnostics]
+        N38[hamiltonian]
+        N39[lyapunov]
+        N40[pe_monitor]
+        N41[...1 more]
     end
 
     N0 --> N7
@@ -1060,13 +1110,13 @@ graph TD
     N4 --> N14
     N4 --> N18
     N4 --> N25
-    N4 --> N33
+    N4 --> N34
     N6 --> N8
     N6 --> N13
     N6 --> N14
     N6 --> N15
     N6 --> N18
-    N6 --> N27
+    N6 --> N28
     N6 --> N31
     N8 --> N9
     N8 --> N10
@@ -1082,15 +1132,15 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 44 |
+| Total Python Files | 46 |
 | Total Modules | 10 |
-| Total Lines of Code | 6895 |
-| Total Public Exports | 138 |
-| Total Re-exports | 48 |
-| Total Classes | 49 |
+| Total Lines of Code | 7314 |
+| Total Public Exports | 144 |
+| Total Re-exports | 51 |
+| Total Classes | 50 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 40 |
+| Total Functions | 42 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 12 |
@@ -1099,4 +1149,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.4.14
+*Last Updated*: 2026-06-05  |  *Version*: 0.5.0

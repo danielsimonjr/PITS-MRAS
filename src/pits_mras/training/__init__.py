@@ -6,6 +6,7 @@ are implemented.
 """
 
 from pits_mras.training.cotrain import cotraining_loop
+from pits_mras.training.hinf_minmax import hinf_minmax_train, hji_residual
 from pits_mras.training.irl_trainer import train_irl_critic
 from pits_mras.training.pretrain import pretrain_pitnn
 
@@ -13,4 +14,6 @@ __all__ = [
     "pretrain_pitnn",
     "cotraining_loop",
     "train_irl_critic",
+    "hinf_minmax_train",
+    "hji_residual",
 ]

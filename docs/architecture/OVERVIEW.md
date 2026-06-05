@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.4.14` · 44 source files · 10 modules · 6,895 LOC · 138 exports
-(48 re-exports) · 49 classes · 1 Protocol/ABC · 40 functions · 0 circular
+**Version `0.5.0` · 46 source files · 10 modules · 7,314 LOC · 144 exports
+(51 re-exports) · 50 classes · 1 Protocol/ABC · 42 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -85,7 +85,7 @@ the v0.2.0 behavior is unchanged unless PCML is explicitly wired in.
 
 ## 2. Module Map
 
-Ten modules, 44 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
+Ten modules, 46 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
 subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 | Module | Files | Purpose |
@@ -172,16 +172,16 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.4.14` |
-| Total Python files | 44 |
+| Version | `0.5.0` |
+| Total Python files | 46 |
 | Modules | 10 |
-| Total lines of code | 6,895 |
-| Total exports | 138 |
-| Re-exports (barrel) | 48 |
-| Classes | 49 |
+| Total lines of code | 7,314 |
+| Total exports | 144 |
+| Re-exports (barrel) | 51 |
+| Classes | 50 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
-| Functions | 40 |
+| Functions | 42 |
 | Constants | 0 |
 | Type-checking-only imports | 10 |
 | Runtime circular dependencies | 0 |
@@ -190,7 +190,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 | Unused exports | 0 |
 
 The single interface/ABC is `PhysicsConstraints` in `constraints/base.py`. The
-48 re-exports are the convenience barrels in the package and subpackage
+51 re-exports are the convenience barrels in the package and subpackage
 `__init__.py` files (`pits_mras`, `constraints`, `losses`, `models`, `training`).
 The 10 type-only imports are `TYPE_CHECKING`-guarded edges (mostly into
 `training/cotrain.py`, `training/irl_trainer.py`, `training/pretrain.py`, and

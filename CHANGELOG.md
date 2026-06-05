@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-05
+
+**H∞ neural adversarial min-max training loop** (ROADMAP #1) — the headline new
+feature line on top of the v0.4.5 analytic H∞ core. Closes the long-planned
+v0.5.0 milestone. Additive (the analytic core is untouched); suite green (312
+passed, 1 documented skip); ruff + mypy clean.
+
+### Added
+
+- **`NeuralAdversary`** (`models/adversary.py`, re-exported from `pits_mras.models`)
+  — a *learned* disturbance policy `w = π(e)` (Tanh-MLP, small-init so the
+  disturbance starts weak), the trainable counterpart to the analytic
+  `AdversaryHead` (`w* = γ⁻²DᵀPe`).
+- **`hji_residual`** and **`hinf_minmax_train`** (`training/hinf_minmax.py`,
+  re-exported from `pits_mras.training`) — a three-network actor–critic–adversary
+  ADP loop solving the Hamilton–Jacobi–Isaacs equation as a min-max game:
+  - HJI residual `ρ(e) = eᵀQe + uᵀRu − γ²‖w‖² + ∇V̂·(Ae + Bu + Dw)` with
+    `u = −½R⁻¹Bᵀ∇V̂` (costate head) and `w = NeuralAdversary(e)`.
+  - Critic minimizes `E[ρ²]` (+ positivity); the adversary ascends (maximizes)
+    `E[ρ]`; the protagonist is the implicit slow player. Two-timescale learning
+    rates (`adv_lr ≥ critic_lr`, both fast vs. the protagonist; Borkar / TTUR)
+    stabilize the min-max.
+  - **Verified against the analytic GARE oracle** (`solve_gare`): on a linear
+    plant the trained critic/gain/adversary recover `(P*, K*, L*)` tightly
+    (`‖P̂−P*‖/‖P*‖ ~1e-5` at γ=5), and a training-free objective-correctness check
+    gives `max|ρ| < 1e-3` with the analytic value+heads. `γ→∞` recovers the
+    LQR/CARE solution. 8 new tests (1 tight-equality variant skipped by design —
+    the trend test is the non-flaky equivalent).
+
+### Notes
+
+- Control-loop integration with the deep Koopman lifting (v0.4.14) — running the
+  neural min-max on lifted coordinates — is a natural follow-on, not included.
+
 ## [0.4.14] - 2026-06-05
 
 Sprint item ROADMAP #2 (deep Koopman lifting model). Additive capability — not

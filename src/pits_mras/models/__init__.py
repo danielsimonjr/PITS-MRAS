@@ -5,6 +5,7 @@ Owning phase: Phase 2 (Neural Network Models) per ROADMAP.md / ARCHITECTURE.md
 classes are re-exported for convenient import.
 """
 
+from pits_mras.models.adversary import NeuralAdversary
 from pits_mras.models.attention import PhysicsInformedAttention
 from pits_mras.models.critic import AdversaryHead, CostateHead, QuadraticCritic
 from pits_mras.models.decoders import (
@@ -23,6 +24,7 @@ __all__ = [
     "QuadraticCritic",
     "CostateHead",
     "AdversaryHead",
+    "NeuralAdversary",
     "PITNN",
     "KoopmanLiftingModel",
     "koopman_loss",

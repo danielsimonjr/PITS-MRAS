@@ -1,10 +1,10 @@
 metadata:
   name: pits_mras
-  version: 0.4.14
+  version: 0.5.0
   lastUpdated: '2026-06-05'
-  totalFiles: 44
+  totalFiles: 46
   totalModules: 10
-  totalExports: 138
+  totalExports: 144
 entryPoints:
 - file: examples/autonomous_vehicle.py
   type: cli
@@ -988,6 +988,11 @@ modules:
       externalDependencies: []
       stdlibDependencies: []
       internalDependencies:
+      - file: src/pits_mras/models/adversary.py
+        module: pits_mras.models.adversary
+        imports:
+        - NeuralAdversary
+        reExport: true
       - file: src/pits_mras/models/attention.py
         module: pits_mras.models.attention
         imports:
@@ -1026,10 +1031,12 @@ modules:
       - QuadraticCritic
       - CostateHead
       - AdversaryHead
+      - NeuralAdversary
       - PITNN
       - KoopmanLiftingModel
       - koopman_loss
       reExported:
+      - NeuralAdversary
       - PhysicsInformedAttention
       - AdversaryHead
       - CostateHead
@@ -1040,6 +1047,27 @@ modules:
       - KoopmanLiftingModel
       - koopman_loss
       - PITNN
+    src/pits_mras/models/adversary.py:
+      description: 'Learned (neural) H-infinity adversary -- the disturbance policy (ROADMAP #1).'
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      internalDependencies: []
+      exports:
+      - NeuralAdversary
+      classes:
+      - NeuralAdversary
     src/pits_mras/models/attention.py:
       description: Multi-head physics-informed attention (IP §5.1).
       externalDependencies:
@@ -1260,6 +1288,12 @@ modules:
         imports:
         - cotraining_loop
         reExport: true
+      - file: src/pits_mras/training/hinf_minmax.py
+        module: pits_mras.training.hinf_minmax
+        imports:
+        - hinf_minmax_train
+        - hji_residual
+        reExport: true
       - file: src/pits_mras/training/irl_trainer.py
         module: pits_mras.training.irl_trainer
         imports:
@@ -1274,8 +1308,12 @@ modules:
       - pretrain_pitnn
       - cotraining_loop
       - train_irl_critic
+      - hinf_minmax_train
+      - hji_residual
       reExported:
       - cotraining_loop
+      - hinf_minmax_train
+      - hji_residual
       - train_irl_critic
       - pretrain_pitnn
     src/pits_mras/training/cotrain.py:
@@ -1354,6 +1392,48 @@ modules:
       - cotraining_loop
       functions:
       - cotraining_loop
+    src/pits_mras/training/hinf_minmax.py:
+      description: 'Neural H-infinity adversarial min-max training loop (ROADMAP #1, capstone).'
+      externalDependencies:
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: logging
+        imports:
+        - (module)
+      - module: typing
+        imports:
+        - Optional
+      internalDependencies:
+      - file: src/pits_mras/models/adversary.py
+        module: pits_mras.models.adversary
+        imports:
+        - NeuralAdversary
+      - file: src/pits_mras/models/critic.py
+        module: pits_mras.models.critic
+        imports:
+        - CostateHead
+        - QuadraticCritic
+      - file: src/pits_mras/utils/lyapunov.py
+        module: pits_mras.utils.lyapunov
+        imports:
+        - solve_gare
+      exports:
+      - hji_residual
+      - hinf_minmax_train
+      functions:
+      - hji_residual
+      - hinf_minmax_train
     src/pits_mras/training/irl_trainer.py:
       description: Offline IRL critic trainer (batch least-squares, §8.3).
       externalDependencies:
@@ -1655,6 +1735,7 @@ dependencyGraph:
   - name: Src / pits_mras / models
     files:
     - src/pits_mras/models/__init__.py
+    - src/pits_mras/models/adversary.py
     - src/pits_mras/models/attention.py
     - src/pits_mras/models/critic.py
     - src/pits_mras/models/decoders.py
@@ -1666,6 +1747,7 @@ dependencyGraph:
     files:
     - src/pits_mras/training/__init__.py
     - src/pits_mras/training/cotrain.py
+    - src/pits_mras/training/hinf_minmax.py
     - src/pits_mras/training/irl_trainer.py
     - src/pits_mras/training/pretrain.py
   - name: Src / pits_mras / utils
@@ -1677,17 +1759,17 @@ dependencyGraph:
     - src/pits_mras/utils/pe_monitor.py
     - src/pits_mras/utils/uq.py
 statistics:
-  totalPythonFiles: 44
+  totalPythonFiles: 46
   totalModules: 10
-  totalLinesOfCode: 6895
-  totalExports: 138
-  totalClasses: 49
+  totalLinesOfCode: 7314
+  totalExports: 144
+  totalClasses: 50
   totalInterfaces: 1
   totalEnums: 0
-  totalFunctions: 40
+  totalFunctions: 42
   totalTypeGuards: 0
   totalConstants: 0
-  totalReExports: 48
+  totalReExports: 51
   totalTypeCheckingImports: 12
   runtimeCircularDeps: 0
   typeCheckingCircularDeps: 0
