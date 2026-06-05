@@ -163,9 +163,10 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
 > at a time, foundation/safe-first. **Done so far:** HJB/costate co-training
 > rewire (v0.4.0); README + linked-docs sweep (v0.4.1 docs); dead `LossConfig`
 > fields removed (v0.4.1); KKT line-search Newton (v0.4.2); higher-fidelity
-> nonlinear plants (v0.4.3); ParallelInferenceEngine hardening (v0.4.4).
-> **Remaining:** only **H∞ head** — its own brainstorm (ADR-level), the last
-> v0.4.x item.
+> nonlinear plants (v0.4.3); ParallelInferenceEngine hardening (v0.4.4); H∞
+> adversary core (v0.4.5). **The v0.4.x line is COMPLETE.** Only follow-on left:
+> the H∞ neural adversarial min-max training loop → **v0.5.0** (a new feature
+> line, not part of v0.4.x).
 
 - [x] **Dead `LossConfig` fields → wire-or-remove** (**DONE v0.4.1**): decided
   **remove** all 6 (`lambda_adjoint`, `alpha_attn`, `alpha_smooth`, `mu_lyap`,
@@ -173,11 +174,14 @@ synced; CHANGELOG `[0.3.2]`; tagged `v0.3.2`.
   feature work and the sub-loss classes already carry their own weights).
   Behavior-preserving; YAML-backward-compatible. If a specific sub-loss is later
   wanted in the active loop, that's a focused feature (the classes exist).
-- **H∞ disturbance/adversary head (gap G1, Blueprint Connection 7).** A new
-  adversary network head, a Game Algebraic Riccati Equation (GARE) solver
-  (`solve_gare`, not yet implemented), and the robust-control / worst-case
-  min-max training loop. The Blueprint describes it; the Implementation Plan
-  built critic/costate/CBF as the three concrete heads. Major capability.
+- [x] **H∞ disturbance/adversary head — CORE (gap G1, Connection 7)** (**DONE
+  v0.4.5**, brainstormed → spec → TDD). Built the *analytic* core: `solve_gare`
+  (Hamiltonian–Schur GARE solver in `utils/lyapunov.py`; D defaults to B,
+  fixed-γ with feasibility raise, γ→∞ recovers CARE) + `AdversaryHead`
+  (`models/critic.py`; `w*=γ⁻²DᵀPe`, by construction from the critic gradient).
+  Math reviewed clean. **Deferred to v0.5.0:** the neural adversarial **min-max
+  training loop** (learned adversary network + worst-case co-training) — a new
+  feature line on top of this analytic core.
 - [x] **KKT projection robustness — line-search Newton** (**DONE v0.4.2**).
   Added a backtracking line search on the L∞ residual (`use_line_search=True`
   default + `line_search_max_halvings`): the iterate is now non-increasing and

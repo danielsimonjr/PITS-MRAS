@@ -3,13 +3,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](./docs/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.4.4-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.5-blue.svg)](./CHANGELOG.md)
 
 A unified framework merging **Physics-Informed Neural Networks (PINNs)**, **Time-Series Deep Learning**, and **Model-Reference Adaptive Systems (MRAS)** for robust adaptive control of complex dynamical systems.
 
 ## ⚠️ Project Status
 
-This is a **research and engineering exploration** combining control theory with modern AI/ML. **Released through v0.4.4** (see [CHANGELOG.md](./CHANGELOG.md)):
+This is a **research and engineering exploration** combining control theory with modern AI/ML. **Released through v0.4.5** (see [CHANGELOG.md](./CHANGELOG.md)):
 
 - ✅ **Complete mathematical framework** - formal specification with algorithms
 - ✅ **Full Python implementation** - all 9 ROADMAP phases implemented (config/math → NN models → losses → controllers → training → inference → examples → tests → CI), plus the **PCML** physics-constraint layer (v0.3.0)
@@ -367,12 +367,11 @@ See [docs/ROADMAP.md](./docs/ROADMAP.md) for the phase-by-phase build plan and
 - ✅ **v0.4.2** — KKT projection robustness (backtracking line search in the Newton solve)
 - ✅ **v0.4.3** — higher-fidelity nonlinear example plants (pendulum, tyre-saturation lateral, RC thermal)
 - ✅ **v0.4.4** — `ParallelInferenceEngine` hardening (real double-buffered adaptation + thread-failure capture)
-
-### v0.4.x (queued)
-- 🔮 **H∞ disturbance/adversary head** + GARE solver (`solve_gare`) + worst-case min-max training loop
+- ✅ **v0.4.5** — H∞ robust-control **core**: `solve_gare` (GARE solver) + analytic `AdversaryHead` (the v0.4.x line is now complete)
 
 ### Future
 
+- 🔮 **H∞ neural adversarial min-max training loop** (v0.5.0) — the learned-adversary training on top of the v0.4.5 analytic core
 - 🔮 Multi-agent coordination · hierarchical PITS-MRAS · GPU/TPU acceleration · real-time monitoring dashboard
 
 ---

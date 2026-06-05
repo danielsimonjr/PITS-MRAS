@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.4.4 | **Last Updated**: 2026-06-04
+**Version**: 0.4.5 | **Last Updated**: 2026-06-04
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -565,12 +565,12 @@ The codebase is organized into the following modules:
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/models/attention.py` | `PhysicsInformedAttention` | Re-export |
-| `src/pits_mras/models/critic.py` | `CostateHead, QuadraticCritic` | Re-export |
+| `src/pits_mras/models/critic.py` | `AdversaryHead, CostateHead, QuadraticCritic` | Re-export |
 | `src/pits_mras/models/decoders.py` | `DissipationNet, HamiltonianNet, PortHamiltonianDecoder` | Re-export |
 | `src/pits_mras/models/pitnn.py` | `PITNN` | Re-export |
 
 **Exports:**
-- Re-exports: `PhysicsInformedAttention`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `PITNN`
+- Re-exports: `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `PITNN`
 
 ---
 
@@ -609,7 +609,7 @@ The codebase is organized into the following modules:
 | `src/pits_mras/utils/lyapunov.py` | `pack_symmetric, quadratic_basis, unpack_symmetric` | Import |
 
 **Exports:**
-- Classes: `QuadraticCritic`, `CostateHead`
+- Classes: `QuadraticCritic`, `CostateHead`, `AdversaryHead`
 
 ---
 
@@ -829,7 +829,7 @@ The codebase is organized into the following modules:
 |---------|--------|
 | `numpy` | `(module)` |
 | `torch` | `(module)` |
-| `scipy.linalg` | `solve_continuous_are, solve_continuous_lyapunov` |
+| `scipy.linalg` | `schur, solve_continuous_are, solve_continuous_lyapunov` |
 | `torch` | `Tensor` |
 
 **Standard-library Dependencies:**
@@ -839,7 +839,7 @@ The codebase is organized into the following modules:
 | `typing` | `Optional, Tuple, Union` |
 
 **Exports:**
-- Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric`
+- Functions: `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `solve_gare`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric`
 
 ---
 
@@ -980,13 +980,13 @@ graph TD
 |----------|-------|
 | Total Python Files | 40 |
 | Total Modules | 10 |
-| Total Lines of Code | 5577 |
-| Total Public Exports | 119 |
-| Total Re-exports | 45 |
-| Total Classes | 44 |
+| Total Lines of Code | 5687 |
+| Total Public Exports | 122 |
+| Total Re-exports | 46 |
+| Total Classes | 45 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 29 |
+| Total Functions | 30 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 10 |
@@ -995,4 +995,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-04  |  *Version*: 0.4.4
+*Last Updated*: 2026-06-04  |  *Version*: 0.4.5

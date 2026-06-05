@@ -32,7 +32,7 @@
 
 ---
 
-## 0. Implemented Architecture (v0.4.4) — graph-backed
+## 0. Implemented Architecture (v0.4.5) — graph-backed
 
 > **Status:** all nine ROADMAP phases are implemented (released **v0.3.0**) plus
 > the **PCML** (Physics-Constrained Machine Learning) component; **v0.3.1** was a
@@ -41,7 +41,8 @@
 > feature/refinement line is underway (**v0.4.0** HJB/costate co-training rewire,
 > **v0.4.1** removed 6 unconsumed `LossConfig` fields, **v0.4.2** backtracking
 > line search in the KKT projection, **v0.4.3** nonlinear example plants,
-> **v0.4.4** ParallelInferenceEngine hardening). The
+> **v0.4.4** ParallelInferenceEngine hardening, **v0.4.5** H∞ adversary core —
+> `solve_gare` + analytic `AdversaryHead`). The
 > structure below is generated from the codebase by
 > `tools/create-dependency-graph/create_dependency_graph.py` and cross-checked
 > against the source; regenerate with `python tools/create-dependency-graph/create_dependency_graph.py --include-tests`.
@@ -80,9 +81,9 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 40 files · 10 modules · ~5,577 LOC · 119
-public exports (45 re-exported through barrels) · 44 classes · 1 ABC
-(`PhysicsConstraints`) · 29 functions · 10 `TYPE_CHECKING`-guarded imports.
+Key statistics (graph-generated): 40 files · 10 modules · ~5,687 LOC · 122
+public exports (46 re-exported through barrels) · 45 classes · 1 ABC
+(`PhysicsConstraints`) · 30 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---
 
@@ -212,7 +213,7 @@ Empty `__init__.py` files (docstrings only, no imports) are created in:
 | `utils/pe_monitor.py` | Phase 1 | `PEMonitor` — checks persistence-of-excitation Gram min-eigenvalue, injects probing noise. | `[IP PAGE 14, §4.5]` |
 | `models/attention.py` | Phase 2 Models | `PhysicsInformedAttention` (temporal + physical + error-driven, learned 3-way gate). | `[IP PAGE 16, §5.1]` |
 | `models/decoders.py` | Phase 2 | `HamiltonianNet`, `DissipationNet`, `PortHamiltonianDecoder`. | `[IP PAGE 18, §5.2]` |
-| `models/critic.py` | Phase 2 | `QuadraticCritic` (V̂=Wᵀφ(e)), `CostateHead` (λ̂=∇V̂, u*=−R⁻¹Bᵀλ̂). NEW — Identity 1 & 2. | `[IP PAGE 22, §5.3]` |
+| `models/critic.py` | Phase 2 | `QuadraticCritic` (V̂=Wᵀφ(e)), `CostateHead` (λ̂=∇V̂, u*=−R⁻¹Bᵀλ̂), `AdversaryHead` (H∞ worst-case w*=γ⁻²DᵀPe, v0.4.5). NEW — Identity 1 & 2. | `[IP PAGE 22, §5.3]` |
 | `models/pitnn.py` | Phase 2 | `PITNN` — embedding → causal LSTM → attention → port-Hamiltonian decoder (Algorithm 1). | `[IP PAGE 25, §5.4]` |
 | `losses/physics.py` | Phase 3 Losses | `PhysicsLoss`: λ₁L_energy+λ₂L_PDE+λ₃L_BC+λ₄L_sym. | `[IP PAGE 28, §6.1]` |
 | `losses/temporal.py` | Phase 3 | `MultiStepPredictionLoss`, `AttentionRegularizationLoss`, `TemporalSmoothnessLoss`, `TemporalLoss`. | `[IP PAGE 28, §6.2]` |
@@ -262,7 +263,7 @@ certificates, generalized Lyapunov)" as sound but higher-complexity.
 | Identity 8 — HJB Residual Loss | Connection 8 | 0=ℓ(e,u*)+∇_eV̂·(A_m e+B u*+f_corr); add as PINN-style residual. | Higher complexity | `losses/hjb.py` | `[IP PAGE 5; BP PAGE 7]` |
 | (port-Hamiltonian storage = value) | Connection 2 | H_θ is a storage/value function; passivity = L2-gain. | Rigorous | `models/decoders.py`, `utils/hamiltonian.py` | `[BP PAGE 4; IP PAGE 13]` |
 | (SAC entropy ↔ R-matrix) | Connection 5 | SAC temperature α ≡ control-penalty R⁻¹; entropy bonus = excitation. | Rigorous | **No dedicated module** (see G1). PE/excitation surfaced via `utils/pe_monitor.py` + attention entropy reg. | `[BP PAGE 5; IP PAGE 14]` |
-| (H∞ two-player game) | Connection 7 | H∞ robust control = zero-sum game; add disturbance/adversary head. | Rigorous | **No dedicated module** in the plan (see G1). | `[BP PAGE 6]` |
+| (H∞ two-player game) | Connection 7 | H∞ robust control = zero-sum game; add disturbance/adversary head. | Rigorous | **Analytic core built in v0.4.5** (see G1): `solve_gare` (GARE) + `AdversaryHead` (`w*=γ⁻²DᵀPe`). Neural min-max training loop still pending (v0.5.0). | `[BP PAGE 6]` |
 | (TD-MPC2 latent planning) | Connection 9 | PITNN is a learned world model → latent MPC + terminal value head. | Higher complexity | **No dedicated module** (see G1). | `[BP PAGE 8]` |
 | (Neural / generalized Lyapunov) | Connection 10 | keep V=eᵀPe backbone; add learned residual V=eᵀPe+φ_NN(e) only for nonlinear regime. | Higher complexity | optional `nonlinear_residual` flag in `QuadraticCritic` | `[BP PAGE 9; IP PAGE 22]` |
 
@@ -377,7 +378,7 @@ flowchart LR
     end
     MRAS --> CRIT
     MRAS -->|"u_nom = u_fb + u_ff + u_aux"| SF["CLFCBFSafetyFilter<br/>h(e)=c−eᵀPe — Identity 3"]
-    ADV["disturbance/adversary head ŵ = K_w·x_p<br/>(Blueprint H∞ — not built; see G1)"] -.->|"conceptual"| CRIT
+    ADV["disturbance/adversary head ŵ = γ⁻²DᵀP·e<br/>(H∞ analytic core, v0.4.5 — AdversaryHead)"] -.->|"conceptual"| CRIT
     SF -->|"u_safe"| PLANT["Plant"]
     PLANT -->|"push (x_p, u_safe, e)"| H
 ```
@@ -606,7 +607,7 @@ Library usage explicitly referenced:
 | ID | Gap | Where |
 |---|---|---|
 | **G0** | **No single verbatim "§2 target tree" exists in the source.** The plan's §2 is "Updated Dependencies." Paths are scattered inline as "Create `src/...`" across §4–§12. The tree in this doc's §2 was assembled from those inline directives and cited per-path. The orchestrator must rely on that assembled list, not a literal source block. | `[IP PAGE 2, §2]` |
-| **G1** | **Blueprint's "disturbance/adversary head" (H∞, Connection 7) has NO concrete module** in the Implementation Plan's file layout — no `adversary.py`, no `hinf_loss.py`. Likewise Connection 5 (SAC/entropy) and Connection 9 (TD-MPC2 latent planning) get **no dedicated files**. The plan implements its three concrete new heads as critic / costate / CBF. The Blueprint's "3 new heads (critic, adversary, CBF)" and the plan's realized heads (critic, costate, CBF) **do not match on the middle head.** *The adversary/H∞ module is not specified for build.* | `[BP PAGE 1,6] vs [IP §5,§7]` |
+| **G1** | **[PARTLY RESOLVED v0.4.5]** The Blueprint's "disturbance/adversary head" (H∞, Connection 7) originally had no concrete module (the plan built critic/costate/CBF). v0.4.5 added the **analytic H∞ core**: `solve_gare` (`utils/lyapunov.py`) + `AdversaryHead` (`models/critic.py`, `w*=γ⁻²DᵀPe`, by construction). So the "middle head" now exists alongside costate. Remaining: the neural adversarial **min-max training loop** (v0.5.0), and Connection 5 (SAC/entropy) / Connection 9 (TD-MPC2) still have no dedicated modules. | `[BP PAGE 1,6] vs [IP §5,§7]` |
 | **G2** | **setup.py / requirements.txt conflict** between current scaffold (`pits-mras`, v1.0.0, no `control`/`isort`) and the plan (`pits_mras`, v0.1.0, adds `control`, `torchvision`, `pytest-cov`, `isort`; "Replace entirely"). Scaffolder must decide whether to overwrite. | `[IP PAGES 2–3, §2]` |
 | **G3** | **`control>=0.9.4` is listed as a dependency** ("Riccati, Lyapunov solvers") but the actual `lyapunov.py` code in the plan uses **scipy** (`solve_continuous_lyapunov`/`solve_continuous_are`), not `control`. The `control` dependency may be unused as written. | `[IP PAGE 2 vs PAGES 10–12]` |
 | **G4** | **`docs/PITS-MRAS — Physics-Informed...md` (1,543 lines) is cited as the "source of truth for the existing design"** and referenced for "Algorithm 1/2/3", `L_physics §2.2`, etc. — but that file was **not provided** to this task. Several losses (`physics.py` PDE operator, `temporal.py`, `stability.py`) are described only by reference to it. Their exact formulas live there, unseen here. | `[IP PAGE 1, §0]` |

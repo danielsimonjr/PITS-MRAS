@@ -17,7 +17,7 @@ symbols, grouped by area:
 | **Training** | `pretrain_pitnn`, `cotraining_loop` |
 | **Inference** | `RealtimeInferenceEngine` |
 
-`__version__` is `"0.4.4"`.
+`__version__` is `"0.4.5"`.
 
 > Note on the configuration layer: `PITSMRASConfig` and its seven sub-config
 > dataclasses (`config.py`) are not in the package-level `__all__`, but they are
@@ -173,6 +173,29 @@ forward(e: Tensor) -> tuple[Tensor, Tensor]
 
 Returns `(lambda_hat, u_optimal)`: `lambda_hat` `[batch, state_dim]` (the costate
 `∇V̂`, always un-scaled), `u_optimal` `[batch, control_dim]`.
+
+### `AdversaryHead` (H∞, v0.4.5)
+
+`pits_mras.models.critic.AdversaryHead` — the H∞ worst-case-disturbance head,
+analytic by construction from the critic gradient (the robust-control sibling of
+`CostateHead`). For `V̂ = eᵀPe`, returns `w* = (1/2γ²)·∇V̂·D = γ⁻²DᵀPe` — the
+disturbance that maximizes the H∞ game Hamiltonian. (Exported from
+`pits_mras.models`, not in the package-level `__all__`.)
+
+```python
+AdversaryHead(
+    critic: QuadraticCritic,
+    D: Tensor,            # [state_dim, dist_dim] disturbance input matrix
+    gamma: float,         # attenuation level
+)
+forward(e: Tensor) -> Tensor   # w*  [batch, dist_dim]
+```
+
+Pair with a critic warm-started to the GARE solution:
+`P, K, L = solve_gare(A, B, Q, R, gamma, D=None); critic.set_P(torch.tensor(P))`.
+`solve_gare` (`pits_mras.utils.lyapunov`) solves the H∞ GARE via Hamiltonian–Schur,
+returns `(P, K=R⁻¹BᵀP, L=γ⁻²DᵀP)`, defaults `D=B`, and raises `ValueError` on an
+infeasible `γ` (`γ → ∞` recovers `solve_care`).
 
 ### `LagrangianMultiplierHead`
 

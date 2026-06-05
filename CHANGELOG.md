@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-06-04
+
+Sixth and final v0.4.x sub-project: the H∞ robust-control **core** (partly
+resolves gap G1). Additive/backward-compatible; suite green; flake8 + mypy clean.
+
+### Added
+
+- **`solve_gare(A, B, Q, R, gamma, D=None)`** (`utils/lyapunov.py`, beside
+  `solve_care`) — solves the H∞ Game Algebraic Riccati Equation
+  `AᵀP + PA + Q − P(BR⁻¹Bᵀ − γ⁻²DDᵀ)P = 0` via the Hamiltonian–Schur method.
+  Returns `(P, K, L)` — the stabilizing `P`, the robust control gain
+  `K = R⁻¹BᵀP`, and the worst-case-disturbance gain `L = γ⁻²DᵀP`. `D` defaults to
+  `B` (matched disturbance). Raises `ValueError` on an infeasible `γ`; `γ → ∞`
+  recovers the CARE.
+- **`AdversaryHead(critic, D, gamma)`** (`models/critic.py`, beside `CostateHead`;
+  re-exported from `pits_mras.models`) — the analytic H∞ worst-case-disturbance
+  head, `w* = (1/2γ²)·∇V̂·D = γ⁻²DᵀPe`, by construction from the critic gradient
+  (the robust-control sibling of the costate head). Closes the "head" of gap G1.
+
+### Notes
+
+- This is the H∞ *core* (solver + analytic head + gains), all deterministically
+  verifiable. The neural adversarial **min-max training loop** is deferred to
+  v0.5.0.
+
 ## [0.4.4] - 2026-06-04
 
 Fifth v0.4.x sub-project: `ParallelInferenceEngine` hardening. Backward-compatible

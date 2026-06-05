@@ -3,7 +3,7 @@
 > A grounded, per-module component reference for the `pits_mras` package.
 > Every class/function name, responsibility, and dependency below is taken from
 > the actual source under `src/pits_mras/` and cross-checked against
-> `docs/architecture/dependency-graph.json` (v0.4.3, 40 files, 10 modules, 119
+> `docs/architecture/dependency-graph.json` (v0.4.5, 40 files, 10 modules, 122
 > exports, 0 circular dependencies). Module purposes quote the package
 > `__init__` and file docstrings; class/function responsibilities quote their
 > own docstrings. For the *why* (the ten RL/optimal-control identities and the
@@ -85,7 +85,7 @@ records **zero** runtime or type-only circular dependencies; every arrow points
   `inference`, and `models.PITNN`.
 
 The package root `src/pits_mras/__init__.py` re-exports a flat public API of 17
-symbols (`__version__ = "0.4.4"`): `PITNN`, `QuadraticCritic`, `MRASController`,
+symbols (`__version__ = "0.4.5"`): `PITNN`, `QuadraticCritic`, `MRASController`,
 `LinearReferenceModel`, `CLFCBFSafetyFilter`, `RealtimeInferenceEngine`,
 `pretrain_pitnn`, `cotraining_loop`, plus the PCML surface
 (`PhysicsConstraints`, `ConstraintSpec`, `MechanicalDAE`, `HeatConductionDAE`,
@@ -199,7 +199,7 @@ critic/costate, PITNN." Phase 2. Re-exports the six core model classes;
 |---|---|---|
 | `attention.py` | `PhysicsInformedAttention` | Three-headed attention (temporal + physical + error-driven) fused by a learned 3-way softmax gate into context `c_t` and weights `alpha`. |
 | `decoders.py` | `HamiltonianNet`, `DissipationNet`, `PortHamiltonianDecoder` | Port-Hamiltonian decoder stack (Connection 2). |
-| `critic.py` | `QuadraticCritic`, `CostateHead` | Value head + costate/optimal-control head (Identity 1 & 2). |
+| `critic.py` | `QuadraticCritic`, `CostateHead`, `AdversaryHead` | Value head + costate/optimal-control head (Identity 1 & 2) + H∞ worst-case-disturbance head (v0.4.5). |
 | `pitnn.py` | `PITNN` | Top-level dynamics model (Algorithm 1): embed → causal LSTM → attention → port-Hamiltonian decoder. |
 | `pcml.py` | `SoftPCMLLoss`, `TaylorNeighborhoodApproximation`, `KKTProjectionLayer`, `PCMLModule` | Physics-Constrained ML: soft penalty (Patel et al. 2022) and hard KKT projection (DAE-HardNet). |
 | `lagrangian_head.py` | `LagrangianMultiplierHead` | Predicts KKT warm-start multipliers `lambda_hat` from the attention context (PCML Addendum §2.3). |

@@ -7,7 +7,7 @@
 | Metric | Count |
 |--------|-------|
 | Total Source Files | 40 |
-| Total Test Files | 22 |
+| Total Test Files | 23 |
 | Source Files with Tests | 32 |
 | Source Files without Tests | 8 |
 | Coverage | 80.0% |
@@ -52,7 +52,7 @@
 | `src/pits_mras/losses/temporal.py` | `test_losses.py`, `test_pcml_integration.py` |
 | `src/pits_mras/models/__init__.py` | `test_inference.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/attention.py` | `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/critic.py` | `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_imports.py`, `test_inference.py`, `test_irl.py`, `test_losses.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/critic.py` | `test_hinf.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_imports.py`, `test_inference.py`, `test_irl.py`, `test_losses.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/decoders.py` | `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/lagrangian_head.py` | `test_imports.py`, `test_pcml_integration.py`, `test_pcml_soft.py` |
 | `src/pits_mras/models/pcml.py` | `test_imports.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_soft.py` |
@@ -63,5 +63,5 @@
 | `src/pits_mras/training/pretrain.py` | `test_imports.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/utils/__init__.py` | `test_lyapunov_utils.py` |
 | `src/pits_mras/utils/hamiltonian.py` | `test_hamiltonian_utils.py` |
-| `src/pits_mras/utils/lyapunov.py` | `test_controllers.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_lyapunov_utils.py` |
+| `src/pits_mras/utils/lyapunov.py` | `test_controllers.py`, `test_hinf.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_lyapunov_utils.py` |
 | `src/pits_mras/utils/pe_monitor.py` | `test_pe_monitor.py` |

@@ -190,12 +190,21 @@ def test_parallel_engine_captures_thread_exception() -> None:
 def test_parallel_engine_adapts_during_run() -> None:
     """Threaded smoke: the control thread ticks AND the adaptation thread applies
     real double-buffered swaps; shared metrics stay finite and threads join."""
+    import time
+
     engine = _make_engine()
     par = ParallelInferenceEngine(
         engine, x_p=torch.zeros(2), r=torch.ones(1) * 0.1, irl_window=4,
     )
     par.start()
-    par.wait(0.3)
+    # Poll until the adaptation thread has applied a swap (robust to scheduling /
+    # CPU load: the daemon threads may get little CPU on a busy machine, so a
+    # fixed sleep is flaky -- poll up to a generous deadline instead).
+    deadline = time.monotonic() + 5.0
+    while par.state.adaptation_swaps == 0 and time.monotonic() < deadline:
+        if par.error is not None:
+            break
+        time.sleep(0.02)
     par.stop(timeout=2.0)
     assert not par.is_alive()
     assert par.error is None

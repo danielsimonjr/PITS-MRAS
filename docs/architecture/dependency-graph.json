@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "lastUpdated": "2026-06-04",
     "totalFiles": 40,
     "totalModules": 10,
-    "totalExports": 119
+    "totalExports": 122
   },
   "entryPoints": [
     {
@@ -1752,6 +1752,7 @@
             "file": "src/pits_mras/models/critic.py",
             "module": "pits_mras.models.critic",
             "imports": [
+              "AdversaryHead",
               "CostateHead",
               "QuadraticCritic"
             ],
@@ -1783,10 +1784,12 @@
           "PortHamiltonianDecoder",
           "QuadraticCritic",
           "CostateHead",
+          "AdversaryHead",
           "PITNN"
         ],
         "reExported": [
           "PhysicsInformedAttention",
+          "AdversaryHead",
           "CostateHead",
           "QuadraticCritic",
           "DissipationNet",
@@ -1875,11 +1878,13 @@
         ],
         "exports": [
           "QuadraticCritic",
-          "CostateHead"
+          "CostateHead",
+          "AdversaryHead"
         ],
         "classes": [
           "QuadraticCritic",
-          "CostateHead"
+          "CostateHead",
+          "AdversaryHead"
         ]
       },
       "src/pits_mras/models/decoders.py": {
@@ -2457,6 +2462,7 @@
           {
             "package": "scipy.linalg",
             "imports": [
+              "schur",
               "solve_continuous_are",
               "solve_continuous_lyapunov"
             ]
@@ -2489,6 +2495,7 @@
           "solve_lyapunov",
           "kleinman_iteration",
           "solve_care",
+          "solve_gare",
           "check_hurwitz",
           "lyapunov_derivative",
           "quadratic_basis",
@@ -2499,6 +2506,7 @@
           "solve_lyapunov",
           "kleinman_iteration",
           "solve_care",
+          "solve_gare",
           "check_hurwitz",
           "lyapunov_derivative",
           "quadratic_basis",
@@ -2650,15 +2658,15 @@
   "statistics": {
     "totalPythonFiles": 40,
     "totalModules": 10,
-    "totalLinesOfCode": 5577,
-    "totalExports": 119,
-    "totalClasses": 44,
+    "totalLinesOfCode": 5687,
+    "totalExports": 122,
+    "totalClasses": 45,
     "totalInterfaces": 1,
     "totalEnums": 0,
-    "totalFunctions": 29,
+    "totalFunctions": 30,
     "totalTypeGuards": 0,
     "totalConstants": 0,
-    "totalReExports": 45,
+    "totalReExports": 46,
     "totalTypeCheckingImports": 10,
     "runtimeCircularDeps": 0,
     "typeCheckingCircularDeps": 0,

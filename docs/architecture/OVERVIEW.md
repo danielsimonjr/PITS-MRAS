@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.4.4` · 40 source files · 10 modules · 5,577 LOC · 119 exports
-(45 re-exports) · 44 classes · 1 Protocol/ABC · 29 functions · 0 circular
+**Version `0.4.5` · 40 source files · 10 modules · 5,687 LOC · 122 exports
+(46 re-exports) · 45 classes · 1 Protocol/ABC · 30 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -171,16 +171,16 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.4.4` |
+| Version | `0.4.5` |
 | Total Python files | 40 |
 | Modules | 10 |
-| Total lines of code | 5,577 |
-| Total exports | 119 |
-| Re-exports (barrel) | 45 |
-| Classes | 44 |
+| Total lines of code | 5,687 |
+| Total exports | 122 |
+| Re-exports (barrel) | 46 |
+| Classes | 45 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
-| Functions | 29 |
+| Functions | 30 |
 | Constants | 0 |
 | Type-checking-only imports | 10 |
 | Runtime circular dependencies | 0 |
@@ -189,7 +189,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 | Unused exports | 0 |
 
 The single interface/ABC is `PhysicsConstraints` in `constraints/base.py`. The
-45 re-exports are the convenience barrels in the package and subpackage
+46 re-exports are the convenience barrels in the package and subpackage
 `__init__.py` files (`pits_mras`, `constraints`, `losses`, `models`, `training`).
 The 10 type-only imports are `TYPE_CHECKING`-guarded edges (mostly into
 `training/cotrain.py`, `training/irl_trainer.py`, `training/pretrain.py`, and
