@@ -6,11 +6,11 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 54 |
-| Total Test Files | 36 |
-| Source Files with Tests | 46 |
+| Total Source Files | 55 |
+| Total Test Files | 37 |
+| Source Files with Tests | 47 |
 | Source Files without Tests | 8 |
-| Coverage | 85.2% |
+| Coverage | 85.5% |
 
 ---
 
@@ -54,17 +54,18 @@
 | `src/pits_mras/losses/physics.py` | `test_losses.py`, `test_pcml_integration.py` |
 | `src/pits_mras/losses/stability.py` | `test_losses.py`, `test_pcml_integration.py` |
 | `src/pits_mras/losses/temporal.py` | `test_losses.py`, `test_pcml_integration.py` |
-| `src/pits_mras/models/__init__.py` | `test_data.py`, `test_inference.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/adversary.py` | `test_data.py`, `test_hinf_minmax.py`, `test_inference.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/attention.py` | `test_data.py`, `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/critic.py` | `test_data.py`, `test_hinf.py`, `test_hinf_minmax.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_imports.py`, `test_inference.py`, `test_irl.py`, `test_losses.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/decoders.py` | `test_data.py`, `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/koopman.py` | `test_data.py`, `test_inference.py`, `test_koopman.py`, `test_koopman_control.py`, `test_linearization.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/__init__.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/adversary.py` | `test_data.py`, `test_generic.py`, `test_hinf_minmax.py`, `test_inference.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/attention.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/critic.py` | `test_data.py`, `test_generic.py`, `test_hinf.py`, `test_hinf_minmax.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_imports.py`, `test_inference.py`, `test_irl.py`, `test_losses.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/decoders.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_models.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/generic.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/koopman.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_koopman.py`, `test_koopman_control.py`, `test_linearization.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/lagrangian_head.py` | `test_imports.py`, `test_pcml_integration.py`, `test_pcml_soft.py` |
 | `src/pits_mras/models/pcml.py` | `test_imports.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_jacobian_vectorized.py`, `test_pcml_soft.py` |
-| `src/pits_mras/models/pitnn.py` | `test_data.py`, `test_imports.py`, `test_inference.py`, `test_models.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/sac.py` | `test_data.py`, `test_inference.py`, `test_sac.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/models/tdmpc.py` | `test_data.py`, `test_inference.py`, `test_smoke.py`, `test_tdmpc.py`, `test_training.py` |
+| `src/pits_mras/models/pitnn.py` | `test_data.py`, `test_generic.py`, `test_imports.py`, `test_inference.py`, `test_models.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/sac.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_sac.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/tdmpc.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_smoke.py`, `test_tdmpc.py`, `test_training.py` |
 | `src/pits_mras/training/__init__.py` | `test_imports.py`, `test_smoke.py` |
 | `src/pits_mras/training/cotrain.py` | `test_imports.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/training/hinf_minmax.py` | `test_hinf_minmax.py`, `test_imports.py`, `test_linearization.py`, `test_smoke.py` |

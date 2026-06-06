@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "lastUpdated": "2026-06-06",
-    "totalFiles": 54,
+    "totalFiles": 55,
     "totalModules": 11,
-    "totalExports": 167
+    "totalExports": 169
   },
   "entryPoints": [
     {
@@ -1817,6 +1817,14 @@
             "reExport": true
           },
           {
+            "file": "src/pits_mras/models/generic.py",
+            "module": "pits_mras.models.generic",
+            "imports": [
+              "GFINNDecoder"
+            ],
+            "reExport": true
+          },
+          {
             "file": "src/pits_mras/models/koopman.py",
             "module": "pits_mras.models.koopman",
             "imports": [
@@ -1857,6 +1865,7 @@
           "HamiltonianNet",
           "DissipationNet",
           "PortHamiltonianDecoder",
+          "GFINNDecoder",
           "QuadraticCritic",
           "CostateHead",
           "AdversaryHead",
@@ -1878,6 +1887,7 @@
           "DissipationNet",
           "HamiltonianNet",
           "PortHamiltonianDecoder",
+          "GFINNDecoder",
           "KoopmanLiftingModel",
           "koopman_loss",
           "PITNN",
@@ -2064,6 +2074,37 @@
           "HamiltonianNet",
           "DissipationNet",
           "PortHamiltonianDecoder"
+        ]
+      },
+      "src/pits_mras/models/generic.py": {
+        "description": "GENERIC / GFINN thermodynamic decoder (ROADMAP extension).",
+        "externalDependencies": [
+          {
+            "package": "torch",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch.nn",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
+              "Tensor"
+            ]
+          }
+        ],
+        "stdlibDependencies": [],
+        "internalDependencies": [],
+        "exports": [
+          "GFINNDecoder"
+        ],
+        "classes": [
+          "GFINNDecoder"
         ]
       },
       "src/pits_mras/models/koopman.py": {
@@ -3322,6 +3363,7 @@
           "src/pits_mras/models/attention.py",
           "src/pits_mras/models/critic.py",
           "src/pits_mras/models/decoders.py",
+          "src/pits_mras/models/generic.py",
           "src/pits_mras/models/koopman.py",
           "src/pits_mras/models/lagrangian_head.py",
           "src/pits_mras/models/pcml.py",
@@ -3357,17 +3399,17 @@
     ]
   },
   "statistics": {
-    "totalPythonFiles": 54,
+    "totalPythonFiles": 55,
     "totalModules": 11,
-    "totalLinesOfCode": 8780,
-    "totalExports": 167,
-    "totalClasses": 57,
+    "totalLinesOfCode": 9021,
+    "totalExports": 169,
+    "totalClasses": 58,
     "totalInterfaces": 2,
     "totalEnums": 0,
     "totalFunctions": 47,
     "totalTypeGuards": 0,
     "totalConstants": 0,
-    "totalReExports": 61,
+    "totalReExports": 62,
     "totalTypeCheckingImports": 13,
     "runtimeCircularDeps": 0,
     "typeCheckingCircularDeps": 0,

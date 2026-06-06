@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-06
+
+Gap-closure sprint — **GENERIC/GFINN thermodynamic decoder** (the final gap; the
+thermodynamically-consistent generalization of the port-Hamiltonian decoder).
+Suite green (380); ruff + mypy clean.
+
+### Added
+
+- **`GFINNDecoder`** (`models/generic.py`, re-exported from `pits_mras.models`) —
+  a GENERIC-formalism decoder (Zhang/Shin/Karniadakis 2022) with learned scalar
+  potentials `E(z)` (energy), `S(z)` (entropy) and operators `L(z)` (skew),
+  `M(z)` (PSD), giving `ż = L∇E + M∇S`. The thermodynamic laws hold **by
+  construction**: `L` is built as `Σ(âb̂ᵀ − b̂âᵀ)` with `â, b̂` projected
+  orthogonal to `∇S` (so `L∇S = 0` and `Lᵀ = −L`); `M = Σ d̂d̂ᵀ` with `d̂`
+  projected orthogonal to `∇E` (so `M∇E = 0`, `M ⪰ 0`). Hence `dE/dt = 0`
+  (first law) and `dS/dt = ∇SᵀM∇S ≥ 0` (second law). Verified to ≤1e-5 residuals
+  (skew, PSD, degeneracy, energy conservation, entropy production). 9 new tests.
+
 ## [0.7.0] - 2026-06-06
 
 Gap-closure sprint — **Connection 9: TD-MPC2 / learned-model planning** (the

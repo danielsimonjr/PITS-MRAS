@@ -13,6 +13,7 @@ from pits_mras.models.decoders import (
     HamiltonianNet,
     PortHamiltonianDecoder,
 )
+from pits_mras.models.generic import GFINNDecoder
 from pits_mras.models.koopman import KoopmanLiftingModel, koopman_loss
 from pits_mras.models.pitnn import PITNN
 from pits_mras.models.sac import GaussianPolicy, TwinQCritic
@@ -23,6 +24,7 @@ __all__ = [
     "HamiltonianNet",
     "DissipationNet",
     "PortHamiltonianDecoder",
+    "GFINNDecoder",
     "QuadraticCritic",
     "CostateHead",
     "AdversaryHead",

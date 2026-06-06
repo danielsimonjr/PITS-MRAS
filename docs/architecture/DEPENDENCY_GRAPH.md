@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.7.0 | **Last Updated**: 2026-06-06
+**Version**: 0.8.0 | **Last Updated**: 2026-06-06
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -18,7 +18,7 @@ The codebase is organized into the following modules:
 - **src/pits_mras/data**: 2 files
 - **src/pits_mras/inference**: 3 files
 - **src/pits_mras/losses**: 7 files
-- **src/pits_mras/models**: 11 files
+- **src/pits_mras/models**: 12 files
 - **src/pits_mras/training**: 7 files
 - **src/pits_mras/utils**: 7 files
 
@@ -667,13 +667,14 @@ The codebase is organized into the following modules:
 | `src/pits_mras/models/attention.py` | `PhysicsInformedAttention` | Re-export |
 | `src/pits_mras/models/critic.py` | `AdversaryHead, CostateHead, QuadraticCritic` | Re-export |
 | `src/pits_mras/models/decoders.py` | `DissipationNet, HamiltonianNet, PortHamiltonianDecoder` | Re-export |
+| `src/pits_mras/models/generic.py` | `GFINNDecoder` | Re-export |
 | `src/pits_mras/models/koopman.py` | `KoopmanLiftingModel, koopman_loss` | Re-export |
 | `src/pits_mras/models/pitnn.py` | `PITNN` | Re-export |
 | `src/pits_mras/models/sac.py` | `GaussianPolicy, TwinQCritic` | Re-export |
 | `src/pits_mras/models/tdmpc.py` | `MPPIPlanner, WorldModel` | Re-export |
 
 **Exports:**
-- Re-exports: `NeuralAdversary`, `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`, `GaussianPolicy`, `TwinQCritic`, `MPPIPlanner`, `WorldModel`
+- Re-exports: `NeuralAdversary`, `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `GFINNDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`, `GaussianPolicy`, `TwinQCritic`, `MPPIPlanner`, `WorldModel`
 
 ---
 
@@ -752,6 +753,20 @@ The codebase is organized into the following modules:
 
 **Exports:**
 - Classes: `HamiltonianNet`, `DissipationNet`, `PortHamiltonianDecoder`
+
+---
+
+### `src/pits_mras/models/generic.py` - GENERIC / GFINN thermodynamic decoder (ROADMAP extension).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch.nn` | `(module)` |
+| `torch` | `Tensor` |
+
+**Exports:**
+- Classes: `GFINNDecoder`
 
 ---
 
@@ -1259,7 +1274,7 @@ graph TD
         N30[attention]
         N31[critic]
         N32[decoders]
-        N33[...6 more]
+        N33[...7 more]
     end
 
     subgraph Src / pits_mras / training
@@ -1318,12 +1333,12 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 54 |
+| Total Python Files | 55 |
 | Total Modules | 11 |
-| Total Lines of Code | 8780 |
-| Total Public Exports | 167 |
-| Total Re-exports | 61 |
-| Total Classes | 57 |
+| Total Lines of Code | 9021 |
+| Total Public Exports | 169 |
+| Total Re-exports | 62 |
+| Total Classes | 58 |
 | Total Protocols/ABCs | 2 |
 | Total Enums | 0 |
 | Total Functions | 47 |
@@ -1335,4 +1350,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 1 |
 
-*Last Updated*: 2026-06-06  |  *Version*: 0.7.0
+*Last Updated*: 2026-06-06  |  *Version*: 0.8.0

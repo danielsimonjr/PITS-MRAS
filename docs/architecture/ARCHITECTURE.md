@@ -58,13 +58,13 @@
 ### 0.1 Module map (as built)
 
 The package lives under `src/pits_mras/` (src-layout). The dependency graph
-finds **54 first-party Python files across 11 modules** (incl. `examples/`):
+finds **55 first-party Python files across 11 modules** (incl. `examples/`):
 
 | Module | Files | Responsibility |
 |--------|-------|----------------|
 | `src/pits_mras` | 2 | Package root: `config.py` (8 dataclasses incl. `PCMLConfig`, `lambda_cbf`, `adaptive_weighting`) + `__init__.py` (flat public API) |
 | `utils` | 7 | Foundation math: `lyapunov.py` (Lyapunov/Riccati/Kleinman + GARE + differentiable CARE/GARE), `hamiltonian.py`, `pe_monitor.py`, `diagnostics.py` (rollout-stability), `uq.py` (ensembles + conformal), `linearization.py` (Jacobian linearization of a dynamics callable) |
-| `models` | 11 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian, MIMO `B@u`), `critic.py` (critic + costate + analytic adversary), `pcml.py` (soft+hard PCML, `torch.func` Jacobians), `lagrangian_head.py`, `adversary.py` (`NeuralAdversary`), `koopman.py` (deep Koopman lifting), `sac.py` (`GaussianPolicy` + `TwinQCritic`), `tdmpc.py` (`WorldModel` + `MPPIPlanner`) |
+| `models` | 12 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian, MIMO `B@u`), `critic.py` (critic + costate + analytic adversary), `pcml.py` (soft+hard PCML, `torch.func` Jacobians), `lagrangian_head.py`, `adversary.py` (`NeuralAdversary`), `koopman.py` (deep Koopman lifting), `sac.py` (`GaussianPolicy` + `TwinQCritic`), `tdmpc.py` (`WorldModel` + `MPPIPlanner`), `generic.py` (`GFINNDecoder` — GENERIC thermodynamic structure) |
 | `losses` | 7 | `physics.py`, `temporal.py`, `stability.py`, `irl.py`, `hjb.py`, `adaptive_weighting.py` (ReLoBRaLo + causal) + `TotalLoss` aggregator |
 | `controllers` | 5 | `reference_models.py`, `safety.py` (CLF-CBF), `mras.py` (actor-critic MRAS controller), `koopman_control.py` (`KoopmanLQRController` — CARE on lifted coords) |
 | `constraints` | 4 | `base.py` (`PhysicsConstraints` ABC), `mechanical.py`, `thermal.py` — PCML DAE systems |
@@ -82,8 +82,8 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 54 files · 11 modules · ~8,780 LOC · 167
-public exports (61 re-exported through barrels) · 57 classes · 2 ABC/Protocol
+Key statistics (graph-generated): 55 files · 11 modules · ~9,021 LOC · 169
+public exports (62 re-exported through barrels) · 58 classes · 2 ABC/Protocol
 (`PhysicsConstraints`, `LatentModel`) · 47 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---

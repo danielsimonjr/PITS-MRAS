@@ -1,11 +1,11 @@
 {
   "metadata": {
     "generatedAt": "2026-06-06",
-    "totalSourceFiles": 54,
-    "totalTestFiles": 36,
-    "testedCount": 46,
+    "totalSourceFiles": 55,
+    "totalTestFiles": 37,
+    "testedCount": 47,
     "untestedCount": 8,
-    "coveragePercent": "85.2"
+    "coveragePercent": "85.5"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -44,6 +44,7 @@
     "src/pits_mras/models/attention.py",
     "src/pits_mras/models/critic.py",
     "src/pits_mras/models/decoders.py",
+    "src/pits_mras/models/generic.py",
     "src/pits_mras/models/koopman.py",
     "src/pits_mras/models/lagrangian_head.py",
     "src/pits_mras/models/pcml.py",
@@ -191,12 +192,14 @@
     ],
     "src/pits_mras/models/__init__.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_inference.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
     "src/pits_mras/models/adversary.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_hinf_minmax.py",
       "tests/test_inference.py",
       "tests/test_smoke.py",
@@ -204,6 +207,7 @@
     ],
     "src/pits_mras/models/attention.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_inference.py",
       "tests/test_models.py",
       "tests/test_smoke.py",
@@ -211,6 +215,7 @@
     ],
     "src/pits_mras/models/critic.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_hinf.py",
       "tests/test_hinf_minmax.py",
       "tests/test_identity_costate.py",
@@ -225,13 +230,22 @@
     ],
     "src/pits_mras/models/decoders.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_inference.py",
       "tests/test_models.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
+    "src/pits_mras/models/generic.py": [
+      "tests/test_data.py",
+      "tests/test_generic.py",
+      "tests/test_inference.py",
+      "tests/test_smoke.py",
+      "tests/test_training.py"
+    ],
     "src/pits_mras/models/koopman.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_inference.py",
       "tests/test_koopman.py",
       "tests/test_koopman_control.py",
@@ -253,6 +267,7 @@
     ],
     "src/pits_mras/models/pitnn.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_imports.py",
       "tests/test_inference.py",
       "tests/test_models.py",
@@ -262,6 +277,7 @@
     ],
     "src/pits_mras/models/sac.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_inference.py",
       "tests/test_sac.py",
       "tests/test_smoke.py",
@@ -269,6 +285,7 @@
     ],
     "src/pits_mras/models/tdmpc.py": [
       "tests/test_data.py",
+      "tests/test_generic.py",
       "tests/test_inference.py",
       "tests/test_smoke.py",
       "tests/test_tdmpc.py",
@@ -365,6 +382,7 @@
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/generic.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/sac.py",
@@ -379,6 +397,18 @@
     ],
     "tests/test_example_plants.py": [],
     "tests/test_examples.py": [],
+    "tests/test_generic.py": [
+      "src/pits_mras/models/__init__.py",
+      "src/pits_mras/models/adversary.py",
+      "src/pits_mras/models/attention.py",
+      "src/pits_mras/models/critic.py",
+      "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/generic.py",
+      "src/pits_mras/models/koopman.py",
+      "src/pits_mras/models/pitnn.py",
+      "src/pits_mras/models/sac.py",
+      "src/pits_mras/models/tdmpc.py"
+    ],
     "tests/test_hamiltonian_utils.py": [
       "src/pits_mras/utils/hamiltonian.py"
     ],
@@ -437,6 +467,7 @@
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/generic.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/sac.py",
@@ -549,6 +580,7 @@
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/generic.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/sac.py",
@@ -575,6 +607,7 @@
       "src/pits_mras/models/attention.py",
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/generic.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/sac.py",
