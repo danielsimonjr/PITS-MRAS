@@ -15,11 +15,14 @@
 
 ## 1. Status
 
-**v0.5.0 — improvement sprint complete.** The 2026-06-05 sprint shipped the 10 research
-proposals (§2) across releases v0.4.6 → v0.5.0, headlined by the H∞ neural adversarial
-min-max loop (v0.5.0). Gates green: pytest 312/0 (1 documented skip), ruff + mypy clean,
-dependency graph 46 files / 7,314 LOC / 0 circular / 0 unused. The examples run; performance
-figures in the docs are design targets on illustrative nonlinear plants, **not**
+**v0.8.0 — both sprints complete.** The 2026-06-05 proposal sprint shipped the 10 research
+proposals (§2; v0.4.6 → v0.5.0, headlined by the H∞ neural min-max loop). The 2026-06-06
+gap-closure sprint then closed every remaining gap (§3; v0.5.1 → v0.8.0): MIMO control (G8),
+`data/` loader (G7), Koopman→control + min-max→dynamics integrations, and three new capability
+lines — SAC (v0.6.0), TD-MPC2 (v0.7.0), GENERIC/GFINN (v0.8.0). Gates green: pytest 380/0
+(0 skipped), ruff + mypy clean, dependency graph 55 files / 9,021 LOC / 0 circular / 0 unused.
+The examples run; performance figures in the docs are design targets on illustrative nonlinear
+plants, **not**
 hardware-validated.
 
 ---
@@ -164,19 +167,28 @@ are candidates, grouped by the three improvement axes.
 
 ## 3. Known Gaps / Deferred (pre-existing)
 
-Genuine un-done items carried over from the original build plan, re-verified against the
-source on 2026-06-05:
+> **✅ ALL CLOSED (2026-06-06 gap-closure sprint).** Every gap below was implemented and
+> released (v0.5.1 → v0.8.0). Kept here as a resolved record; see `../CHANGELOG.md` for detail.
 
-- **G8 — MIMO control input is simplified in the decoder.** `f_ctrl = B(x_p) · u.sum(...)`
-  (`src/pits_mras/models/decoders.py:204–207`, annotated "MIMO-simplified per IP §5.2 / G8").
-  Generalize to a proper `B u` product for true multi-input plants.
-- **Connection 5 (SAC / max-entropy RL)** — no dedicated module. (The `entropy` term in
-  `models/attention.py` is attention regularization, unrelated to SAC.)
-- **Connection 9 (TD-MPC2 / learned-model planning)** — no dedicated module.
-- **G7 — no `data/` module.** `training/pretrain.py` and `training/irl_trainer.py` assume
-  "trajectory data" but there is no dataset format / generator / loader; data is synthesized
-  inline in the co-training loop. A `data/` package would be needed for real-trajectory
-  training.
+- **G8 — MIMO control input** — **RESOLVED v0.5.1.** The decoder now uses a true input-matrix
+  product `f_ctrl = B(x_p) @ u` (`B_net` emits `[batch, 2·n_q, control_dim]`); `control_dim=1`
+  exactly preserved.
+- **Connection 5 (SAC / max-entropy RL)** — **RESOLVED v0.6.0.** `models/sac.py`
+  (`GaussianPolicy`, `TwinQCritic`) + `training/sac.py` (`SACTrainer`, automatic entropy
+  temperature).
+- **Connection 9 (TD-MPC2 / learned-model planning)** — **RESOLVED v0.7.0.** `models/tdmpc.py`
+  (`WorldModel` + `MPPIPlanner`) + `training/tdmpc.py` (`tdmpc_update`).
+- **G7 — `data/` module** — **RESOLVED v0.5.2** (source-tracking hotfix v0.5.3). `pits_mras.data`
+  (`TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader`); opt-in dataset
+  path in `pretrain_pitnn`.
+
+### Remaining open / follow-ons (genuinely not done)
+- **Control-loop integration is partial.** The Koopman→control bridge (`KoopmanLQRController`,
+  v0.5.4) and the min-max→dynamics adapter (`hinf_minmax_from_dynamics`, v0.5.5) exist, but
+  wrapping the **full sequence-`PITNN`** into a one-step `f(x,u)` for the min-max loop (operating
+  point / history handling) is an ADR-level choice left undone.
+- **Aspirational (need their own brainstorm/design — not auto-implementable):** multi-agent,
+  hierarchical PITS-MRAS, GPU/TPU support, monitoring dashboard.
 
 ---
 
@@ -191,9 +203,9 @@ hallucinated novelty:
 - **Eigenvalues-only PD check (avoids eigenvector-backprop NaNs)** — already used
   (`src/pits_mras/models/critic.py` `positivity_loss`, `torch.linalg.eigvalsh`).
 - **float64 analytic core** — already satisfied (SciPy Riccati/Lyapunov/Schur run float64; init-only).
-- **Structure-preserving port-Hamiltonian decoder** — already implemented; a GENERIC/GFINN
-  thermodynamic extension is a possible *future* capability but overlaps the existing decoder
-  and was held back to keep §2 to ten actionable items.
+- **Structure-preserving port-Hamiltonian decoder** — already implemented; the GENERIC/GFINN
+  thermodynamic extension (held back from the original 10) **shipped in v0.8.0**
+  (`models/generic.py` `GFINNDecoder`; 1st/2nd laws by construction).
 
 ---
 

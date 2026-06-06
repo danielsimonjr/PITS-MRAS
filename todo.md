@@ -42,27 +42,22 @@ are genuine optional follow-ons, in rough priority order:
 > H∞ neural min-max) is now ROADMAP proposal #1. The proposals are candidates, not
 > scheduled. See memory `project_pits_mras_improvement_research.md`.
 
-> **2026-06-05 — GAP-CLOSURE SPRINT (in progress).** After the 10-proposal sprint,
-> enumerated all remaining gaps and committed to implementing them all, least →
-> most complex, via the same autonomous dev-workflow + subagent process (per-item
-> version+tag). Complexity-ascending ladder:
+> **2026-06-06 — GAP-CLOSURE SPRINT COMPLETE.** Implemented every enumerated gap,
+> least → most complex, via the autonomous dev-workflow + subagent process. All
+> CI-green; HEAD = **v0.8.0**. Map:
+> 1. todo doc-rot cleanup ✓ · 2. functorch warmup fixture ✓ · 3. un-skipped the
+> tight H∞ min-max test ✓ (all three: test/doc commits) · 4. **G8** MIMO control
+> `B@u` → **v0.5.1** · 5. **G7** `data/` loader → **v0.5.2** (source-tracking
+> hotfix **v0.5.3** — `.gitignore` `data/` had excluded the package) · 6. **#5**
+> Koopman→control (`KoopmanLQRController`) → **v0.5.4** · 7. **#6** min-max→dynamics
+> adapter (`linearize_dynamics` + `hinf_minmax_from_dynamics`) → **v0.5.5** ·
+> 8. **SAC** (Connection 5) → **v0.6.0** · 9. **TD-MPC2** (Connection 9) →
+> **v0.7.0** · 10. **GENERIC/GFINN** decoder → **v0.8.0**.
 >
-> 1. todo.md doc-rot cleanup + record this plan — XS *(this edit)*
-> 2. Example-test warmup fixture (session-scoped functorch warmup) — S
-> 3. Revisit / un-skip the tight-equality H∞ min-max test — S
-> 4. **G8** — generalize MIMO control input in the decoder (`B @ u`, not `B·u.sum`) — S–M
-> 5. **G7** — `data/` dataset/loader module (replace inline synthetic data) — M
-> 6. **#5 integration** — wire deep Koopman lifting into the control loop (latent
->    `(A_z,B_z)` → `solve_care`/MRAS on lifted coords) — M–L
-> 7. **#6 integration** — wire the H∞ neural min-max loop into the PITNN/cotrain
->    pipeline (currently standalone on linear systems) — M–L
-> 8. **Connection 5** — SAC / max-entropy RL module — L (minor bump)
-> 9. **Connection 9** — TD-MPC2 / learned-model planning module — L (minor bump)
-> 10. **GENERIC/GFINN** thermodynamic decoder extension — L (minor bump)
->
-> **Excluded (Cardinal-Rule-6, needs its own brainstorm/design — NOT auto-implemented):**
-> the aspirational bucket — multi-agent, hierarchical PITS-MRAS, GPU/TPU support,
-> monitoring dashboard. These are undefined directions, not bounded tasks.
+> **Remaining follow-ons (genuinely open):** wrap the full sequence-PITNN as a
+> one-step `f(x,u)` to feed the min-max loop (ADR-level operating-point/history
+> choice). **Excluded aspirational bucket** (own brainstorm/design needed):
+> multi-agent, hierarchical PITS-MRAS, GPU/TPU, monitoring dashboard.
 
 ## Done
 
