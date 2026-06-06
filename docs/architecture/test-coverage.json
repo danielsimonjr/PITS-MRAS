@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "generatedAt": "2026-06-05",
-    "totalSourceFiles": 50,
-    "totalTestFiles": 34,
-    "testedCount": 42,
+    "generatedAt": "2026-06-06",
+    "totalSourceFiles": 52,
+    "totalTestFiles": 35,
+    "testedCount": 44,
     "untestedCount": 8,
-    "coveragePercent": "84.0"
+    "coveragePercent": "84.6"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -48,11 +48,13 @@
     "src/pits_mras/models/lagrangian_head.py",
     "src/pits_mras/models/pcml.py",
     "src/pits_mras/models/pitnn.py",
+    "src/pits_mras/models/sac.py",
     "src/pits_mras/training/__init__.py",
     "src/pits_mras/training/cotrain.py",
     "src/pits_mras/training/hinf_minmax.py",
     "src/pits_mras/training/irl_trainer.py",
     "src/pits_mras/training/pretrain.py",
+    "src/pits_mras/training/sac.py",
     "src/pits_mras/utils/__init__.py",
     "src/pits_mras/utils/diagnostics.py",
     "src/pits_mras/utils/hamiltonian.py",
@@ -256,6 +258,13 @@
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
+    "src/pits_mras/models/sac.py": [
+      "tests/test_data.py",
+      "tests/test_inference.py",
+      "tests/test_sac.py",
+      "tests/test_smoke.py",
+      "tests/test_training.py"
+    ],
     "src/pits_mras/training/__init__.py": [
       "tests/test_imports.py",
       "tests/test_smoke.py"
@@ -283,6 +292,11 @@
       "tests/test_imports.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
+    ],
+    "src/pits_mras/training/sac.py": [
+      "tests/test_imports.py",
+      "tests/test_sac.py",
+      "tests/test_smoke.py"
     ],
     "src/pits_mras/utils/__init__.py": [
       "tests/test_lyapunov_utils.py"
@@ -338,6 +352,7 @@
       "src/pits_mras/models/decoders.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
+      "src/pits_mras/models/sac.py",
       "src/pits_mras/training/pretrain.py"
     ],
     "tests/test_diagnostics.py": [
@@ -391,7 +406,8 @@
       "src/pits_mras/training/cotrain.py",
       "src/pits_mras/training/hinf_minmax.py",
       "src/pits_mras/training/irl_trainer.py",
-      "src/pits_mras/training/pretrain.py"
+      "src/pits_mras/training/pretrain.py",
+      "src/pits_mras/training/sac.py"
     ],
     "tests/test_inference.py": [
       "src/pits_mras/config.py",
@@ -405,7 +421,8 @@
       "src/pits_mras/models/critic.py",
       "src/pits_mras/models/decoders.py",
       "src/pits_mras/models/koopman.py",
-      "src/pits_mras/models/pitnn.py"
+      "src/pits_mras/models/pitnn.py",
+      "src/pits_mras/models/sac.py"
     ],
     "tests/test_irl.py": [
       "src/pits_mras/losses/irl.py",
@@ -496,6 +513,10 @@
     "tests/test_pe_monitor.py": [
       "src/pits_mras/utils/pe_monitor.py"
     ],
+    "tests/test_sac.py": [
+      "src/pits_mras/models/sac.py",
+      "src/pits_mras/training/sac.py"
+    ],
     "tests/test_safety.py": [
       "src/pits_mras/controllers/reference_models.py",
       "src/pits_mras/controllers/safety.py"
@@ -512,11 +533,13 @@
       "src/pits_mras/models/decoders.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
+      "src/pits_mras/models/sac.py",
       "src/pits_mras/training/__init__.py",
       "src/pits_mras/training/cotrain.py",
       "src/pits_mras/training/hinf_minmax.py",
       "src/pits_mras/training/irl_trainer.py",
-      "src/pits_mras/training/pretrain.py"
+      "src/pits_mras/training/pretrain.py",
+      "src/pits_mras/training/sac.py"
     ],
     "tests/test_training.py": [
       "src/pits_mras/config.py",
@@ -529,6 +552,7 @@
       "src/pits_mras/models/decoders.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
+      "src/pits_mras/models/sac.py",
       "src/pits_mras/training/cotrain.py",
       "src/pits_mras/training/irl_trainer.py",
       "src/pits_mras/training/pretrain.py"

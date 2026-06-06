@@ -13,6 +13,7 @@ from pits_mras.training.hinf_minmax import (
 )
 from pits_mras.training.irl_trainer import train_irl_critic
 from pits_mras.training.pretrain import pretrain_pitnn
+from pits_mras.training.sac import SACTrainer
 
 __all__ = [
     "pretrain_pitnn",
@@ -21,4 +22,5 @@ __all__ = [
     "hinf_minmax_train",
     "hinf_minmax_from_dynamics",
     "hji_residual",
+    "SACTrainer",
 ]

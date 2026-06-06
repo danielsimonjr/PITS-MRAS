@@ -1,16 +1,16 @@
 # Test Coverage Analysis
 
-**Generated**: 2026-06-05
+**Generated**: 2026-06-06
 
 ## Summary
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 50 |
-| Total Test Files | 34 |
-| Source Files with Tests | 42 |
+| Total Source Files | 52 |
+| Total Test Files | 35 |
+| Source Files with Tests | 44 |
 | Source Files without Tests | 8 |
-| Coverage | 84.0% |
+| Coverage | 84.6% |
 
 ---
 
@@ -63,11 +63,13 @@
 | `src/pits_mras/models/lagrangian_head.py` | `test_imports.py`, `test_pcml_integration.py`, `test_pcml_soft.py` |
 | `src/pits_mras/models/pcml.py` | `test_imports.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_jacobian_vectorized.py`, `test_pcml_soft.py` |
 | `src/pits_mras/models/pitnn.py` | `test_data.py`, `test_imports.py`, `test_inference.py`, `test_models.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/sac.py` | `test_data.py`, `test_inference.py`, `test_sac.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/training/__init__.py` | `test_imports.py`, `test_smoke.py` |
 | `src/pits_mras/training/cotrain.py` | `test_imports.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/training/hinf_minmax.py` | `test_hinf_minmax.py`, `test_imports.py`, `test_linearization.py`, `test_smoke.py` |
 | `src/pits_mras/training/irl_trainer.py` | `test_identity_lyapunov_value.py`, `test_imports.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/training/pretrain.py` | `test_data.py`, `test_imports.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/training/sac.py` | `test_imports.py`, `test_sac.py`, `test_smoke.py` |
 | `src/pits_mras/utils/__init__.py` | `test_lyapunov_utils.py` |
 | `src/pits_mras/utils/diagnostics.py` | `test_diagnostics.py` |
 | `src/pits_mras/utils/hamiltonian.py` | `test_hamiltonian_utils.py` |

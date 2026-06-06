@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-06
+
+Gap-closure sprint — **Connection 5: SAC / max-entropy RL** (one of the two
+Blueprint connections that previously had no module). A self-contained, additive
+Soft Actor-Critic. Suite green (362); ruff + mypy clean.
+
+### Added
+
+- **SAC policy + critics** (`models/sac.py`, re-exported from `pits_mras.models`):
+  - `GaussianPolicy` — tanh-squashed reparameterized Gaussian actor with the exact
+    log-prob squash correction; deterministic `mean` path; configurable
+    `action_scale` / `log_std_bounds`.
+  - `TwinQCritic` — twin `Q(s,a)` networks with a `q_min` helper.
+- **`SACTrainer`** (`training/sac.py`, re-exported from `pits_mras.training`) —
+  full Soft Actor-Critic (Haarnoja et al. 2018) with **automatic entropy
+  temperature** (`log_alpha` toward target entropy `-action_dim`), twin-Q targets,
+  and Polyak soft updates. `update(batch)` implements the standard critic/actor/
+  temperature losses and returns finite diagnostics + `alpha`.
+  - Verified by a falsifiable learning sanity (single-step bandit, reward
+    `-‖a−target‖²`): the greedy policy action converges from 0.73 to 0.015 of the
+    target. 11 new tests.
+
 ## [0.5.5] - 2026-06-05
 
 Gap-closure sprint — integration item **#6** (wire the H∞ neural min-max loop to

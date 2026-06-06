@@ -15,6 +15,7 @@ from pits_mras.models.decoders import (
 )
 from pits_mras.models.koopman import KoopmanLiftingModel, koopman_loss
 from pits_mras.models.pitnn import PITNN
+from pits_mras.models.sac import GaussianPolicy, TwinQCritic
 
 __all__ = [
     "PhysicsInformedAttention",
@@ -28,4 +29,6 @@ __all__ = [
     "PITNN",
     "KoopmanLiftingModel",
     "koopman_loss",
+    "GaussianPolicy",
+    "TwinQCritic",
 ]

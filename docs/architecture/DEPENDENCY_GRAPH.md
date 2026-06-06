@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.5.5 | **Last Updated**: 2026-06-05
+**Version**: 0.6.0 | **Last Updated**: 2026-06-06
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -18,8 +18,8 @@ The codebase is organized into the following modules:
 - **src/pits_mras/data**: 2 files
 - **src/pits_mras/inference**: 3 files
 - **src/pits_mras/losses**: 7 files
-- **src/pits_mras/models**: 9 files
-- **src/pits_mras/training**: 5 files
+- **src/pits_mras/models**: 10 files
+- **src/pits_mras/training**: 6 files
 - **src/pits_mras/utils**: 7 files
 
 ---
@@ -669,9 +669,10 @@ The codebase is organized into the following modules:
 | `src/pits_mras/models/decoders.py` | `DissipationNet, HamiltonianNet, PortHamiltonianDecoder` | Re-export |
 | `src/pits_mras/models/koopman.py` | `KoopmanLiftingModel, koopman_loss` | Re-export |
 | `src/pits_mras/models/pitnn.py` | `PITNN` | Re-export |
+| `src/pits_mras/models/sac.py` | `GaussianPolicy, TwinQCritic` | Re-export |
 
 **Exports:**
-- Re-exports: `NeuralAdversary`, `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`
+- Re-exports: `NeuralAdversary`, `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`, `GaussianPolicy`, `TwinQCritic`
 
 ---
 
@@ -841,6 +842,25 @@ The codebase is organized into the following modules:
 
 ---
 
+### `src/pits_mras/models/sac.py` - Soft Actor-Critic networks: squashed Gaussian policy + twin Q critic.
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch.nn` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+
+**Exports:**
+- Classes: `GaussianPolicy`, `TwinQCritic`
+
+---
+
 ## Src / pits_mras / training Dependencies
 
 ### `src/pits_mras/training/__init__.py` - Training subpackage: physics pretrain, IRL co-train, offline IRL trainer.
@@ -852,9 +872,10 @@ The codebase is organized into the following modules:
 | `src/pits_mras/training/hinf_minmax.py` | `hinf_minmax_from_dynamics, hinf_minmax_train, hji_residual` | Re-export |
 | `src/pits_mras/training/irl_trainer.py` | `train_irl_critic` | Re-export |
 | `src/pits_mras/training/pretrain.py` | `pretrain_pitnn` | Re-export |
+| `src/pits_mras/training/sac.py` | `SACTrainer` | Re-export |
 
 **Exports:**
-- Re-exports: `cotraining_loop`, `hinf_minmax_from_dynamics`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`
+- Re-exports: `cotraining_loop`, `hinf_minmax_from_dynamics`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`, `SACTrainer`
 
 ---
 
@@ -976,6 +997,31 @@ The codebase is organized into the following modules:
 
 **Exports:**
 - Functions: `data_weight_schedule`, `temporal_weight_schedule`, `pretrain_pitnn`
+
+---
+
+### `src/pits_mras/training/sac.py` - Soft Actor-Critic update logic with automatic temperature (Connection 5).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch.nn.functional` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Mapping, Optional` |
+
+**Internal Dependencies:**
+| Module | Imports | Type |
+|--------|---------|------|
+| `src/pits_mras/models/sac.py` | `GaussianPolicy, TwinQCritic` | Import |
+
+**Exports:**
+- Classes: `SACTrainer`
 
 ---
 
@@ -1165,7 +1211,7 @@ graph TD
         N30[attention]
         N31[critic]
         N32[decoders]
-        N33[...4 more]
+        N33[...5 more]
     end
 
     subgraph Src / pits_mras / training
@@ -1174,15 +1220,16 @@ graph TD
         N36[hinf_minmax]
         N37[irl_trainer]
         N38[pretrain]
+        N39[...1 more]
     end
 
     subgraph Src / pits_mras / utils
-        N39[__init__]
-        N40[diagnostics]
-        N41[hamiltonian]
-        N42[linearization]
-        N43[lyapunov]
-        N44[...2 more]
+        N40[__init__]
+        N41[diagnostics]
+        N42[hamiltonian]
+        N43[linearization]
+        N44[lyapunov]
+        N45[...2 more]
     end
 
     N0 --> N7
@@ -1214,7 +1261,7 @@ graph TD
     N8 --> N11
     N10 --> N9
     N11 --> N9
-    N13 --> N43
+    N13 --> N44
 ```
 
 ---
@@ -1223,12 +1270,12 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 50 |
+| Total Python Files | 52 |
 | Total Modules | 11 |
-| Total Lines of Code | 8054 |
-| Total Public Exports | 154 |
-| Total Re-exports | 55 |
-| Total Classes | 52 |
+| Total Lines of Code | 8391 |
+| Total Public Exports | 160 |
+| Total Re-exports | 58 |
+| Total Classes | 55 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
 | Total Functions | 46 |
@@ -1240,4 +1287,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.5.5
+*Last Updated*: 2026-06-06  |  *Version*: 0.6.0

@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.5.5",
-    "lastUpdated": "2026-06-05",
-    "totalFiles": 50,
+    "version": "0.6.0",
+    "lastUpdated": "2026-06-06",
+    "totalFiles": 52,
     "totalModules": 11,
-    "totalExports": 154
+    "totalExports": 160
   },
   "entryPoints": [
     {
@@ -1832,6 +1832,15 @@
               "PITNN"
             ],
             "reExport": true
+          },
+          {
+            "file": "src/pits_mras/models/sac.py",
+            "module": "pits_mras.models.sac",
+            "imports": [
+              "GaussianPolicy",
+              "TwinQCritic"
+            ],
+            "reExport": true
           }
         ],
         "exports": [
@@ -1845,7 +1854,9 @@
           "NeuralAdversary",
           "PITNN",
           "KoopmanLiftingModel",
-          "koopman_loss"
+          "koopman_loss",
+          "GaussianPolicy",
+          "TwinQCritic"
         ],
         "reExported": [
           "NeuralAdversary",
@@ -1858,7 +1869,9 @@
           "PortHamiltonianDecoder",
           "KoopmanLiftingModel",
           "koopman_loss",
-          "PITNN"
+          "PITNN",
+          "GaussianPolicy",
+          "TwinQCritic"
         ]
       },
       "src/pits_mras/models/adversary.py": {
@@ -2255,6 +2268,46 @@
         "classes": [
           "PITNN"
         ]
+      },
+      "src/pits_mras/models/sac.py": {
+        "description": "Soft Actor-Critic networks: squashed Gaussian policy + twin Q critic.",
+        "externalDependencies": [
+          {
+            "package": "torch",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch.nn",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
+              "Tensor"
+            ]
+          }
+        ],
+        "stdlibDependencies": [
+          {
+            "module": "__future__",
+            "imports": [
+              "annotations"
+            ]
+          }
+        ],
+        "internalDependencies": [],
+        "exports": [
+          "GaussianPolicy",
+          "TwinQCritic"
+        ],
+        "classes": [
+          "GaussianPolicy",
+          "TwinQCritic"
+        ]
       }
     },
     "src/pits_mras/training": {
@@ -2296,6 +2349,14 @@
               "pretrain_pitnn"
             ],
             "reExport": true
+          },
+          {
+            "file": "src/pits_mras/training/sac.py",
+            "module": "pits_mras.training.sac",
+            "imports": [
+              "SACTrainer"
+            ],
+            "reExport": true
           }
         ],
         "exports": [
@@ -2304,7 +2365,8 @@
           "train_irl_critic",
           "hinf_minmax_train",
           "hinf_minmax_from_dynamics",
-          "hji_residual"
+          "hji_residual",
+          "SACTrainer"
         ],
         "reExported": [
           "cotraining_loop",
@@ -2312,7 +2374,8 @@
           "hinf_minmax_train",
           "hji_residual",
           "train_irl_critic",
-          "pretrain_pitnn"
+          "pretrain_pitnn",
+          "SACTrainer"
         ]
       },
       "src/pits_mras/training/cotrain.py": {
@@ -2694,6 +2757,60 @@
           "data_weight_schedule",
           "temporal_weight_schedule",
           "pretrain_pitnn"
+        ]
+      },
+      "src/pits_mras/training/sac.py": {
+        "description": "Soft Actor-Critic update logic with automatic temperature (Connection 5).",
+        "externalDependencies": [
+          {
+            "package": "torch",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch.nn.functional",
+            "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
+              "Tensor"
+            ]
+          }
+        ],
+        "stdlibDependencies": [
+          {
+            "module": "__future__",
+            "imports": [
+              "annotations"
+            ]
+          },
+          {
+            "module": "typing",
+            "imports": [
+              "Mapping",
+              "Optional"
+            ]
+          }
+        ],
+        "internalDependencies": [
+          {
+            "file": "src/pits_mras/models/sac.py",
+            "module": "pits_mras.models.sac",
+            "imports": [
+              "GaussianPolicy",
+              "TwinQCritic"
+            ]
+          }
+        ],
+        "exports": [
+          "SACTrainer"
+        ],
+        "classes": [
+          "SACTrainer"
         ]
       }
     },
@@ -3082,7 +3199,8 @@
           "src/pits_mras/models/koopman.py",
           "src/pits_mras/models/lagrangian_head.py",
           "src/pits_mras/models/pcml.py",
-          "src/pits_mras/models/pitnn.py"
+          "src/pits_mras/models/pitnn.py",
+          "src/pits_mras/models/sac.py"
         ]
       },
       {
@@ -3092,7 +3210,8 @@
           "src/pits_mras/training/cotrain.py",
           "src/pits_mras/training/hinf_minmax.py",
           "src/pits_mras/training/irl_trainer.py",
-          "src/pits_mras/training/pretrain.py"
+          "src/pits_mras/training/pretrain.py",
+          "src/pits_mras/training/sac.py"
         ]
       },
       {
@@ -3110,17 +3229,17 @@
     ]
   },
   "statistics": {
-    "totalPythonFiles": 50,
+    "totalPythonFiles": 52,
     "totalModules": 11,
-    "totalLinesOfCode": 8054,
-    "totalExports": 154,
-    "totalClasses": 52,
+    "totalLinesOfCode": 8391,
+    "totalExports": 160,
+    "totalClasses": 55,
     "totalInterfaces": 1,
     "totalEnums": 0,
     "totalFunctions": 46,
     "totalTypeGuards": 0,
     "totalConstants": 0,
-    "totalReExports": 55,
+    "totalReExports": 58,
     "totalTypeCheckingImports": 13,
     "runtimeCircularDeps": 0,
     "typeCheckingCircularDeps": 0,

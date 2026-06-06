@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.5.5` · 50 source files · 11 modules · 8,054 LOC · 154 exports
-(55 re-exports) · 52 classes · 1 Protocol/ABC · 46 functions · 0 circular
+**Version `0.6.0` · 52 source files · 11 modules · 8,391 LOC · 160 exports
+(58 re-exports) · 55 classes · 1 Protocol/ABC · 46 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -85,7 +85,7 @@ the v0.2.0 behavior is unchanged unless PCML is explicitly wired in.
 
 ## 2. Module Map
 
-Eleven modules, 50 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
+Eleven modules, 52 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
 subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 | Module | Files | Purpose |
@@ -96,8 +96,8 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 | `src/pits_mras/data` | 2 | Opt-in trajectory dataset/loader: `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader` (G7). |
 | `src/pits_mras/inference` | 3 | Real-time closed-loop inference engine and the parallel multi-thread deployment architecture (IP §9). |
 | `src/pits_mras/losses` | 7 | Loss functions (Phase 3): physics, temporal, stability, IRL-Bellman, HJB-residual, adaptive/causal weighting, plus the `TotalLoss` aggregator. |
-| `src/pits_mras/models` | 9 | Physics-informed attention, port-Hamiltonian decoders, critic/costate/adversary heads, PCML/Lagrangian heads, neural adversary, deep Koopman lifting, and the top-level `PITNN`. |
-| `src/pits_mras/training` | 5 | Physics pre-training curriculum, IRL co-training loop, the offline IRL critic trainer (IP §8), and the H∞ neural min-max loop. |
+| `src/pits_mras/models` | 10 | Physics-informed attention, port-Hamiltonian decoders, critic/costate/adversary heads, PCML/Lagrangian heads, neural adversary, deep Koopman lifting, SAC policy/critic nets, and the top-level `PITNN`. |
+| `src/pits_mras/training` | 6 | Physics pre-training curriculum, IRL co-training loop, the offline IRL critic trainer (IP §8), the H∞ neural min-max loop, and the SAC trainer. |
 | `src/pits_mras/utils` | 7 | Lyapunov/Riccati engine (+ GARE + differentiable CARE/GARE), port-Hamiltonian utilities, the PE monitor, rollout diagnostics, UQ utilities, and dynamics linearization. |
 | `examples` | 5 | Runnable end-to-end demos: robotic manipulator, autonomous vehicle, building HVAC, hard-PCML heat-diffusion + `plants.py` nonlinear plant steps. |
 | `root` | 1 | `setup.py` packaging entry point. |
@@ -173,13 +173,13 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.5.5` |
-| Total Python files | 50 |
+| Version | `0.6.0` |
+| Total Python files | 52 |
 | Modules | 11 |
-| Total lines of code | 8,054 |
-| Total exports | 154 |
-| Re-exports (barrel) | 55 |
-| Classes | 52 |
+| Total lines of code | 8,391 |
+| Total exports | 160 |
+| Re-exports (barrel) | 58 |
+| Classes | 55 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
 | Functions | 46 |
@@ -191,7 +191,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 | Unused exports | 0 |
 
 The single interface/ABC is `PhysicsConstraints` in `constraints/base.py`. The
-55 re-exports are the convenience barrels in the package and subpackage
+58 re-exports are the convenience barrels in the package and subpackage
 `__init__.py` files (`pits_mras`, `constraints`, `losses`, `models`, `training`).
 The 10 type-only imports are `TYPE_CHECKING`-guarded edges (mostly into
 `training/cotrain.py`, `training/irl_trainer.py`, `training/pretrain.py`, and
