@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.6.0 | **Last Updated**: 2026-06-06
+**Version**: 0.7.0 | **Last Updated**: 2026-06-06
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -18,8 +18,8 @@ The codebase is organized into the following modules:
 - **src/pits_mras/data**: 2 files
 - **src/pits_mras/inference**: 3 files
 - **src/pits_mras/losses**: 7 files
-- **src/pits_mras/models**: 10 files
-- **src/pits_mras/training**: 6 files
+- **src/pits_mras/models**: 11 files
+- **src/pits_mras/training**: 7 files
 - **src/pits_mras/utils**: 7 files
 
 ---
@@ -670,9 +670,10 @@ The codebase is organized into the following modules:
 | `src/pits_mras/models/koopman.py` | `KoopmanLiftingModel, koopman_loss` | Re-export |
 | `src/pits_mras/models/pitnn.py` | `PITNN` | Re-export |
 | `src/pits_mras/models/sac.py` | `GaussianPolicy, TwinQCritic` | Re-export |
+| `src/pits_mras/models/tdmpc.py` | `MPPIPlanner, WorldModel` | Re-export |
 
 **Exports:**
-- Re-exports: `NeuralAdversary`, `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`, `GaussianPolicy`, `TwinQCritic`
+- Re-exports: `NeuralAdversary`, `PhysicsInformedAttention`, `AdversaryHead`, `CostateHead`, `QuadraticCritic`, `DissipationNet`, `HamiltonianNet`, `PortHamiltonianDecoder`, `KoopmanLiftingModel`, `koopman_loss`, `PITNN`, `GaussianPolicy`, `TwinQCritic`, `MPPIPlanner`, `WorldModel`
 
 ---
 
@@ -861,6 +862,27 @@ The codebase is organized into the following modules:
 
 ---
 
+### `src/pits_mras/models/tdmpc.py` - TD-MPC2 latent world model + sampling-based (MPPI) latent planner.
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch.nn` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Optional, Protocol` |
+
+**Exports:**
+- Classes: `WorldModel`, `MPPIPlanner`
+- Protocols/ABCs: `LatentModel`
+
+---
+
 ## Src / pits_mras / training Dependencies
 
 ### `src/pits_mras/training/__init__.py` - Training subpackage: physics pretrain, IRL co-train, offline IRL trainer.
@@ -873,9 +895,10 @@ The codebase is organized into the following modules:
 | `src/pits_mras/training/irl_trainer.py` | `train_irl_critic` | Re-export |
 | `src/pits_mras/training/pretrain.py` | `pretrain_pitnn` | Re-export |
 | `src/pits_mras/training/sac.py` | `SACTrainer` | Re-export |
+| `src/pits_mras/training/tdmpc.py` | `tdmpc_update` | Re-export |
 
 **Exports:**
-- Re-exports: `cotraining_loop`, `hinf_minmax_from_dynamics`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`, `SACTrainer`
+- Re-exports: `cotraining_loop`, `hinf_minmax_from_dynamics`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`, `SACTrainer`, `tdmpc_update`
 
 ---
 
@@ -1022,6 +1045,31 @@ The codebase is organized into the following modules:
 
 **Exports:**
 - Classes: `SACTrainer`
+
+---
+
+### `src/pits_mras/training/tdmpc.py` - TD-MPC2 world-model update (Connection 9 — learned-model planning).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch.nn.functional` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Mapping` |
+
+**Internal Dependencies:**
+| Module | Imports | Type |
+|--------|---------|------|
+| `src/pits_mras/models/tdmpc.py` | `WorldModel` | Import |
+
+**Exports:**
+- Functions: `tdmpc_update`
 
 ---
 
@@ -1211,7 +1259,7 @@ graph TD
         N30[attention]
         N31[critic]
         N32[decoders]
-        N33[...5 more]
+        N33[...6 more]
     end
 
     subgraph Src / pits_mras / training
@@ -1220,7 +1268,7 @@ graph TD
         N36[hinf_minmax]
         N37[irl_trainer]
         N38[pretrain]
-        N39[...1 more]
+        N39[...2 more]
     end
 
     subgraph Src / pits_mras / utils
@@ -1270,21 +1318,21 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 52 |
+| Total Python Files | 54 |
 | Total Modules | 11 |
-| Total Lines of Code | 8391 |
-| Total Public Exports | 160 |
-| Total Re-exports | 58 |
-| Total Classes | 55 |
-| Total Protocols/ABCs | 1 |
+| Total Lines of Code | 8780 |
+| Total Public Exports | 167 |
+| Total Re-exports | 61 |
+| Total Classes | 57 |
+| Total Protocols/ABCs | 2 |
 | Total Enums | 0 |
-| Total Functions | 46 |
+| Total Functions | 47 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 13 |
 | Runtime Circular Deps | 0 |
 | TYPE_CHECKING Circular Deps | 0 |
 | Potentially Unused Files | 0 |
-| Potentially Unused Exports | 0 |
+| Potentially Unused Exports | 1 |
 
-*Last Updated*: 2026-06-06  |  *Version*: 0.6.0
+*Last Updated*: 2026-06-06  |  *Version*: 0.7.0

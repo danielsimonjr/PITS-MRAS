@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-06
+
+Gap-closure sprint — **Connection 9: TD-MPC2 / learned-model planning** (the
+second of the two Blueprint connections that previously had no module). A
+self-contained latent world model + sampling-based planner. Suite green (371);
+ruff + mypy clean.
+
+### Added
+
+- **TD-MPC2 world model** (`models/tdmpc.py`, re-exported from `pits_mras.models`):
+  - `WorldModel` — latent `encode` / `next` / `reward` / `value` / `Q` heads
+    (Hansen et al. 2024) over a shared latent space.
+  - `MPPIPlanner` — gradient-free sampling-based MPC in latent space: samples
+    action sequences, rolls them through the learned model, scores by discounted
+    reward + terminal value, and refits a Gaussian to the MPPI-weighted elites.
+    Consumes any object exposing `next`/`reward`/`value` (the `LatentModel`
+    Protocol).
+- **`tdmpc_update`** (`training/tdmpc.py`, re-exported from `pits_mras.training`)
+  — joint world-model loss (latent consistency + reward MSE + TD value).
+  - Verified by a falsifiable planner test: with the `WorldModel` set to the
+    ground-truth of a linear-quadratic problem, the MPPI planner's first action
+    recovers the LQR-optimal `a* = -K*z₀` to relative error 0.13. 9 new tests.
+
 ## [0.6.0] - 2026-06-06
 
 Gap-closure sprint — **Connection 5: SAC / max-entropy RL** (one of the two

@@ -1,11 +1,11 @@
 {
   "metadata": {
     "generatedAt": "2026-06-06",
-    "totalSourceFiles": 52,
-    "totalTestFiles": 35,
-    "testedCount": 44,
+    "totalSourceFiles": 54,
+    "totalTestFiles": 36,
+    "testedCount": 46,
     "untestedCount": 8,
-    "coveragePercent": "84.6"
+    "coveragePercent": "85.2"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -49,12 +49,14 @@
     "src/pits_mras/models/pcml.py",
     "src/pits_mras/models/pitnn.py",
     "src/pits_mras/models/sac.py",
+    "src/pits_mras/models/tdmpc.py",
     "src/pits_mras/training/__init__.py",
     "src/pits_mras/training/cotrain.py",
     "src/pits_mras/training/hinf_minmax.py",
     "src/pits_mras/training/irl_trainer.py",
     "src/pits_mras/training/pretrain.py",
     "src/pits_mras/training/sac.py",
+    "src/pits_mras/training/tdmpc.py",
     "src/pits_mras/utils/__init__.py",
     "src/pits_mras/utils/diagnostics.py",
     "src/pits_mras/utils/hamiltonian.py",
@@ -265,6 +267,13 @@
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
+    "src/pits_mras/models/tdmpc.py": [
+      "tests/test_data.py",
+      "tests/test_inference.py",
+      "tests/test_smoke.py",
+      "tests/test_tdmpc.py",
+      "tests/test_training.py"
+    ],
     "src/pits_mras/training/__init__.py": [
       "tests/test_imports.py",
       "tests/test_smoke.py"
@@ -298,6 +307,11 @@
       "tests/test_sac.py",
       "tests/test_smoke.py"
     ],
+    "src/pits_mras/training/tdmpc.py": [
+      "tests/test_imports.py",
+      "tests/test_smoke.py",
+      "tests/test_tdmpc.py"
+    ],
     "src/pits_mras/utils/__init__.py": [
       "tests/test_lyapunov_utils.py"
     ],
@@ -318,7 +332,8 @@
       "tests/test_identity_costate.py",
       "tests/test_identity_lyapunov_value.py",
       "tests/test_koopman_control.py",
-      "tests/test_lyapunov_utils.py"
+      "tests/test_lyapunov_utils.py",
+      "tests/test_tdmpc.py"
     ],
     "src/pits_mras/utils/pe_monitor.py": [
       "tests/test_pe_monitor.py"
@@ -353,6 +368,7 @@
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/sac.py",
+      "src/pits_mras/models/tdmpc.py",
       "src/pits_mras/training/pretrain.py"
     ],
     "tests/test_diagnostics.py": [
@@ -407,7 +423,8 @@
       "src/pits_mras/training/hinf_minmax.py",
       "src/pits_mras/training/irl_trainer.py",
       "src/pits_mras/training/pretrain.py",
-      "src/pits_mras/training/sac.py"
+      "src/pits_mras/training/sac.py",
+      "src/pits_mras/training/tdmpc.py"
     ],
     "tests/test_inference.py": [
       "src/pits_mras/config.py",
@@ -422,7 +439,8 @@
       "src/pits_mras/models/decoders.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
-      "src/pits_mras/models/sac.py"
+      "src/pits_mras/models/sac.py",
+      "src/pits_mras/models/tdmpc.py"
     ],
     "tests/test_irl.py": [
       "src/pits_mras/losses/irl.py",
@@ -534,12 +552,19 @@
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/sac.py",
+      "src/pits_mras/models/tdmpc.py",
       "src/pits_mras/training/__init__.py",
       "src/pits_mras/training/cotrain.py",
       "src/pits_mras/training/hinf_minmax.py",
       "src/pits_mras/training/irl_trainer.py",
       "src/pits_mras/training/pretrain.py",
-      "src/pits_mras/training/sac.py"
+      "src/pits_mras/training/sac.py",
+      "src/pits_mras/training/tdmpc.py"
+    ],
+    "tests/test_tdmpc.py": [
+      "src/pits_mras/models/tdmpc.py",
+      "src/pits_mras/training/tdmpc.py",
+      "src/pits_mras/utils/lyapunov.py"
     ],
     "tests/test_training.py": [
       "src/pits_mras/config.py",
@@ -553,6 +578,7 @@
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/models/pitnn.py",
       "src/pits_mras/models/sac.py",
+      "src/pits_mras/models/tdmpc.py",
       "src/pits_mras/training/cotrain.py",
       "src/pits_mras/training/irl_trainer.py",
       "src/pits_mras/training/pretrain.py"

@@ -5,7 +5,7 @@
 ## Summary
 
 - **Potentially unused files**: 0
-- **Potentially unused exports**: 0
+- **Potentially unused exports**: 1
 
 ## Potentially Unused Files
 
@@ -13,4 +13,6 @@ None.
 
 ## Potentially Unused Exports
 
-None.
+### `src/pits_mras/models/tdmpc.py`
+
+- `LatentModel` (interface)

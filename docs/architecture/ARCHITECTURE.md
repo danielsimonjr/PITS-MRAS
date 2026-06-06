@@ -58,17 +58,17 @@
 ### 0.1 Module map (as built)
 
 The package lives under `src/pits_mras/` (src-layout). The dependency graph
-finds **52 first-party Python files across 11 modules** (incl. `examples/`):
+finds **54 first-party Python files across 11 modules** (incl. `examples/`):
 
 | Module | Files | Responsibility |
 |--------|-------|----------------|
 | `src/pits_mras` | 2 | Package root: `config.py` (8 dataclasses incl. `PCMLConfig`, `lambda_cbf`, `adaptive_weighting`) + `__init__.py` (flat public API) |
 | `utils` | 7 | Foundation math: `lyapunov.py` (Lyapunov/Riccati/Kleinman + GARE + differentiable CARE/GARE), `hamiltonian.py`, `pe_monitor.py`, `diagnostics.py` (rollout-stability), `uq.py` (ensembles + conformal), `linearization.py` (Jacobian linearization of a dynamics callable) |
-| `models` | 10 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian, MIMO `B@u`), `critic.py` (critic + costate + analytic adversary), `pcml.py` (soft+hard PCML, `torch.func` Jacobians), `lagrangian_head.py`, `adversary.py` (`NeuralAdversary`), `koopman.py` (deep Koopman lifting), `sac.py` (`GaussianPolicy` + `TwinQCritic`) |
+| `models` | 11 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian, MIMO `B@u`), `critic.py` (critic + costate + analytic adversary), `pcml.py` (soft+hard PCML, `torch.func` Jacobians), `lagrangian_head.py`, `adversary.py` (`NeuralAdversary`), `koopman.py` (deep Koopman lifting), `sac.py` (`GaussianPolicy` + `TwinQCritic`), `tdmpc.py` (`WorldModel` + `MPPIPlanner`) |
 | `losses` | 7 | `physics.py`, `temporal.py`, `stability.py`, `irl.py`, `hjb.py`, `adaptive_weighting.py` (ReLoBRaLo + causal) + `TotalLoss` aggregator |
 | `controllers` | 5 | `reference_models.py`, `safety.py` (CLF-CBF), `mras.py` (actor-critic MRAS controller), `koopman_control.py` (`KoopmanLQRController` — CARE on lifted coords) |
 | `constraints` | 4 | `base.py` (`PhysicsConstraints` ABC), `mechanical.py`, `thermal.py` — PCML DAE systems |
-| `training` | 6 | `pretrain.py` (3-stage curriculum, opt-in dataset), `cotrain.py` (closed-loop actor-critic + IRL + PCML), `irl_trainer.py`, `hinf_minmax.py` (H∞ neural min-max), `sac.py` (`SACTrainer` — max-entropy RL) |
+| `training` | 7 | `pretrain.py` (3-stage curriculum, opt-in dataset), `cotrain.py` (closed-loop actor-critic + IRL + PCML), `irl_trainer.py`, `hinf_minmax.py` (H∞ neural min-max), `sac.py` (`SACTrainer` — max-entropy RL), `tdmpc.py` (`tdmpc_update` — world-model losses) |
 | `inference` | 3 | `realtime.py` (closed-loop engine), `parallel.py` (thread skeleton) |
 | `data` | 2 | `trajectory.py` — `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader` (opt-in dataset path) |
 | `examples` | 5 | Runnable demos: robotic manipulator, autonomous vehicle, building HVAC, hard-PCML heat diffusion + `plants.py` (nonlinear plant steps) |
@@ -82,9 +82,9 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 52 files · 11 modules · ~8,391 LOC · 160
-public exports (58 re-exported through barrels) · 55 classes · 1 ABC
-(`PhysicsConstraints`) · 46 functions · 10 `TYPE_CHECKING`-guarded imports.
+Key statistics (graph-generated): 54 files · 11 modules · ~8,780 LOC · 167
+public exports (61 re-exported through barrels) · 57 classes · 2 ABC/Protocol
+(`PhysicsConstraints`, `LatentModel`) · 47 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---
 

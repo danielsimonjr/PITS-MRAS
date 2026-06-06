@@ -1,10 +1,10 @@
 metadata:
   name: pits_mras
-  version: 0.6.0
+  version: 0.7.0
   lastUpdated: '2026-06-06'
-  totalFiles: 52
+  totalFiles: 54
   totalModules: 11
-  totalExports: 160
+  totalExports: 167
 entryPoints:
 - file: examples/autonomous_vehicle.py
   type: cli
@@ -1123,6 +1123,12 @@ modules:
         - GaussianPolicy
         - TwinQCritic
         reExport: true
+      - file: src/pits_mras/models/tdmpc.py
+        module: pits_mras.models.tdmpc
+        imports:
+        - MPPIPlanner
+        - WorldModel
+        reExport: true
       exports:
       - PhysicsInformedAttention
       - HamiltonianNet
@@ -1137,6 +1143,8 @@ modules:
       - koopman_loss
       - GaussianPolicy
       - TwinQCritic
+      - WorldModel
+      - MPPIPlanner
       reExported:
       - NeuralAdversary
       - PhysicsInformedAttention
@@ -1151,6 +1159,8 @@ modules:
       - PITNN
       - GaussianPolicy
       - TwinQCritic
+      - MPPIPlanner
+      - WorldModel
     src/pits_mras/models/adversary.py:
       description: 'Learned (neural) H-infinity adversary -- the disturbance policy (ROADMAP #1).'
       externalDependencies:
@@ -1404,6 +1414,36 @@ modules:
       classes:
       - GaussianPolicy
       - TwinQCritic
+    src/pits_mras/models/tdmpc.py:
+      description: TD-MPC2 latent world model + sampling-based (MPPI) latent planner.
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: typing
+        imports:
+        - Optional
+        - Protocol
+      internalDependencies: []
+      exports:
+      - WorldModel
+      - MPPIPlanner
+      - LatentModel
+      classes:
+      - WorldModel
+      - MPPIPlanner
+      interfaces:
+      - LatentModel
   src/pits_mras/training:
     src/pits_mras/training/__init__.py:
       description: 'Training subpackage: physics pretrain, IRL co-train, offline IRL trainer.'
@@ -1437,6 +1477,11 @@ modules:
         imports:
         - SACTrainer
         reExport: true
+      - file: src/pits_mras/training/tdmpc.py
+        module: pits_mras.training.tdmpc
+        imports:
+        - tdmpc_update
+        reExport: true
       exports:
       - pretrain_pitnn
       - cotraining_loop
@@ -1445,6 +1490,7 @@ modules:
       - hinf_minmax_from_dynamics
       - hji_residual
       - SACTrainer
+      - tdmpc_update
       reExported:
       - cotraining_loop
       - hinf_minmax_from_dynamics
@@ -1453,6 +1499,7 @@ modules:
       - train_irl_critic
       - pretrain_pitnn
       - SACTrainer
+      - tdmpc_update
     src/pits_mras/training/cotrain.py:
       description: Co-training pipeline with IRL critic updates (Algorithm 3 extended, §8.2).
       externalDependencies:
@@ -1705,6 +1752,34 @@ modules:
       - SACTrainer
       classes:
       - SACTrainer
+    src/pits_mras/training/tdmpc.py:
+      description: TD-MPC2 world-model update (Connection 9 — learned-model planning).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn.functional
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: typing
+        imports:
+        - Mapping
+      internalDependencies:
+      - file: src/pits_mras/models/tdmpc.py
+        module: pits_mras.models.tdmpc
+        imports:
+        - WorldModel
+      exports:
+      - tdmpc_update
+      functions:
+      - tdmpc_update
   src/pits_mras/utils:
     src/pits_mras/utils/__init__.py:
       description: 'Utils subpackage: Lyapunov/Riccati engine, port-Hamiltonian, PE monitor.'
@@ -1955,6 +2030,7 @@ dependencyGraph:
     - src/pits_mras/models/pcml.py
     - src/pits_mras/models/pitnn.py
     - src/pits_mras/models/sac.py
+    - src/pits_mras/models/tdmpc.py
   - name: Src / pits_mras / training
     files:
     - src/pits_mras/training/__init__.py
@@ -1963,6 +2039,7 @@ dependencyGraph:
     - src/pits_mras/training/irl_trainer.py
     - src/pits_mras/training/pretrain.py
     - src/pits_mras/training/sac.py
+    - src/pits_mras/training/tdmpc.py
   - name: Src / pits_mras / utils
     files:
     - src/pits_mras/utils/__init__.py
@@ -1973,19 +2050,19 @@ dependencyGraph:
     - src/pits_mras/utils/pe_monitor.py
     - src/pits_mras/utils/uq.py
 statistics:
-  totalPythonFiles: 52
+  totalPythonFiles: 54
   totalModules: 11
-  totalLinesOfCode: 8391
-  totalExports: 160
-  totalClasses: 55
-  totalInterfaces: 1
+  totalLinesOfCode: 8780
+  totalExports: 167
+  totalClasses: 57
+  totalInterfaces: 2
   totalEnums: 0
-  totalFunctions: 46
+  totalFunctions: 47
   totalTypeGuards: 0
   totalConstants: 0
-  totalReExports: 58
+  totalReExports: 61
   totalTypeCheckingImports: 13
   runtimeCircularDeps: 0
   typeCheckingCircularDeps: 0
   unusedFilesCount: 0
-  unusedExportsCount: 0
+  unusedExportsCount: 1
