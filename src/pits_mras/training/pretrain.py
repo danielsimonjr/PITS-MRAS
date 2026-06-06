@@ -38,13 +38,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Iterator
 
 import torch
 from torch import Tensor
 
 if TYPE_CHECKING:
     from pits_mras.config import PITSMRASConfig
+    from pits_mras.data import TrajectoryDataset
     from pits_mras.models import PITNN
 
 logger = logging.getLogger(__name__)
@@ -133,6 +134,66 @@ def _sample_collocation(
     }
 
 
+def _fit_dim(x: Tensor, dim: int) -> Tensor:
+    """Slice or zero-pad the last axis of ``x`` to width ``dim``.
+
+    Lets a dataset whose ``state_dim`` / ``control_dim`` differs from the
+    PITNN's wired ``input_dim`` be fed through the forward pass without error:
+    extra channels are dropped, missing channels are zero-filled.
+    """
+    have = x.shape[-1]
+    if have == dim:
+        return x
+    if have > dim:
+        return x[..., :dim]
+    pad_shape = list(x.shape)
+    pad_shape[-1] = dim - have
+    return torch.cat([x, x.new_zeros(pad_shape)], dim=-1)
+
+
+def _dataset_pitnn_batch(
+    batch: dict[str, Tensor],
+    input_dim: int,
+    control_dim: int,
+    output_dim: int,
+    dt: float,
+) -> tuple[dict[str, Tensor], Tensor]:
+    """Map a :class:`TrajectoryDataset` batch to PITNN inputs + a regression target.
+
+    The dataset carries no tracking error or reference model, so the error
+    tensors ``e_curr`` / ``e_hist`` are passed as zeros (pre-training is a
+    physics/data warm-up, not a closed-loop step). The data-fit target is the
+    finite-difference state derivative ``(next_state - state) / dt`` -- the
+    discrete analogue of ``x_dot`` produced by the same plant the generator
+    rolls out -- sliced to ``output_dim``.
+
+    Returns ``(forward_kwargs, f_target)``.
+    """
+    state_hist = _fit_dim(batch["state_hist"], input_dim)  # [B, W, input_dim]
+    control_hist = _fit_dim(batch["control_hist"], input_dim)  # [B, W, input_dim]
+    x_p_curr = _fit_dim(batch["state"], input_dim)  # [B, input_dim]
+    u_curr = _fit_dim(batch["control"], control_dim)  # [B, control_dim]
+    b = x_p_curr.shape[0]
+    forward_kwargs = {
+        "x_hist": state_hist,
+        "u_hist": control_hist,
+        "x_p_curr": x_p_curr,
+        "u_curr": u_curr,
+        "e_curr": x_p_curr.new_zeros(b, output_dim),
+        "e_hist": state_hist.new_zeros(b, state_hist.shape[1], output_dim),
+    }
+    x_dot = (batch["next_state"] - batch["state"]) / dt  # [B, state_dim]
+    f_target = _fit_dim(x_dot, output_dim)
+    return forward_kwargs, f_target
+
+
+def _cycle_batches(loader: "torch.utils.data.DataLoader") -> Iterator[dict[str, Tensor]]:
+    """Yield batches from ``loader`` indefinitely (re-iterating each pass)."""
+    while True:
+        for batch in loader:
+            yield batch
+
+
 def pretrain_pitnn(
     pitnn: "PITNN",
     cfg: "PITSMRASConfig",
@@ -144,6 +205,7 @@ def pretrain_pitnn(
     epsilon_tol: float = 1e3,
     history_length: int = 8,
     seed: int | None = None,
+    dataset: "TrajectoryDataset | None" = None,
 ) -> dict[str, list[float]]:
     """Run the three-stage curriculum pre-training (Algorithm 2).
 
@@ -161,6 +223,15 @@ def pretrain_pitnn(
             halved and a warning is logged (validation criterion, §8.1).
         history_length: length of the synthetic history window.
         seed: optional RNG seed for reproducible synthetic data.
+        dataset: optional :class:`~pits_mras.data.TrajectoryDataset` (Gap G7,
+            opt-in). When ``None`` (default) the function is unchanged -- it
+            synthesizes inline collocation data with the same RNG consumption as
+            before. When supplied, each epoch instead draws a windowed batch
+            from the dataset (cycled), maps it to the PITNN forward inputs, and
+            uses the finite-difference state derivative ``(x_next - x) / dt`` as
+            the data-fit target (``f_target_fn`` is ignored on this path). The
+            dataset's ``memory_horizon`` replaces ``history_length`` for the
+            window width.
 
     Returns:
         A history dict mapping metric names to per-epoch lists:
@@ -189,6 +260,16 @@ def pretrain_pitnn(
     optimizer = torch.optim.Adam(pitnn.parameters(), lr=lr)
     generator = torch.Generator().manual_seed(seed)
 
+    # ── Opt-in dataset path (Gap G7). Default off -> ``batch_iter is None`` ->
+    # the inline-collocation branch below runs unchanged (same RNG consumption).
+    batch_iter: Iterator[dict[str, Tensor]] | None = None
+    if dataset is not None:
+        from pits_mras.data import make_dataloader
+
+        loader_gen = torch.Generator().manual_seed(seed)
+        loader = make_dataloader(dataset, batch_size=batch_size, shuffle=True, generator=loader_gen)
+        batch_iter = _cycle_batches(loader)
+
     history: dict[str, list[float]] = {
         "total_loss": [],
         "physics_loss": [],
@@ -207,19 +288,27 @@ def pretrain_pitnn(
             stage1_epochs=stage1_epochs,
         )
 
-        batch = _sample_collocation(
-            batch_size, input_dim, control_dim, output_dim, history_length, generator
-        )
-        f_target = f_target_fn(batch["x_p_curr"][:, :output_dim], batch["u_curr"])
+        if batch_iter is None:
+            # ── default path: inline synthetic collocation (unchanged) ──
+            batch = _sample_collocation(
+                batch_size, input_dim, control_dim, output_dim, history_length, generator
+            )
+            f_target = f_target_fn(batch["x_p_curr"][:, :output_dim], batch["u_curr"])
+            forward_kwargs = {
+                "x_hist": batch["x_hist"],
+                "u_hist": batch["u_hist"],
+                "x_p_curr": batch["x_p_curr"],
+                "u_curr": batch["u_curr"],
+                "e_curr": batch["e_curr"],
+                "e_hist": batch["e_hist"],
+            }
+        else:
+            # ── opt-in dataset path (Gap G7): draw a windowed batch ──
+            forward_kwargs, f_target = _dataset_pitnn_batch(
+                next(batch_iter), input_dim, control_dim, output_dim, train_cfg.dt
+            )
 
-        output = pitnn(
-            batch["x_hist"],
-            batch["u_hist"],
-            batch["x_p_curr"],
-            batch["u_curr"],
-            batch["e_curr"],
-            batch["e_hist"],
-        )
+        output = pitnn(**forward_kwargs)
         # L_physics: the architecturally-exposed port-Hamiltonian energy residual.
         l_physics = output["energy_loss"]
         # L_data: regress the dynamics prediction onto the surrogate target.

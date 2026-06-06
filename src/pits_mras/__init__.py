@@ -41,7 +41,7 @@ from pits_mras.models.pitnn import PITNN
 # working while the training modules were docstring-only stubs.)
 from pits_mras.training import cotraining_loop, pretrain_pitnn
 
-__version__ = "0.5.1"
+__version__ = "0.5.2"
 
 __all__ = [
     "PITNN",

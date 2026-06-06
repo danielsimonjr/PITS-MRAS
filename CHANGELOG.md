@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-06-05
+
+Gap-closure sprint — gap **G7** (`data/` dataset/loader module). Additive + opt-in;
+suite green (332); ruff + mypy clean.
+
+### Added
+
+- **`pits_mras.data` package** (`data/trajectory.py`) — a reusable, opt-in
+  trajectory-data layer (torch/numpy only):
+  - `TrajectoryDataset(torch.utils.data.Dataset)` — windowed `(state_hist,
+    control_hist, state, control, next_state)` samples from one or many
+    trajectories, with shape validation.
+  - `generate_synthetic_trajectories(...)` — seedable forward-Euler rollout of the
+    same plant the inline co-training code uses (factored out for reuse).
+  - `make_dataloader(...)` — batching helper with a PITNN-shaped collate.
+- **Opt-in dataset path in `pretrain_pitnn`** (`dataset=None` default). When
+  `None`, behaviour is unchanged (the default path is byte-identical — verified;
+  `cotrain` deliberately left untouched to protect its characterization lock).
+  When supplied, pre-training draws windowed batches from the dataset.
+  15 new tests. `data/` is imported lazily on the opt-in path only, so
+  `import pits_mras` and the public surface are unchanged.
+
 ## [0.5.1] - 2026-06-05
 
 Gap-closure sprint — gap **G8** (MIMO control input). Suite green (317);

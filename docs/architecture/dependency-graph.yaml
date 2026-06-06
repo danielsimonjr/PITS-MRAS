@@ -1,10 +1,10 @@
 metadata:
   name: pits_mras
-  version: 0.5.1
+  version: 0.5.2
   lastUpdated: '2026-06-05'
-  totalFiles: 46
-  totalModules: 10
-  totalExports: 144
+  totalFiles: 48
+  totalModules: 11
+  totalExports: 150
 entryPoints:
 - file: examples/autonomous_vehicle.py
   type: cli
@@ -33,6 +33,9 @@ entryPoints:
 - file: src/pits_mras/controllers/__init__.py
   type: main
   description: 'Controllers subpackage: reference models, CLF-CBF safety filter, MRAS actor.'
+- file: src/pits_mras/data/__init__.py
+  type: main
+  description: 'Data subpackage: reusable trajectory dataset, generator, and loader (Gap G7).'
 - file: src/pits_mras/inference/__init__.py
   type: main
   description: 'Inference subpackage: real-time engine and parallel thread architecture.'
@@ -656,6 +659,61 @@ modules:
       - CLFCBFSafetyFilter
       classes:
       - CLFCBFSafetyFilter
+  src/pits_mras/data:
+    src/pits_mras/data/__init__.py:
+      description: 'Data subpackage: reusable trajectory dataset, generator, and loader (Gap G7).'
+      externalDependencies: []
+      stdlibDependencies: []
+      internalDependencies:
+      - file: src/pits_mras/data/trajectory.py
+        module: pits_mras.data.trajectory
+        imports:
+        - TrajectoryDataset
+        - generate_synthetic_trajectories
+        - make_dataloader
+        reExport: true
+      exports:
+      - TrajectoryDataset
+      - generate_synthetic_trajectories
+      - make_dataloader
+      reExported:
+      - TrajectoryDataset
+      - generate_synthetic_trajectories
+      - make_dataloader
+    src/pits_mras/data/trajectory.py:
+      description: Reusable trajectory dataset + synthetic generator + loader (Gap G7).
+      externalDependencies:
+      - package: torch
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      - package: torch.utils.data
+        imports:
+        - DataLoader
+        - Dataset
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: typing
+        imports:
+        - Dict
+        - List
+        - Sequence
+        - Tuple
+        - Union
+      internalDependencies: []
+      exports:
+      - generate_synthetic_trajectories
+      - make_dataloader
+      - TrajectoryDataset
+      classes:
+      - TrajectoryDataset
+      functions:
+      - generate_synthetic_trajectories
+      - make_dataloader
   src/pits_mras/inference:
     src/pits_mras/inference/__init__.py:
       description: 'Inference subpackage: real-time engine and parallel thread architecture.'
@@ -1502,17 +1560,27 @@ modules:
         imports:
         - TYPE_CHECKING
         - Callable
+        - Iterator
       internalDependencies:
       - file: src/pits_mras/config.py
         module: pits_mras.config
         imports:
         - PITSMRASConfig
         typeOnly: true
+      - file: src/pits_mras/data/__init__.py
+        module: pits_mras.data
+        imports:
+        - TrajectoryDataset
+        typeOnly: true
       - file: src/pits_mras/models/__init__.py
         module: pits_mras.models
         imports:
         - PITNN
         typeOnly: true
+      - file: src/pits_mras/data/__init__.py
+        module: pits_mras.data
+        imports:
+        - make_dataloader
       exports:
       - data_weight_schedule
       - temporal_weight_schedule
@@ -1718,6 +1786,10 @@ dependencyGraph:
     - src/pits_mras/controllers/mras.py
     - src/pits_mras/controllers/reference_models.py
     - src/pits_mras/controllers/safety.py
+  - name: Src / pits_mras / data
+    files:
+    - src/pits_mras/data/__init__.py
+    - src/pits_mras/data/trajectory.py
   - name: Src / pits_mras / inference
     files:
     - src/pits_mras/inference/__init__.py
@@ -1759,18 +1831,18 @@ dependencyGraph:
     - src/pits_mras/utils/pe_monitor.py
     - src/pits_mras/utils/uq.py
 statistics:
-  totalPythonFiles: 46
-  totalModules: 10
-  totalLinesOfCode: 7332
-  totalExports: 144
-  totalClasses: 50
+  totalPythonFiles: 48
+  totalModules: 11
+  totalLinesOfCode: 7726
+  totalExports: 150
+  totalClasses: 51
   totalInterfaces: 1
   totalEnums: 0
-  totalFunctions: 42
+  totalFunctions: 44
   totalTypeGuards: 0
   totalConstants: 0
-  totalReExports: 51
-  totalTypeCheckingImports: 12
+  totalReExports: 54
+  totalTypeCheckingImports: 13
   runtimeCircularDeps: 0
   typeCheckingCircularDeps: 0
   unusedFilesCount: 0

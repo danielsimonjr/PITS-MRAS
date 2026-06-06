@@ -3,7 +3,7 @@
 > A grounded, per-module component reference for the `pits_mras` package.
 > Every class/function name, responsibility, and dependency below is taken from
 > the actual source under `src/pits_mras/` and cross-checked against
-> `docs/architecture/dependency-graph.json` (v0.5.1, 46 files, 10 modules, 144
+> `docs/architecture/dependency-graph.json` (v0.5.2, 48 files, 11 modules, 150
 > exports, 0 circular dependencies). Module purposes quote the package
 > `__init__` and file docstrings; class/function responsibilities quote their
 > own docstrings. For the *why* (the ten RL/optimal-control identities and the

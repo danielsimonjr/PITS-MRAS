@@ -1,11 +1,11 @@
 {
   "metadata": {
     "generatedAt": "2026-06-05",
-    "totalSourceFiles": 46,
-    "totalTestFiles": 31,
-    "testedCount": 38,
+    "totalSourceFiles": 48,
+    "totalTestFiles": 32,
+    "testedCount": 40,
     "untestedCount": 8,
-    "coveragePercent": "82.6"
+    "coveragePercent": "83.3"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -27,6 +27,8 @@
     "src/pits_mras/controllers/mras.py",
     "src/pits_mras/controllers/reference_models.py",
     "src/pits_mras/controllers/safety.py",
+    "src/pits_mras/data/__init__.py",
+    "src/pits_mras/data/trajectory.py",
     "src/pits_mras/inference/parallel.py",
     "src/pits_mras/inference/realtime.py",
     "src/pits_mras/losses/__init__.py",
@@ -69,6 +71,7 @@
     ],
     "src/pits_mras/config.py": [
       "tests/test_config.py",
+      "tests/test_data.py",
       "tests/test_inference.py",
       "tests/test_losses.py",
       "tests/test_models.py",
@@ -133,6 +136,12 @@
       "tests/test_imports.py",
       "tests/test_safety.py"
     ],
+    "src/pits_mras/data/__init__.py": [
+      "tests/test_data.py"
+    ],
+    "src/pits_mras/data/trajectory.py": [
+      "tests/test_data.py"
+    ],
     "src/pits_mras/inference/__init__.py": [],
     "src/pits_mras/inference/parallel.py": [
       "tests/test_inference.py"
@@ -172,23 +181,27 @@
       "tests/test_pcml_integration.py"
     ],
     "src/pits_mras/models/__init__.py": [
+      "tests/test_data.py",
       "tests/test_inference.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
     "src/pits_mras/models/adversary.py": [
+      "tests/test_data.py",
       "tests/test_hinf_minmax.py",
       "tests/test_inference.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
     "src/pits_mras/models/attention.py": [
+      "tests/test_data.py",
       "tests/test_inference.py",
       "tests/test_models.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
     "src/pits_mras/models/critic.py": [
+      "tests/test_data.py",
       "tests/test_hinf.py",
       "tests/test_hinf_minmax.py",
       "tests/test_identity_costate.py",
@@ -202,12 +215,14 @@
       "tests/test_training.py"
     ],
     "src/pits_mras/models/decoders.py": [
+      "tests/test_data.py",
       "tests/test_inference.py",
       "tests/test_models.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
     "src/pits_mras/models/koopman.py": [
+      "tests/test_data.py",
       "tests/test_inference.py",
       "tests/test_koopman.py",
       "tests/test_smoke.py",
@@ -226,6 +241,7 @@
       "tests/test_pcml_soft.py"
     ],
     "src/pits_mras/models/pitnn.py": [
+      "tests/test_data.py",
       "tests/test_imports.py",
       "tests/test_inference.py",
       "tests/test_models.py",
@@ -255,6 +271,7 @@
       "tests/test_training.py"
     ],
     "src/pits_mras/training/pretrain.py": [
+      "tests/test_data.py",
       "tests/test_imports.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
@@ -297,6 +314,19 @@
       "src/pits_mras/controllers/mras.py",
       "src/pits_mras/controllers/reference_models.py",
       "src/pits_mras/utils/lyapunov.py"
+    ],
+    "tests/test_data.py": [
+      "src/pits_mras/config.py",
+      "src/pits_mras/data/__init__.py",
+      "src/pits_mras/data/trajectory.py",
+      "src/pits_mras/models/__init__.py",
+      "src/pits_mras/models/adversary.py",
+      "src/pits_mras/models/attention.py",
+      "src/pits_mras/models/critic.py",
+      "src/pits_mras/models/decoders.py",
+      "src/pits_mras/models/koopman.py",
+      "src/pits_mras/models/pitnn.py",
+      "src/pits_mras/training/pretrain.py"
     ],
     "tests/test_diagnostics.py": [
       "src/pits_mras/utils/diagnostics.py"

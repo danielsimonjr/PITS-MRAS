@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.5.1 | **Last Updated**: 2026-06-05
+**Version**: 0.5.2 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -15,6 +15,7 @@ The codebase is organized into the following modules:
 - **src/pits_mras**: 2 files
 - **src/pits_mras/constraints**: 4 files
 - **src/pits_mras/controllers**: 4 files
+- **src/pits_mras/data**: 2 files
 - **src/pits_mras/inference**: 3 files
 - **src/pits_mras/losses**: 7 files
 - **src/pits_mras/models**: 9 files
@@ -375,6 +376,41 @@ The codebase is organized into the following modules:
 
 **Exports:**
 - Classes: `CLFCBFSafetyFilter`
+
+---
+
+## Src / pits_mras / data Dependencies
+
+### `src/pits_mras/data/__init__.py` - Data subpackage: reusable trajectory dataset, generator, and loader (Gap G7).
+
+**Internal Dependencies:**
+| Module | Imports | Type |
+|--------|---------|------|
+| `src/pits_mras/data/trajectory.py` | `TrajectoryDataset, generate_synthetic_trajectories, make_dataloader` | Re-export |
+
+**Exports:**
+- Re-exports: `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader`
+
+---
+
+### `src/pits_mras/data/trajectory.py` - Reusable trajectory dataset + synthetic generator + loader (Gap G7).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `(module)` |
+| `torch` | `Tensor` |
+| `torch.utils.data` | `DataLoader, Dataset` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Dict, List, Sequence, Tuple, Union` |
+
+**Exports:**
+- Classes: `TrajectoryDataset`
+- Functions: `generate_synthetic_trajectories`, `make_dataloader`
 
 ---
 
@@ -900,13 +936,15 @@ The codebase is organized into the following modules:
 | `__future__` | `annotations` |
 | `logging` | `(module)` |
 | `math` | `(module)` |
-| `typing` | `TYPE_CHECKING, Callable` |
+| `typing` | `TYPE_CHECKING, Callable, Iterator` |
 
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/config.py` | `PITSMRASConfig` | Import (TYPE_CHECKING) |
+| `src/pits_mras/data/__init__.py` | `TrajectoryDataset` | Import (TYPE_CHECKING) |
 | `src/pits_mras/models/__init__.py` | `PITNN` | Import (TYPE_CHECKING) |
+| `src/pits_mras/data/__init__.py` | `make_dataloader` | Import |
 
 **Exports:**
 - Functions: `data_weight_schedule`, `temporal_weight_schedule`, `pretrain_pitnn`
@@ -1053,71 +1091,76 @@ graph TD
         N15[safety]
     end
 
-    subgraph Src / pits_mras / inference
+    subgraph Src / pits_mras / data
         N16[__init__]
-        N17[parallel]
-        N18[realtime]
+        N17[trajectory]
+    end
+
+    subgraph Src / pits_mras / inference
+        N18[__init__]
+        N19[parallel]
+        N20[realtime]
     end
 
     subgraph Src / pits_mras / losses
-        N19[__init__]
-        N20[adaptive_weighting]
-        N21[hjb]
-        N22[irl]
-        N23[physics]
-        N24[...2 more]
+        N21[__init__]
+        N22[adaptive_weighting]
+        N23[hjb]
+        N24[irl]
+        N25[physics]
+        N26[...2 more]
     end
 
     subgraph Src / pits_mras / models
-        N25[__init__]
-        N26[adversary]
-        N27[attention]
-        N28[critic]
-        N29[decoders]
-        N30[...4 more]
+        N27[__init__]
+        N28[adversary]
+        N29[attention]
+        N30[critic]
+        N31[decoders]
+        N32[...4 more]
     end
 
     subgraph Src / pits_mras / training
-        N31[__init__]
-        N32[cotrain]
-        N33[hinf_minmax]
-        N34[irl_trainer]
-        N35[pretrain]
+        N33[__init__]
+        N34[cotrain]
+        N35[hinf_minmax]
+        N36[irl_trainer]
+        N37[pretrain]
     end
 
     subgraph Src / pits_mras / utils
-        N36[__init__]
-        N37[diagnostics]
-        N38[hamiltonian]
-        N39[lyapunov]
-        N40[pe_monitor]
-        N41[...1 more]
+        N38[__init__]
+        N39[diagnostics]
+        N40[hamiltonian]
+        N41[lyapunov]
+        N42[pe_monitor]
+        N43[...1 more]
     end
 
     N0 --> N7
     N0 --> N13
     N0 --> N14
-    N0 --> N18
-    N0 --> N25
+    N0 --> N20
+    N0 --> N27
     N1 --> N7
     N1 --> N13
     N1 --> N14
-    N1 --> N18
-    N1 --> N25
+    N1 --> N20
+    N1 --> N27
     N2 --> N8
     N4 --> N7
     N4 --> N13
     N4 --> N14
-    N4 --> N18
-    N4 --> N25
-    N4 --> N34
+    N4 --> N20
+    N4 --> N27
+    N4 --> N36
     N6 --> N8
     N6 --> N13
     N6 --> N14
     N6 --> N15
-    N6 --> N18
-    N6 --> N28
-    N6 --> N31
+    N6 --> N20
+    N6 --> N30
+    N6 --> N33
     N8 --> N9
     N8 --> N10
     N8 --> N11
@@ -1132,21 +1175,21 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 46 |
-| Total Modules | 10 |
-| Total Lines of Code | 7332 |
-| Total Public Exports | 144 |
-| Total Re-exports | 51 |
-| Total Classes | 50 |
+| Total Python Files | 48 |
+| Total Modules | 11 |
+| Total Lines of Code | 7726 |
+| Total Public Exports | 150 |
+| Total Re-exports | 54 |
+| Total Classes | 51 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 42 |
+| Total Functions | 44 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
-| TYPE_CHECKING Imports | 12 |
+| TYPE_CHECKING Imports | 13 |
 | Runtime Circular Deps | 0 |
 | TYPE_CHECKING Circular Deps | 0 |
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.5.1
+*Last Updated*: 2026-06-05  |  *Version*: 0.5.2

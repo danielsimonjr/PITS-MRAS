@@ -58,19 +58,20 @@
 ### 0.1 Module map (as built)
 
 The package lives under `src/pits_mras/` (src-layout). The dependency graph
-finds **40 first-party Python files across 10 modules** (incl. `examples/`):
+finds **48 first-party Python files across 11 modules** (incl. `examples/`):
 
 | Module | Files | Responsibility |
 |--------|-------|----------------|
-| `src/pits_mras` | 2 | Package root: `config.py` (8 dataclasses incl. `PCMLConfig`) + `__init__.py` (flat public API, 17 symbols) |
-| `utils` | 4 | Foundation math: `lyapunov.py` (Lyapunov/Riccati/Kleinman), `hamiltonian.py` (skew/PSD/energy), `pe_monitor.py` |
-| `models` | 7 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian), `critic.py` (critic + costate), `pcml.py` (soft+hard PCML), `lagrangian_head.py` |
-| `losses` | 6 | `physics.py`, `temporal.py`, `stability.py`, `irl.py`, `hjb.py` + `TotalLoss` aggregator |
+| `src/pits_mras` | 2 | Package root: `config.py` (8 dataclasses incl. `PCMLConfig`, `lambda_cbf`, `adaptive_weighting`) + `__init__.py` (flat public API) |
+| `utils` | 6 | Foundation math: `lyapunov.py` (Lyapunov/Riccati/Kleinman + GARE + differentiable CARE/GARE), `hamiltonian.py`, `pe_monitor.py`, `diagnostics.py` (rollout-stability), `uq.py` (ensembles + conformal) |
+| `models` | 9 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian, MIMO `B@u`), `critic.py` (critic + costate + analytic adversary), `pcml.py` (soft+hard PCML, `torch.func` Jacobians), `lagrangian_head.py`, `adversary.py` (`NeuralAdversary`), `koopman.py` (deep Koopman lifting) |
+| `losses` | 7 | `physics.py`, `temporal.py`, `stability.py`, `irl.py`, `hjb.py`, `adaptive_weighting.py` (ReLoBRaLo + causal) + `TotalLoss` aggregator |
 | `controllers` | 4 | `reference_models.py`, `safety.py` (CLF-CBF), `mras.py` (actor-critic MRAS controller) |
 | `constraints` | 4 | `base.py` (`PhysicsConstraints` ABC), `mechanical.py`, `thermal.py` — PCML DAE systems |
-| `training` | 4 | `pretrain.py` (3-stage curriculum), `cotrain.py` (closed-loop actor-critic + IRL + PCML), `irl_trainer.py` |
+| `training` | 5 | `pretrain.py` (3-stage curriculum, opt-in dataset), `cotrain.py` (closed-loop actor-critic + IRL + PCML), `irl_trainer.py`, `hinf_minmax.py` (H∞ neural min-max) |
 | `inference` | 3 | `realtime.py` (closed-loop engine), `parallel.py` (thread skeleton) |
-| `examples` | 4 | Runnable demos: robotic manipulator, autonomous vehicle, building HVAC, hard-PCML heat diffusion |
+| `data` | 2 | `trajectory.py` — `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader` (opt-in dataset path) |
+| `examples` | 5 | Runnable demos: robotic manipulator, autonomous vehicle, building HVAC, hard-PCML heat diffusion + `plants.py` (nonlinear plant steps) |
 | `root` | 1 | `setup.py` |
 
 ### 0.2 Layering and health
@@ -81,9 +82,9 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 46 files · 10 modules · ~7,332 LOC · 144
-public exports (51 re-exported through barrels) · 50 classes · 1 ABC
-(`PhysicsConstraints`) · 42 functions · 10 `TYPE_CHECKING`-guarded imports.
+Key statistics (graph-generated): 48 files · 11 modules · ~7,726 LOC · 150
+public exports (54 re-exported through barrels) · 51 classes · 1 ABC
+(`PhysicsConstraints`) · 44 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---
 

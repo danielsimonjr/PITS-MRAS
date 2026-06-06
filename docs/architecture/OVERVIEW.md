@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.5.1` · 46 source files · 10 modules · 7,332 LOC · 144 exports
-(51 re-exports) · 50 classes · 1 Protocol/ABC · 42 functions · 0 circular
+**Version `0.5.2` · 48 source files · 11 modules · 7,726 LOC · 150 exports
+(54 re-exports) · 51 classes · 1 Protocol/ABC · 44 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -85,7 +85,7 @@ the v0.2.0 behavior is unchanged unless PCML is explicitly wired in.
 
 ## 2. Module Map
 
-Ten modules, 46 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
+Eleven modules, 48 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
 subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 | Module | Files | Purpose |
@@ -93,12 +93,13 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 | `src/pits_mras` (package root) | 2 | Top-level package: `config.py` (centralized dataclass config, IP §4.2) + `__init__.py` (public-API barrel re-exporting 17 symbols). |
 | `src/pits_mras/constraints` | 4 | Physics constraint systems for PCML (PCML Addendum §2.1): `PhysicsConstraints` ABC, `MechanicalDAE`, `HeatConductionDAE`. |
 | `src/pits_mras/controllers` | 4 | Reference models, CLF-CBF safety filter, and the actor-critic MRAS controller. |
+| `src/pits_mras/data` | 2 | Opt-in trajectory dataset/loader: `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader` (G7). |
 | `src/pits_mras/inference` | 3 | Real-time closed-loop inference engine and the parallel multi-thread deployment architecture (IP §9). |
-| `src/pits_mras/losses` | 6 | Loss functions (Phase 3): physics, temporal, stability, IRL-Bellman, HJB-residual, plus the `TotalLoss` aggregator. |
-| `src/pits_mras/models` | 7 | Physics-informed attention, port-Hamiltonian decoders, critic/costate/adversary heads, PCML/Lagrangian heads, and the top-level `PITNN`. |
-| `src/pits_mras/training` | 4 | Physics pre-training curriculum, IRL co-training loop, and the offline IRL critic trainer (IP §8). |
-| `src/pits_mras/utils` | 4 | Lyapunov/Riccati engine, port-Hamiltonian utilities, and the persistence-of-excitation monitor (IP §4.3–4.5). |
-| `examples` | 4 | Runnable end-to-end demos (CLI entry points): robotic manipulator, autonomous vehicle, building HVAC, and a coordinate-bearing hard-PCML heat-diffusion demo. |
+| `src/pits_mras/losses` | 7 | Loss functions (Phase 3): physics, temporal, stability, IRL-Bellman, HJB-residual, adaptive/causal weighting, plus the `TotalLoss` aggregator. |
+| `src/pits_mras/models` | 9 | Physics-informed attention, port-Hamiltonian decoders, critic/costate/adversary heads, PCML/Lagrangian heads, neural adversary, deep Koopman lifting, and the top-level `PITNN`. |
+| `src/pits_mras/training` | 5 | Physics pre-training curriculum, IRL co-training loop, the offline IRL critic trainer (IP §8), and the H∞ neural min-max loop. |
+| `src/pits_mras/utils` | 6 | Lyapunov/Riccati engine (+ GARE + differentiable CARE/GARE), port-Hamiltonian utilities, the PE monitor, rollout diagnostics, and UQ utilities. |
+| `examples` | 5 | Runnable end-to-end demos: robotic manipulator, autonomous vehicle, building HVAC, hard-PCML heat-diffusion + `plants.py` nonlinear plant steps. |
 | `root` | 1 | `setup.py` packaging entry point. |
 
 ### Notable files within each subpackage
@@ -172,16 +173,16 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.5.1` |
-| Total Python files | 46 |
-| Modules | 10 |
-| Total lines of code | 7,332 |
-| Total exports | 144 |
-| Re-exports (barrel) | 51 |
-| Classes | 50 |
+| Version | `0.5.2` |
+| Total Python files | 48 |
+| Modules | 11 |
+| Total lines of code | 7,726 |
+| Total exports | 150 |
+| Re-exports (barrel) | 54 |
+| Classes | 51 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
-| Functions | 42 |
+| Functions | 44 |
 | Constants | 0 |
 | Type-checking-only imports | 10 |
 | Runtime circular dependencies | 0 |
@@ -190,7 +191,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 | Unused exports | 0 |
 
 The single interface/ABC is `PhysicsConstraints` in `constraints/base.py`. The
-51 re-exports are the convenience barrels in the package and subpackage
+54 re-exports are the convenience barrels in the package and subpackage
 `__init__.py` files (`pits_mras`, `constraints`, `losses`, `models`, `training`).
 The 10 type-only imports are `TYPE_CHECKING`-guarded edges (mostly into
 `training/cotrain.py`, `training/irl_trainer.py`, `training/pretrain.py`, and
