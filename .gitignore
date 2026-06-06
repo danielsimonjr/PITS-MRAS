@@ -72,9 +72,12 @@ site/
 *.bbl
 *.blg
 
-# Data
+# Data (datasets/artifacts — NOT the src/pits_mras/data source package)
 data/
 datasets/
+# Re-include the first-party data package (it is source code, not a dataset dir):
+!src/pits_mras/data/
+!src/pits_mras/data/*.py
 *.csv
 *.h5
 *.hdf5

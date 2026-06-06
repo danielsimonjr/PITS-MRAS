@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.5.2 | **Last Updated**: 2026-06-05
+**Version**: 0.5.3 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -1192,4 +1192,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.5.2
+*Last Updated*: 2026-06-05  |  *Version*: 0.5.3

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-06-05
+
+Hotfix for v0.5.2: the `src/pits_mras/data/` source package was silently excluded
+by the `data/` rule in `.gitignore`, so v0.5.2 shipped its tests but **not** the
+module they import — a fresh checkout (and CI) would fail to import `pits_mras.data`.
+
+### Fixed
+
+- **Track the first-party `data/` package.** Added `.gitignore` exceptions
+  (`!src/pits_mras/data/`, `!src/pits_mras/data/**`) so the source package is
+  committed; the `data/` / `datasets/` ignore rules still cover real dataset
+  directories. `src/pits_mras/data/__init__.py` and `trajectory.py` are now in the
+  repo. (Caught by a git-tracking check; local tests had passed because the files
+  existed on disk.)
+
 ## [0.5.2] - 2026-06-05
 
 Gap-closure sprint — gap **G7** (`data/` dataset/loader module). Additive + opt-in;
