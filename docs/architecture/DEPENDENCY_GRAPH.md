@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.5.4 | **Last Updated**: 2026-06-05
+**Version**: 0.5.5 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -20,7 +20,7 @@ The codebase is organized into the following modules:
 - **src/pits_mras/losses**: 7 files
 - **src/pits_mras/models**: 9 files
 - **src/pits_mras/training**: 5 files
-- **src/pits_mras/utils**: 6 files
+- **src/pits_mras/utils**: 7 files
 
 ---
 
@@ -849,12 +849,12 @@ The codebase is organized into the following modules:
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/training/cotrain.py` | `cotraining_loop` | Re-export |
-| `src/pits_mras/training/hinf_minmax.py` | `hinf_minmax_train, hji_residual` | Re-export |
+| `src/pits_mras/training/hinf_minmax.py` | `hinf_minmax_from_dynamics, hinf_minmax_train, hji_residual` | Re-export |
 | `src/pits_mras/training/irl_trainer.py` | `train_irl_critic` | Re-export |
 | `src/pits_mras/training/pretrain.py` | `pretrain_pitnn` | Re-export |
 
 **Exports:**
-- Re-exports: `cotraining_loop`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`
+- Re-exports: `cotraining_loop`, `hinf_minmax_from_dynamics`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`
 
 ---
 
@@ -907,17 +907,18 @@ The codebase is organized into the following modules:
 |--------|--------|
 | `__future__` | `annotations` |
 | `logging` | `(module)` |
-| `typing` | `Optional` |
+| `typing` | `Callable, Optional` |
 
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/models/adversary.py` | `NeuralAdversary` | Import |
 | `src/pits_mras/models/critic.py` | `CostateHead, QuadraticCritic` | Import |
+| `src/pits_mras/utils/linearization.py` | `linearize_dynamics` | Import |
 | `src/pits_mras/utils/lyapunov.py` | `solve_gare` | Import |
 
 **Exports:**
-- Functions: `hji_residual`, `hinf_minmax_train`
+- Functions: `hji_residual`, `hinf_minmax_train`, `hinf_minmax_from_dynamics`
 
 ---
 
@@ -1013,6 +1014,25 @@ The codebase is organized into the following modules:
 
 **Exports:**
 - Functions: `make_skew_symmetric`, `make_positive_definite`, `port_hamiltonian_energy_loss`, `hamiltonian_positivity_loss`
+
+---
+
+### `src/pits_mras/utils/linearization.py` - First-order linearization of a dynamics callable (ROADMAP integration #6).
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `torch` | `Tensor` |
+| `torch.func` | `jacrev` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Callable, Tuple` |
+
+**Exports:**
+- Functions: `linearize_dynamics`
 
 ---
 
@@ -1160,9 +1180,9 @@ graph TD
         N39[__init__]
         N40[diagnostics]
         N41[hamiltonian]
-        N42[lyapunov]
-        N43[pe_monitor]
-        N44[...1 more]
+        N42[linearization]
+        N43[lyapunov]
+        N44[...2 more]
     end
 
     N0 --> N7
@@ -1194,7 +1214,7 @@ graph TD
     N8 --> N11
     N10 --> N9
     N11 --> N9
-    N13 --> N42
+    N13 --> N43
 ```
 
 ---
@@ -1203,15 +1223,15 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 49 |
+| Total Python Files | 50 |
 | Total Modules | 11 |
-| Total Lines of Code | 7881 |
-| Total Public Exports | 151 |
-| Total Re-exports | 54 |
+| Total Lines of Code | 8054 |
+| Total Public Exports | 154 |
+| Total Re-exports | 55 |
 | Total Classes | 52 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
-| Total Functions | 44 |
+| Total Functions | 46 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 13 |
@@ -1220,4 +1240,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.5.4
+*Last Updated*: 2026-06-05  |  *Version*: 0.5.5

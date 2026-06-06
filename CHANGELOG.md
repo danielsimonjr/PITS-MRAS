@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-06-05
+
+Gap-closure sprint — integration item **#6** (wire the H∞ neural min-max loop to
+learned/analytic dynamics). Additive; suite green (351); ruff + mypy clean.
+
+### Added
+
+- **`linearize_dynamics(dynamics_fn, x0, u0) -> (A, B)`** (`utils/linearization.py`)
+  — first-order Jacobian linearization of any continuous-time dynamics callable
+  `f(x, u) -> xdot` about an operating point, via `torch.func.jacrev` (exact for
+  affine `f`).
+- **`hinf_minmax_from_dynamics(dynamics_fn, x0, u0, Q, R, gamma, D=None, **kwargs)`**
+  (`training/hinf_minmax.py`, re-exported from `pits_mras.training`) — the bridge
+  that linearizes a learned/analytic dynamics callable at `(x0, u0)` and runs the
+  existing `hinf_minmax_train` on the resulting `(A, B)` (returns the metrics plus
+  the extracted `A`, `B`). Lets the robust min-max run on a Koopman `latent_step`,
+  a plant `f`, or any one-step dynamics. Verified: oracle recovery on linear
+  dynamics + a Koopman-`latent_step` bridge smoke test. 7 new tests.
+  `hinf_minmax_train` itself is unchanged (the un-skipped tight recovery test
+  stays green). *Note:* collapsing the full sequence-`PITNN` into a one-step
+  `f(x,u)` (operating-point/history choices) is left as a documented follow-on.
+
 ## [0.5.4] - 2026-06-05
 
 Gap-closure sprint — integration item **#5** (wire deep Koopman lifting into the

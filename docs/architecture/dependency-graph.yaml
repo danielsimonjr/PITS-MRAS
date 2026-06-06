@@ -1,10 +1,10 @@
 metadata:
   name: pits_mras
-  version: 0.5.4
+  version: 0.5.5
   lastUpdated: '2026-06-05'
-  totalFiles: 49
+  totalFiles: 50
   totalModules: 11
-  totalExports: 151
+  totalExports: 154
 entryPoints:
 - file: examples/autonomous_vehicle.py
   type: cli
@@ -1385,6 +1385,7 @@ modules:
       - file: src/pits_mras/training/hinf_minmax.py
         module: pits_mras.training.hinf_minmax
         imports:
+        - hinf_minmax_from_dynamics
         - hinf_minmax_train
         - hji_residual
         reExport: true
@@ -1403,9 +1404,11 @@ modules:
       - cotraining_loop
       - train_irl_critic
       - hinf_minmax_train
+      - hinf_minmax_from_dynamics
       - hji_residual
       reExported:
       - cotraining_loop
+      - hinf_minmax_from_dynamics
       - hinf_minmax_train
       - hji_residual
       - train_irl_critic
@@ -1507,6 +1510,7 @@ modules:
         - (module)
       - module: typing
         imports:
+        - Callable
         - Optional
       internalDependencies:
       - file: src/pits_mras/models/adversary.py
@@ -1518,6 +1522,10 @@ modules:
         imports:
         - CostateHead
         - QuadraticCritic
+      - file: src/pits_mras/utils/linearization.py
+        module: pits_mras.utils.linearization
+        imports:
+        - linearize_dynamics
       - file: src/pits_mras/utils/lyapunov.py
         module: pits_mras.utils.lyapunov
         imports:
@@ -1525,9 +1533,11 @@ modules:
       exports:
       - hji_residual
       - hinf_minmax_train
+      - hinf_minmax_from_dynamics
       functions:
       - hji_residual
       - hinf_minmax_train
+      - hinf_minmax_from_dynamics
     src/pits_mras/training/irl_trainer.py:
       description: Offline IRL critic trainer (batch least-squares, §8.3).
       externalDependencies:
@@ -1680,6 +1690,28 @@ modules:
       - make_positive_definite
       - port_hamiltonian_energy_loss
       - hamiltonian_positivity_loss
+    src/pits_mras/utils/linearization.py:
+      description: 'First-order linearization of a dynamics callable (ROADMAP integration #6).'
+      externalDependencies:
+      - package: torch
+        imports:
+        - Tensor
+      - package: torch.func
+        imports:
+        - jacrev
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: typing
+        imports:
+        - Callable
+        - Tuple
+      internalDependencies: []
+      exports:
+      - linearize_dynamics
+      functions:
+      - linearize_dynamics
     src/pits_mras/utils/lyapunov.py:
       description: Lyapunov / Riccati engine (IP §4.3). "The mathematical engine for all P."
       externalDependencies:
@@ -1864,21 +1896,22 @@ dependencyGraph:
     - src/pits_mras/utils/__init__.py
     - src/pits_mras/utils/diagnostics.py
     - src/pits_mras/utils/hamiltonian.py
+    - src/pits_mras/utils/linearization.py
     - src/pits_mras/utils/lyapunov.py
     - src/pits_mras/utils/pe_monitor.py
     - src/pits_mras/utils/uq.py
 statistics:
-  totalPythonFiles: 49
+  totalPythonFiles: 50
   totalModules: 11
-  totalLinesOfCode: 7881
-  totalExports: 151
+  totalLinesOfCode: 8054
+  totalExports: 154
   totalClasses: 52
   totalInterfaces: 1
   totalEnums: 0
-  totalFunctions: 44
+  totalFunctions: 46
   totalTypeGuards: 0
   totalConstants: 0
-  totalReExports: 54
+  totalReExports: 55
   totalTypeCheckingImports: 13
   runtimeCircularDeps: 0
   typeCheckingCircularDeps: 0

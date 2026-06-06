@@ -1,11 +1,11 @@
 {
   "metadata": {
     "generatedAt": "2026-06-05",
-    "totalSourceFiles": 49,
-    "totalTestFiles": 33,
-    "testedCount": 41,
+    "totalSourceFiles": 50,
+    "totalTestFiles": 34,
+    "testedCount": 42,
     "untestedCount": 8,
-    "coveragePercent": "83.7"
+    "coveragePercent": "84.0"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -56,6 +56,7 @@
     "src/pits_mras/utils/__init__.py",
     "src/pits_mras/utils/diagnostics.py",
     "src/pits_mras/utils/hamiltonian.py",
+    "src/pits_mras/utils/linearization.py",
     "src/pits_mras/utils/lyapunov.py",
     "src/pits_mras/utils/pe_monitor.py",
     "src/pits_mras/utils/uq.py"
@@ -230,6 +231,7 @@
       "tests/test_inference.py",
       "tests/test_koopman.py",
       "tests/test_koopman_control.py",
+      "tests/test_linearization.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
@@ -267,6 +269,7 @@
     "src/pits_mras/training/hinf_minmax.py": [
       "tests/test_hinf_minmax.py",
       "tests/test_imports.py",
+      "tests/test_linearization.py",
       "tests/test_smoke.py"
     ],
     "src/pits_mras/training/irl_trainer.py": [
@@ -289,6 +292,9 @@
     ],
     "src/pits_mras/utils/hamiltonian.py": [
       "tests/test_hamiltonian_utils.py"
+    ],
+    "src/pits_mras/utils/linearization.py": [
+      "tests/test_linearization.py"
     ],
     "src/pits_mras/utils/lyapunov.py": [
       "tests/test_controllers.py",
@@ -412,6 +418,11 @@
       "src/pits_mras/controllers/koopman_control.py",
       "src/pits_mras/models/koopman.py",
       "src/pits_mras/utils/lyapunov.py"
+    ],
+    "tests/test_linearization.py": [
+      "src/pits_mras/models/koopman.py",
+      "src/pits_mras/training/hinf_minmax.py",
+      "src/pits_mras/utils/linearization.py"
     ],
     "tests/test_losses.py": [
       "src/pits_mras/config.py",

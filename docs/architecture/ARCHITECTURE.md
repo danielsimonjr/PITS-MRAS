@@ -58,12 +58,12 @@
 ### 0.1 Module map (as built)
 
 The package lives under `src/pits_mras/` (src-layout). The dependency graph
-finds **49 first-party Python files across 11 modules** (incl. `examples/`):
+finds **50 first-party Python files across 11 modules** (incl. `examples/`):
 
 | Module | Files | Responsibility |
 |--------|-------|----------------|
 | `src/pits_mras` | 2 | Package root: `config.py` (8 dataclasses incl. `PCMLConfig`, `lambda_cbf`, `adaptive_weighting`) + `__init__.py` (flat public API) |
-| `utils` | 6 | Foundation math: `lyapunov.py` (Lyapunov/Riccati/Kleinman + GARE + differentiable CARE/GARE), `hamiltonian.py`, `pe_monitor.py`, `diagnostics.py` (rollout-stability), `uq.py` (ensembles + conformal) |
+| `utils` | 7 | Foundation math: `lyapunov.py` (Lyapunov/Riccati/Kleinman + GARE + differentiable CARE/GARE), `hamiltonian.py`, `pe_monitor.py`, `diagnostics.py` (rollout-stability), `uq.py` (ensembles + conformal), `linearization.py` (Jacobian linearization of a dynamics callable) |
 | `models` | 9 | `pitnn.py`, `attention.py`, `decoders.py` (port-Hamiltonian, MIMO `B@u`), `critic.py` (critic + costate + analytic adversary), `pcml.py` (soft+hard PCML, `torch.func` Jacobians), `lagrangian_head.py`, `adversary.py` (`NeuralAdversary`), `koopman.py` (deep Koopman lifting) |
 | `losses` | 7 | `physics.py`, `temporal.py`, `stability.py`, `irl.py`, `hjb.py`, `adaptive_weighting.py` (ReLoBRaLo + causal) + `TotalLoss` aggregator |
 | `controllers` | 5 | `reference_models.py`, `safety.py` (CLF-CBF), `mras.py` (actor-critic MRAS controller), `koopman_control.py` (`KoopmanLQRController` — CARE on lifted coords) |
@@ -82,9 +82,9 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 49 files · 11 modules · ~7,881 LOC · 151
-public exports (54 re-exported through barrels) · 52 classes · 1 ABC
-(`PhysicsConstraints`) · 44 functions · 10 `TYPE_CHECKING`-guarded imports.
+Key statistics (graph-generated): 50 files · 11 modules · ~8,054 LOC · 154
+public exports (55 re-exported through barrels) · 52 classes · 1 ABC
+(`PhysicsConstraints`) · 46 functions · 10 `TYPE_CHECKING`-guarded imports.
 
 ---
 

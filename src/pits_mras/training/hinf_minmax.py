@@ -62,7 +62,7 @@ TREND from the warm start.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 import torch
@@ -70,6 +70,7 @@ from torch import Tensor
 
 from pits_mras.models.adversary import NeuralAdversary
 from pits_mras.models.critic import CostateHead, QuadraticCritic
+from pits_mras.utils.linearization import linearize_dynamics
 from pits_mras.utils.lyapunov import solve_gare
 
 logger = logging.getLogger(__name__)
@@ -335,4 +336,59 @@ def hinf_minmax_train(
     metrics["critic"] = critic
     metrics["adversary"] = adversary
     metrics["costate"] = costate
+    return metrics
+
+
+def hinf_minmax_from_dynamics(
+    dynamics_fn: Callable[[Tensor, Tensor], Tensor],
+    x0: Tensor,
+    u0: Tensor,
+    Q: np.ndarray,
+    R: np.ndarray,
+    gamma: float,
+    D: Optional[np.ndarray] = None,
+    **kwargs: object,
+) -> dict[str, object]:
+    r"""Run the H-infinity min-max loop on a learned/analytic dynamics callable.
+
+    The bridge (ROADMAP integration #6) that lets the neural adversarial min-max
+    loop run on ANY continuous-time dynamics ``f(x, u) -> xdot`` instead of fixed
+    matrices. It linearizes ``dynamics_fn`` at the operating point ``(x0, u0)``
+    via :func:`~pits_mras.utils.linearization.linearize_dynamics`, then drives the
+    UNCHANGED :func:`hinf_minmax_train` with the extracted ``(A, B)``.
+
+    Use it to run the robust min-max on a learned model's LOCAL linear dynamics
+    (e.g. a one-step plant ``f``), a Koopman ``latent_step`` (treat the latent
+    ``z`` as the "state"), or any analytic plant. The linearization is exact for
+    affine ``f`` (so a Koopman ``latent_step`` recovers ``(A_z, B_z)`` exactly)
+    and a first-order approximation otherwise.
+
+    Args:
+        dynamics_fn: callable mapping a single state ``x`` ``[state_dim]`` and a
+            single control ``u`` ``[control_dim]`` to ``xdot`` ``[state_dim]``.
+        x0: operating-point state, shape ``[state_dim]``.
+        u0: operating-point control, shape ``[control_dim]``.
+        Q, R: cost matrices on the (linearized) state and control.
+        gamma: H-infinity attenuation level (must be GARE-feasible at ``(A, B)``).
+        D: disturbance input matrix ``[state_dim, n_w]``; defaults to ``B``.
+        **kwargs: forwarded verbatim to :func:`hinf_minmax_train` (e.g.
+            ``n_iters``, ``batch_size``, ``seed``).
+
+    Returns:
+        The :func:`hinf_minmax_train` metrics dict, plus the extracted linear
+        model under keys ``"A"`` and ``"B"`` (numpy float64) for transparency.
+
+    Note:
+        ``dynamics_fn`` must be a SINGLE-step ``f(x, u)``. Collapsing a
+        sequence/history-window model (e.g. ``PITNN.forward``) into a one-step
+        operating point is an ADR-level design decision and is the caller's
+        responsibility — wrap such a model in a one-step adapter first.
+    """
+    A_t, B_t = linearize_dynamics(dynamics_fn, x0, u0)
+    A = A_t.detach().cpu().numpy().astype(np.float64)
+    B = B_t.detach().cpu().numpy().astype(np.float64)
+
+    metrics = hinf_minmax_train(A, B, Q, R, gamma, D=D, **kwargs)  # type: ignore[arg-type]
+    metrics["A"] = A
+    metrics["B"] = B
     return metrics
