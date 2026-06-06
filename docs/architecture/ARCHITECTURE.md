@@ -22,28 +22,24 @@
 > **IMPORTANT — naming caveat.** The Blueprint speaks of "~7 new loss terms, 3 new
 > network heads (critic/value, disturbance/adversary, CBF filter), and a
 > re-derived adaptation law" `[BP PAGE 1]` at a conceptual level. The
-> Implementation Plan §2–§12 then defines the **concrete file layout and class
-> names that actually get built**, and these differ from the abstract Blueprint
-> nouns (e.g. there is no standalone `adversary.py` in the plan; the H∞/adversary
-> connection is described in the Blueprint but the plan implements the IRL critic,
-> costate head, and CBF filter as the three concrete new heads). Where the two
-> diverge, **the file/class names below come from the Implementation Plan**, which
-> is the buildable artifact. Divergences are flagged in §8.3.
+> Implementation Plan §2–§12 defines the **concrete file layout and class
+> names**, and these sometimes differ from the abstract Blueprint nouns. Where the
+> two diverge, **the file/class names below come from the Implementation Plan**,
+> which is the buildable artifact.
 
 ---
 
-## 0. Implemented Architecture (v0.4.5) — graph-backed
+## 0. Implemented Architecture — graph-backed
 
-> **Status:** all nine ROADMAP phases are implemented (released **v0.3.0**) plus
-> the **PCML** (Physics-Constrained Machine Learning) component; **v0.3.1** was a
-> behavior-preserving simplification/optimization pass, **v0.3.2** and **v0.3.3**
-> behavior-preserving engineering-debt-resolution releases, and the **v0.4.x**
-> feature/refinement line is underway (**v0.4.0** HJB/costate co-training rewire,
-> **v0.4.1** removed 6 unconsumed `LossConfig` fields, **v0.4.2** backtracking
-> line search in the KKT projection, **v0.4.3** nonlinear example plants,
-> **v0.4.4** ParallelInferenceEngine hardening, **v0.4.5** H∞ adversary core —
-> `solve_gare` + analytic `AdversaryHead`). The
-> structure below is generated from the codebase by
+> **Status:** all nine ROADMAP phases are implemented, plus the **PCML**
+> (Physics-Constrained Machine Learning) component. The HJB and IRL critic
+> regularizers are wired through a dedicated critic optimizer in co-training; the
+> KKT projection uses a backtracking line-search Newton solver; the example plants
+> are nonlinear; the `ParallelInferenceEngine` runs a real double-buffered IRL
+> critic update; and the H∞ robust-control layer is built out — an analytic core
+> (`solve_gare` + `AdversaryHead`) plus a neural adversarial min-max training loop
+> (`NeuralAdversary` + `hinf_minmax_train`). The structure below is generated from
+> the codebase by
 > `tools/create-dependency-graph/create_dependency_graph.py` and cross-checked
 > against the source; regenerate with `python tools/create-dependency-graph/create_dependency_graph.py --include-tests`.
 >
@@ -197,7 +193,6 @@ from pits_mras.controllers.safety import CLFCBFSafetyFilter
 from pits_mras.training.pretrain import pretrain_pitnn
 from pits_mras.training.cotrain import cotraining_loop
 from pits_mras.inference.realtime import RealtimeInferenceEngine
-__version__ = "0.1.0"
 ```
 
 Empty `__init__.py` files (docstrings only, no imports) are created in:
@@ -214,16 +209,16 @@ Empty `__init__.py` files (docstrings only, no imports) are created in:
 | `utils/pe_monitor.py` | Phase 1 | `PEMonitor` — checks persistence-of-excitation Gram min-eigenvalue, injects probing noise. | `[IP PAGE 14, §4.5]` |
 | `models/attention.py` | Phase 2 Models | `PhysicsInformedAttention` (temporal + physical + error-driven, learned 3-way gate). | `[IP PAGE 16, §5.1]` |
 | `models/decoders.py` | Phase 2 | `HamiltonianNet`, `DissipationNet`, `PortHamiltonianDecoder`. | `[IP PAGE 18, §5.2]` |
-| `models/critic.py` | Phase 2 | `QuadraticCritic` (V̂=Wᵀφ(e)), `CostateHead` (λ̂=∇V̂, u*=−R⁻¹Bᵀλ̂), `AdversaryHead` (H∞ worst-case w*=γ⁻²DᵀPe, v0.4.5). NEW — Identity 1 & 2. | `[IP PAGE 22, §5.3]` |
+| `models/critic.py` | Phase 2 | `QuadraticCritic` (V̂=Wᵀφ(e)), `CostateHead` (λ̂=∇V̂, u*=−R⁻¹Bᵀλ̂), `AdversaryHead` (H∞ worst-case w*=γ⁻²DᵀPe). Identity 1 & 2. | `[IP PAGE 22, §5.3]` |
 | `models/pitnn.py` | Phase 2 | `PITNN` — embedding → causal LSTM → attention → port-Hamiltonian decoder (Algorithm 1). | `[IP PAGE 25, §5.4]` |
 | `losses/physics.py` | Phase 3 Losses | `PhysicsLoss`: λ₁L_energy+λ₂L_PDE+λ₃L_BC+λ₄L_sym. | `[IP PAGE 28, §6.1]` |
 | `losses/temporal.py` | Phase 3 | `MultiStepPredictionLoss`, `AttentionRegularizationLoss`, `TemporalSmoothnessLoss`, `TemporalLoss`. | `[IP PAGE 28, §6.2]` |
 | `losses/stability.py` | Phase 3 | `LyapunovConstraintLoss`, `ParameterBoundednessLoss`, `ControlEffortLoss`, `MRASStabilityLoss`. | `[IP PAGE 29, §6.3]` |
-| `losses/irl.py` | Phase 3 | `IRLBellmanAccumulator`, `IRLBellmanLoss`. NEW — Identity 1. | `[IP PAGE 29, §6.4]` |
-| `losses/hjb.py` | Phase 3 | `HJBResidualLoss`, `LyapunovDecreaseEnforcer`. NEW — Identity 8. | `[IP PAGE 31, §6.5]` |
+| `losses/irl.py` | Phase 3 | `IRLBellmanAccumulator`, `IRLBellmanLoss`. Identity 1. | `[IP PAGE 29, §6.4]` |
+| `losses/hjb.py` | Phase 3 | `HJBResidualLoss`, `LyapunovDecreaseEnforcer`. Identity 8. | `[IP PAGE 31, §6.5]` |
 | `losses/__init__.py` | Phase 3 | `TotalLoss` aggregator + per-loss TB/wandb logging. | `[IP PAGE 31, §6.6]` |
 | `controllers/reference_models.py` | Phase 4 Controllers | `LinearReferenceModel` (verifies Hurwitz, solves Lyapunov + Kleinman). | `[IP PAGE 31, §7.1]` |
-| `controllers/safety.py` | Phase 4 | `CLFCBFSafetyFilter` (closed-form CBF projection). NEW — Identity 3. | `[IP PAGE 33, §7.2]` |
+| `controllers/safety.py` | Phase 4 | `CLFCBFSafetyFilter` (closed-form CBF projection). Identity 3. | `[IP PAGE 33, §7.2]` |
 | `controllers/mras.py` | Phase 4 | `MRASController` (critic + costate head + K_ff + compensator + CBF). | `[IP PAGE 35, §7.3]` |
 | `training/pretrain.py` | Phase 5 Training | 3-stage curriculum (1A/1B/1C), Algorithm 2. | `[IP PAGE 38, §8.1]` |
 | `training/cotrain.py` | Phase 5 | co-training with IRL update, Algorithm 3 extended. "the most critical training file." | `[IP PAGE 39, §8.2]` |
@@ -263,9 +258,9 @@ certificates, generalized Lyapunov)" as sound but higher-complexity.
 | Identity 4 — Updated Adaptation Law (DPG) | Connection 4 | MRAS update θ̇_c=−Γ_c(∇L+γ_MRAS e φ_c) IS deterministic policy gradient; replace surrogate eᵀPe with learned critic gradient. | Rigorous | `controllers/mras.py`, `training/cotrain.py` | `[IP PAGE 5; BP PAGE 4]` |
 | Identity 8 — HJB Residual Loss | Connection 8 | 0=ℓ(e,u*)+∇_eV̂·(A_m e+B u*+f_corr); add as PINN-style residual. | Higher complexity | `losses/hjb.py` | `[IP PAGE 5; BP PAGE 7]` |
 | (port-Hamiltonian storage = value) | Connection 2 | H_θ is a storage/value function; passivity = L2-gain. | Rigorous | `models/decoders.py`, `utils/hamiltonian.py` | `[BP PAGE 4; IP PAGE 13]` |
-| (SAC entropy ↔ R-matrix) | Connection 5 | SAC temperature α ≡ control-penalty R⁻¹; entropy bonus = excitation. | Rigorous | **No dedicated module** (see G1). PE/excitation surfaced via `utils/pe_monitor.py` + attention entropy reg. | `[BP PAGE 5; IP PAGE 14]` |
-| (H∞ two-player game) | Connection 7 | H∞ robust control = zero-sum game; add disturbance/adversary head. | Rigorous | **Analytic core built in v0.4.5** (see G1): `solve_gare` (GARE) + `AdversaryHead` (`w*=γ⁻²DᵀPe`). **Neural min-max training loop shipped in v0.5.0** (`NeuralAdversary` + `hinf_minmax_train`, `training/hinf_minmax.py`; recovers the GARE oracle). | `[BP PAGE 6]` |
-| (TD-MPC2 latent planning) | Connection 9 | PITNN is a learned world model → latent MPC + terminal value head. | Higher complexity | **No dedicated module** (see G1). | `[BP PAGE 8]` |
+| (SAC entropy ↔ R-matrix) | Connection 5 | SAC temperature α ≡ control-penalty R⁻¹; entropy bonus = excitation. | Rigorous | `models/sac.py` (`GaussianPolicy` + `TwinQCritic`), `training/sac.py` (`SACTrainer`); PE/excitation also surfaced via `utils/pe_monitor.py` + attention entropy reg. | `[BP PAGE 5; IP PAGE 14]` |
+| (H∞ two-player game) | Connection 7 | H∞ robust control = zero-sum game; add disturbance/adversary head. | Rigorous | Analytic core: `solve_gare` (GARE, `utils/lyapunov.py`) + `AdversaryHead` (`w*=γ⁻²DᵀPe`, `models/critic.py`). Neural min-max training loop: `NeuralAdversary` (`models/adversary.py`) + `hinf_minmax_train` (`training/hinf_minmax.py`), which recovers the GARE oracle. | `[BP PAGE 6]` |
+| (TD-MPC2 latent planning) | Connection 9 | PITNN is a learned world model → latent MPC + terminal value head. | Higher complexity | `models/tdmpc.py` (`WorldModel` + `MPPIPlanner`), `training/tdmpc.py` (`tdmpc_update`); deep Koopman lifting in `models/koopman.py` + `controllers/koopman_control.py`. | `[BP PAGE 8]` |
 | (Neural / generalized Lyapunov) | Connection 10 | keep V=eᵀPe backbone; add learned residual V=eᵀPe+φ_NN(e) only for nonlinear regime. | Higher complexity | optional `nonlinear_residual` flag in `QuadraticCritic` | `[BP PAGE 9; IP PAGE 22]` |
 
 *Note: the **Rigor** column (Rigorous / Higher complexity) is a synthesis derived
@@ -274,7 +269,7 @@ split and prioritized-tier ranking, `[BP PAGE 1, 9–10]`), not a verbatim prior
 label attached to each identity in the source documents.*
 
 **Multi-identity owners (verbatim):**
-- `models/critic.py` — "Critic / Value Network (NEW — Identity 1 & 2)." `[IP PAGE 22, §5.3]`
+- `models/critic.py` — "Critic / Value Network (Identity 1 & 2)." `[IP PAGE 22, §5.3]`
 - `controllers/mras.py` — "combining: Classical MRAS feedback/feedforward structure; IRL critic-guided actor update (Identity 1, 4); Costate-based optimal control action (Identity 2); CLF-CBF safety filter (Identity 3)." `[IP PAGE 36, §7.3]`
 - `controllers/reference_models.py` — links reference model A_m to value function: "the MRAS Lyapunov equation A_mᵀP+PA_m=−Q uses this same A_m to compute P, linking the reference model directly to the value function (Identity 1)." `[IP PAGE 31, §7.1]`
 
@@ -294,8 +289,7 @@ new):
 | `IRLBellmanLoss` / `L_IRL` | Identity 1 | `δ_IRL(t)=∫_{t−T}^{t} r dτ − [V̂(e(t))−V̂(e(t−T))]`, `L_IRL=½E[δ_IRL²]`; "does NOT contain the drift matrix A → model-free." | `losses/irl.py` | `[IP PAGES 4,29; §3.2,§6.4]` |
 | `HJBResidualLoss` / `L_HJB` | Identity 8 | `‖eᵀQe+(u*)ᵀRu*+∇_eV̂·(A_m e+B u*+f_corr)‖²`; "Start with weight λ_HJB=0.01... treat it as a regularizer." | `losses/hjb.py` | `[IP PAGES 5,31; §3.5,§6.5]` |
 | `LyapunovDecreaseEnforcer` / `L_dec` | (Lyapunov decrease) | `L_dec=E[ReLU(∇V̂·f̂+ℓ)]` — "tighter than the existing L_Lyap." | `losses/hjb.py` | `[IP PAGE 31, §6.5]` |
-| `L_costate` (gradient consistency) | Identity 2 | **Removed in v0.4.0** — vacuous: `λ̂ ≡ ∇_eV̂` by construction (the costate head IS the critic gradient), so `L_costate ≡ 0`. Identity 2 holds by construction, not by this loss. | (was `cotrain.py`) | `[IP PAGES 5,39; §3.3,§8.2]` |
-| `L_adjoint` (adjoint dynamics) | Identity 2 | `L_adjoint=‖λ̇(t)+∂H/∂e‖²` along trajectories. **Not implemented** (the `lambda_adjoint` weight was a dead config knob, removed in v0.4.1); a future feature if needed. | (none) | `[IP PAGES 5,9; §3.3,§4.2]` |
+| `L_adjoint` (adjoint dynamics) | Identity 2 | `L_adjoint=‖λ̇(t)+∂H/∂e‖²` along trajectories. **Not implemented**; a future feature if needed. Identity 2 itself holds by construction (the costate head IS the critic gradient, `λ̂ ≡ ∇_eV̂`), so no separate gradient-consistency loss is required. | (none) | `[IP PAGES 5,9; §3.3,§4.2]` |
 | `cbf_constraint_loss` | Identity 3 | soft penalty `ReLU(−h_e).mean()` on CBF violation; added to L_total. | `controllers/safety.py` | `[IP PAGE 35, §7.2]` |
 | `positivity_loss` (critic) | Identity 1 | `ReLU(−min_eig(P̂))` — penalizes non-PD P̂. | `models/critic.py` | `[IP PAGE 24, §5.3]` |
 
@@ -307,20 +301,19 @@ control effort) `[IP PAGE 29]`.
 All weights live in `LossConfig` `[IP PAGE 9, §4.2]`: `lambda_physics`,
 `lambda_temporal`, `lambda_stability`, `lambda_data`, `lambda_irl`, `lambda_hjb`
 (default `0.0`; opt-in critic regularizer), `lambda_pcml`, plus the physics
-sub-weights (`lambda_energy`/`lambda_pde`/`lambda_bc`/`lambda_sym`). (`lambda_costate`
-was removed in v0.4.0 with the vacuous costate term; the 6 unconsumed weights
-`lambda_adjoint`/`alpha_attn`/`alpha_smooth`/`mu_lyap`/`beta_param`/`lambda_delta_u`
-were removed in v0.4.1.) `TotalLoss` logs each sub-loss separately under
+sub-weights (`lambda_energy`/`lambda_pde`/`lambda_bc`/`lambda_sym`). Each sub-loss
+class carries its own internal weights, so `LossConfig` holds only the
+aggregator-level knobs above. `TotalLoss` logs each sub-loss separately under
 `loss/physics`, `loss/temporal`, `loss/stability`, `loss/irl`, `loss/hjb`,
 `loss/data`. `[IP PAGE 31, §6.6]`
 
 ### 4.2 The Three New Network Heads
 
 The Blueprint names "3 new network heads (critic/value, disturbance/adversary, CBF
-filter)" `[BP PAGE 1]`. The Implementation Plan **concretely builds** the
-following three new heads (note: the disturbance/adversary head from the Blueprint
-is NOT given a concrete module in the plan — see G1; the plan's third concrete new
-head is the costate head):
+filter)" `[BP PAGE 1]`. The three concrete heads at the core of the controller are
+the critic/value head, the costate head, and the CBF safety-filter head; the
+disturbance/adversary head is realized separately as the analytic `AdversaryHead`
+plus the `NeuralAdversary` (§3, Connection 7):
 
 1. **Critic / Value head — `QuadraticCritic`** — "V̂(e)=W_cᵀφ_c(e)... V̂(e)=eᵀP̂e
    where P̂ is learned via the IRL Bellman error." Quadratic Kronecker basis
@@ -379,7 +372,7 @@ flowchart LR
     end
     MRAS --> CRIT
     MRAS -->|"u_nom = u_fb + u_ff + u_aux"| SF["CLFCBFSafetyFilter<br/>h(e)=c−eᵀPe — Identity 3"]
-    ADV["disturbance/adversary head ŵ = γ⁻²DᵀP·e<br/>(H∞ analytic core, v0.4.5 — AdversaryHead)"] -.->|"conceptual"| CRIT
+    ADV["disturbance/adversary head ŵ = γ⁻²DᵀP·e<br/>(H∞ analytic core — AdversaryHead)"] -.->|"conceptual"| CRIT
     SF -->|"u_safe"| PLANT["Plant"]
     PLANT -->|"push (x_p, u_safe, e)"| H
 ```
@@ -431,13 +424,16 @@ gradient (the costate) IS the feedback control. `[IP PAGE 35, §7.3]` The attent
 (`context[:, :state_dim]`) and the decoder's temporal correction `W_corr c_t`.
 `[IP PAGES 27, 37]`
 
-**Where the disturbance / adversary head attaches.** *Not realized as a module in
-the Implementation Plan* (see G1). The Blueprint specifies it conceptually:
-"add a disturbance/adversary head ŵ = K_w·x_p that maximizes the cost, train the
-critic on the game-Bellman residual, and set γ from your reference-model
-performance bound." `[BP PAGE 6, Connection 7]` In the plan, the closest realized
-robustness mechanism is the `compensator` (auxiliary disturbance/uncertainty
-network) inside `MRASController` `[IP PAGE 36, §7.3]` and the CBF filter.
+**Where the disturbance / adversary head attaches.** The Blueprint specifies it
+conceptually: "add a disturbance/adversary head ŵ that maximizes the cost, train
+the critic on the game-Bellman residual, and set γ from your reference-model
+performance bound." `[BP PAGE 6, Connection 7]` The analytic `AdversaryHead`
+(`models/critic.py`) realizes the worst-case disturbance `ŵ = γ⁻²DᵀPe` directly
+from the critic gradient, warm-started by `solve_gare`; `NeuralAdversary` +
+`hinf_minmax_train` (`models/adversary.py`, `training/hinf_minmax.py`) learn it via
+the H∞ min-max game. Inside the deployed loop, the `compensator` (auxiliary
+disturbance/uncertainty network) inside `MRASController` `[IP PAGE 36, §7.3]` and
+the CBF filter provide the runtime robustness mechanism.
 
 ### 5.2 Reference Model
 
@@ -470,11 +466,11 @@ above threshold, reduce the data weight `λ_data` by 0.5 and log a warning."
 "the most critical training file." `[IP PAGE 39, §8.2]` After the standard
 gradient update it adds, in order:
 1. **IRL critic update** (Identity 1): push `(e, r_inst)` to `IRLBellmanAccumulator`; when ready, backprop `L_irl` on the critic with grad-clip 1.0 via a **separate `critic_optimizer`** (Adam lr=1e-3), then a **policy-improvement** read `K_new = R⁻¹BᵀP̂` (implicit via the costate head). `[IP PAGE 39]`
-2. **HJB residual update** — opt-in (`lambda_hjb>0`), applied to the critic via `critic_optimizer` (v0.4.0; previously its gradient was discarded in `L_total`). `[IP PAGE 39]`
-3. **Critic positivity regularization** `1e-3·L_pos`, applied to the critic via `critic_optimizer`, guarded on `min_eig(P̂)<0` (v0.3.3). `[IP PAGE 39]`
+2. **HJB residual update** — opt-in (`lambda_hjb>0`), applied to the critic via `critic_optimizer`. `[IP PAGE 39]`
+3. **Critic positivity regularization** `1e-3·L_pos`, applied to the critic via `critic_optimizer`, guarded on `min_eig(P̂)<0`. `[IP PAGE 39]`
 4. **CBF constraint loss** `0.1·L_cbf` (if `enable_cbf`) — part of the PITNN `L_total`. `[IP PAGE 40]`
 
-(The costate-consistency term was removed in v0.4.0: `λ̂ ≡ ∇V̂` by construction, so it was identically zero.)
+There is no separate costate-consistency term: `λ̂ ≡ ∇V̂` by construction, so it would be identically zero.
 
 Two optimizers: `optimizer_pitnn` (Adam lr=1e-4) for PITNN params and
 `critic_optimizer` (Adam lr=1e-3) for the critic — "separate because the IRL
@@ -571,21 +567,13 @@ mypy>=1.4.0      isort>=5.12.0
 # cvxpy>=1.3.0   (commented out — only for >1 CBF constraint)
 ```
 
-And update `setup.py`: `name="pits_mras"`, `version="0.1.0"`,
-`python_requires=">=3.9"`, `install_requires` = numpy/scipy/torch/control/
-matplotlib/pandas/tqdm/pyyaml; `extras_require` `dev` (pytest, pytest-cov, black,
-flake8, mypy, isort) and `logging` (tensorboard, wandb). `[IP PAGE 3, §2]`
-
-> **Conflict with current scaffold (G2).** The repo's existing `setup.py` uses
-> `name="pits-mras"`, `version="1.0.0"`; the plan mandates `name="pits_mras"`,
-> `version="0.1.0"`. The plan also adds **`control>=0.9.4`** (Python Control
-> Systems Library) and **`isort`/`torchvision`/`pytest-cov`** which are absent
-> from the current `requirements.txt`. The plan's §2 says "Replace
-> requirements.txt entirely." `[IP PAGE 2]`
+`setup.py` declares `name="pits_mras"`, `python_requires=">=3.9"`,
+`install_requires` = numpy/scipy/torch/control/matplotlib/pandas/tqdm/pyyaml;
+`extras_require` `dev` (pytest, pytest-cov, black, flake8, mypy, isort) and
+`logging` (tensorboard, wandb). `[IP PAGE 3, §2]`
 
 Library usage explicitly referenced:
-- **torch** — the current `requirements.txt` pins a minimum of **`torch>=2.0.0`**;
-  the plan's replacement block raises this to `torch>=2.1.0` (with `torchvision>=0.16.0`). `[requirements.txt; IP PAGES 2–3, §2]`
+- **torch** — pinned at a minimum of `torch>=2.1.0` (with `torchvision>=0.16.0`). `[IP PAGES 2–3, §2]`
 - **scipy** — `solve_continuous_lyapunov`, `solve_continuous_are`. `[IP PAGE 10]`
 - **control>=0.9.4** — "Python Control Systems Library (Riccati, Lyapunov solvers)." `[IP PAGE 2]` (Note: the actual `lyapunov.py` code shown uses scipy, not `control`; see G3.)
 - **pyyaml** — `PITSMRASConfig.from_yaml/to_yaml`. `[IP PAGE 10]`
@@ -607,16 +595,10 @@ Library usage explicitly referenced:
 
 | ID | Gap | Where |
 |---|---|---|
-| **G0** | **No single verbatim "§2 target tree" exists in the source.** The plan's §2 is "Updated Dependencies." Paths are scattered inline as "Create `src/...`" across §4–§12. The tree in this doc's §2 was assembled from those inline directives and cited per-path. The orchestrator must rely on that assembled list, not a literal source block. | `[IP PAGE 2, §2]` |
-| **G1** | **[PARTLY RESOLVED v0.4.5]** The Blueprint's "disturbance/adversary head" (H∞, Connection 7) originally had no concrete module (the plan built critic/costate/CBF). v0.4.5 added the **analytic H∞ core**: `solve_gare` (`utils/lyapunov.py`) + `AdversaryHead` (`models/critic.py`, `w*=γ⁻²DᵀPe`, by construction). So the "middle head" now exists alongside costate. **[RESOLVED v0.5.0]** the neural adversarial **min-max training loop** (`NeuralAdversary` + `hinf_minmax_train`). Remaining: Connection 5 (SAC/entropy) / Connection 9 (TD-MPC2) still have no dedicated modules. | `[BP PAGE 1,6] vs [IP §5,§7]` |
-| **G2** | **setup.py / requirements.txt conflict** between current scaffold (`pits-mras`, v1.0.0, no `control`/`isort`) and the plan (`pits_mras`, v0.1.0, adds `control`, `torchvision`, `pytest-cov`, `isort`; "Replace entirely"). Scaffolder must decide whether to overwrite. | `[IP PAGES 2–3, §2]` |
-| **G3** | **`control>=0.9.4` is listed as a dependency** ("Riccati, Lyapunov solvers") but the actual `lyapunov.py` code in the plan uses **scipy** (`solve_continuous_lyapunov`/`solve_continuous_are`), not `control`. The `control` dependency may be unused as written. | `[IP PAGE 2 vs PAGES 10–12]` |
-| **G4** | **`docs/PITS-MRAS — Physics-Informed...md` (1,543 lines) is cited as the "source of truth for the existing design"** and referenced for "Algorithm 1/2/3", `L_physics §2.2`, etc. — but that file was **not provided** to this task. Several losses (`physics.py` PDE operator, `temporal.py`, `stability.py`) are described only by reference to it. Their exact formulas live there, unseen here. | `[IP PAGE 1, §0]` |
-| **G5** | **`cotrain.py` references "line 52 of the existing algorithm"** and "Algorithm 3" as a pre-existing object to extend, but only the *additions* are given as code; the base co-training loop body is described prose-only. | `[IP PAGE 39, §8.2]` |
-| **G6** | **`pretrain.py` exports `pretrain_pitnn` and `cotrain.py` exports `cotraining_loop`** (per `__init__.py`), but §8.1/§8.2 describe stage logic without giving those functions' full signatures/return types. | `[IP PAGES 6,38–40]` |
-| **G7** | **Dataset / trajectory data source** for pretraining and the standalone IRL trainer is referenced ("trajectory data", "fixed dataset of trajectories", "demonstration data") but its **format, generation, and loader are not specified**; there is **no `data/` module** in the layout. | `[IP PAGES 38,40]` |
-| **G8** | **[RESOLVED v0.5.1]** MIMO control input was simplified in the decoder (`f_ctrl = B_val * u.sum(...)`). Now a proper input-matrix product `f_ctrl = B(x_p) @ u` (`B_net` emits `[batch, 2*n_q, control_dim]`, `bmm` with `u`); `control_dim=1` exactly preserved. | `[IP PAGE 21, §5.2]` |
-| **G9** | **`examples/` vs README:** the repo scaffold has `examples/README.md`; the plan defines three example scripts but does not mention a `train_pendulum.py`/`evaluate_tracking.py` (those were a misread from the digest, not in the source). The real examples are robotic_manipulator / autonomous_vehicle / building_hvac. | `[IP PAGE 43, §10]` |
+| **G0** | **No single verbatim "§2 target tree" exists in the source.** The plan's §2 is "Updated Dependencies." Paths are scattered inline as "Create `src/...`" across §4–§12. The tree in this doc's §2 is assembled from those inline directives and cited per-path; there is no literal source tree block. | `[IP PAGE 2, §2]` |
+| **G3** | **`control>=0.9.4` is listed as a dependency** ("Riccati, Lyapunov solvers") but `lyapunov.py` uses **scipy** (`solve_continuous_lyapunov`/`solve_continuous_are`), not `control`. The `control` dependency is unused by the math engine. | `[IP PAGE 2 vs PAGES 10–12]` |
+| **G4** | **`docs/PITS-MRAS — Physics-Informed...md` (1,543 lines) is cited as the "source of truth for the existing design"** and referenced for "Algorithm 1/2/3", `L_physics §2.2`, etc. Several losses (`physics.py` PDE operator, `temporal.py`, `stability.py`) trace their exact formulas to it; this document references rather than reproduces those specifics. | `[IP PAGE 1, §0]` |
+| **G7** | **Dataset / trajectory data source.** The source docs reference external "trajectory data" / "demonstration data" without specifying a format, generator, or loader. The repo's `data/` module supplies an opt-in synthetic path (`TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader`); the training loops otherwise run on inline synthetic data. No external/recorded dataset is wired in. | `[IP PAGES 38,40]` |
 
 ---
 
@@ -648,9 +630,8 @@ Library usage explicitly referenced:
 
 ---
 
-*This document was assembled exclusively from the two cited source `.txt`
-extractions plus stated repo-scaffold facts. Items marked "Not specified in source
-docs" or listed in §8.3 (G0–G9) were intentionally left unfilled to avoid
-fabrication. NOTE: the docs/PITS-MRAS Physics-Informed...md file cited by the plan
-as the design source-of-truth (G4) was not available to this task; loss-formula
-specifics that live only there are referenced, not reproduced.*
+*This document is grounded in the two cited source `.txt` extractions plus the
+repository source. Items listed in §8.3 are open ambiguities in the source design
+docs. NOTE: the docs/PITS-MRAS Physics-Informed...md file cited by the plan as the
+design source-of-truth (G4) is referenced rather than reproduced; loss-formula
+specifics that live only there are not duplicated here.*

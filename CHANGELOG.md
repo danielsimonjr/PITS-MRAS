@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs
+
+- **Architecture docs de-versioned to read as a present-tense design snapshot.**
+  Removed version numbers, dates, and "what changed when" language (e.g. `NEW`,
+  `RESOLVED vX`, `shipped in vX`, per-version Status blocks, the resolved-gap rows,
+  the `Version:` stat field) from the hand-written architecture docs
+  (`ARCHITECTURE.md`, `OVERVIEW.md`, `COMPONENTS.md`, `API.md`, `DATAFLOW.md`) and
+  rewrote the affected sections in present tense. Version/date history lives here
+  in the CHANGELOG and in the generated dependency-graph/test-coverage reports;
+  the design docs now describe only the current state (current counts retained).
+  The generated reports were not hand-edited.
+
 ## [0.8.0] - 2026-06-06
 
 Gap-closure sprint — **GENERIC/GFINN thermodynamic decoder** (the final gap; the

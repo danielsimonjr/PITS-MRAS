@@ -3,9 +3,9 @@
 > **Orientation document.** A grounded, high-level map of the `pits_mras`
 > codebase for someone reading it for the first time. Every count and module
 > claim here is taken from the generated dependency graph
-> (`docs/architecture/dependency-graph.json`, `lastUpdated: 2026-06-03`) and the
-> subpackage docstrings in the source tree. For the deep design rationale and the
-> source-document citations, see `ARCHITECTURE.md` in this folder.
+> (`docs/architecture/dependency-graph.json`) and the subpackage docstrings in the
+> source tree. For the deep design rationale and the source-document citations, see
+> `ARCHITECTURE.md` in this folder.
 
 PITS-MRAS (**Physics-Informed Time-Series Model-Reference Adaptive Systems**) is a
 research framework that merges three paradigms — **Physics-Informed Neural
@@ -14,12 +14,11 @@ Networks**, **Time-Series Deep Learning**, and **Model-Reference Adaptive System
 theory through roughly ten mathematical identities. The headline identity is that
 the MRAS Lyapunov function `V(e) = eᵀPe` *is* the LQR value function for the
 tracking-error system; from that, the costate `λ = ∇V`, an Integral-RL critic, and
-a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As of
-**v0.3.0** the framework adds a **PCML (Physics-Constrained ML)** layer that
-upgrades physics enforcement from soft penalties to hard KKT-projection constraint
-satisfaction.
+a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. The
+framework includes a **PCML (Physics-Constrained ML)** layer that upgrades physics
+enforcement from soft penalties to hard KKT-projection constraint satisfaction.
 
-**Version `0.8.0` · 55 source files · 11 modules · 9,021 LOC · 169 exports
+**55 source files · 11 modules · 9,021 LOC · 169 exports
 (62 re-exports) · 58 classes · 2 Protocol/ABC · 47 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
@@ -61,14 +60,16 @@ ones, as tagged in the source code itself:
 
 The port-Hamiltonian storage function doubling as a value function (passivity =
 L2-gain) and the neural/generalized-Lyapunov residual are additional rigorous
-connections; a few Blueprint connections (H∞ adversary head, SAC-entropy, TD-MPC2
-latent planning) are described in the design docs but deliberately **not** built
-as dedicated modules (see `ARCHITECTURE.md` §8.3, gap G1).
+connections. The remaining Blueprint connections are also built out as dedicated
+modules: the H∞ adversary head (analytic `AdversaryHead` + neural `NeuralAdversary`
+with its min-max trainer), SAC-entropy (`models/sac.py` + `training/sac.py`), and
+TD-MPC2 latent planning (`models/tdmpc.py` world model + MPPI planner). See
+`ARCHITECTURE.md` §3 for the full identity → module mapping.
 
-### v0.3.0 — the PCML layer
+### The PCML layer
 
-v0.3.0 adds **Physics-Constrained ML**, which upgrades physics enforcement from
-*soft* penalties to *hard* constraint satisfaction
+**Physics-Constrained ML** upgrades physics enforcement from *soft* penalties to
+*hard* constraint satisfaction
 (`docs/PITS-MRAS_FINAL_SUMMARY.md`, PCML section):
 
 - **Soft PCML** (pre-training): augments the loss with DAE residuals
@@ -78,8 +79,8 @@ v0.3.0 adds **Physics-Constrained ML**, which upgrades physics enforcement from
   manifold to machine precision (Newton on the KKT system with Fischer-Burmeister
   complementarity; gradients via a one-step implicit-function trick).
 
-PCML is **opt-in and backward-compatible** — all PCML config flags default off, so
-the v0.2.0 behavior is unchanged unless PCML is explicitly wired in.
+PCML is **opt-in** — all PCML config flags default off, so the base PITNN behavior
+applies unless PCML is explicitly wired in.
 
 ---
 
@@ -93,7 +94,7 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 | `src/pits_mras` (package root) | 2 | Top-level package: `config.py` (centralized dataclass config, IP §4.2) + `__init__.py` (public-API barrel re-exporting 17 symbols). |
 | `src/pits_mras/constraints` | 4 | Physics constraint systems for PCML (PCML Addendum §2.1): `PhysicsConstraints` ABC, `MechanicalDAE`, `HeatConductionDAE`. |
 | `src/pits_mras/controllers` | 5 | Reference models, CLF-CBF safety filter, the actor-critic MRAS controller, and the Koopman-LQR controller (CARE on lifted coords). |
-| `src/pits_mras/data` | 2 | Opt-in trajectory dataset/loader: `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader` (G7). |
+| `src/pits_mras/data` | 2 | Opt-in trajectory dataset/loader: `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader`. |
 | `src/pits_mras/inference` | 3 | Real-time closed-loop inference engine and the parallel multi-thread deployment architecture (IP §9). |
 | `src/pits_mras/losses` | 7 | Loss functions (Phase 3): physics, temporal, stability, IRL-Bellman, HJB-residual, adaptive/causal weighting, plus the `TotalLoss` aggregator. |
 | `src/pits_mras/models` | 12 | Physics-informed attention, port-Hamiltonian decoders, critic/costate/adversary heads, PCML/Lagrangian heads, neural adversary, deep Koopman lifting, SAC policy/critic nets, TD-MPC2 world model + MPPI planner, the GENERIC/GFINN thermodynamic decoder, and the top-level `PITNN`. |
@@ -109,8 +110,8 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
   `quadratic_basis`, and the canonical `pack_symmetric`/`unpack_symmetric`
   basis helpers (built on `scipy.linalg`).
 - **`models/critic.py`** — `QuadraticCritic` (`V̂ = Wᵀφ(e)`), `CostateHead`
-  (`λ̂ = ∇V̂`, `u* = −R⁻¹Bᵀλ̂`), and `AdversaryHead` (H∞ worst-case `w* = γ⁻²DᵀPe`,
-  v0.4.5); tagged "Identity 1 & 2."
+  (`λ̂ = ∇V̂`, `u* = −R⁻¹Bᵀλ̂`), and `AdversaryHead` (H∞ worst-case `w* = γ⁻²DᵀPe`);
+  tagged "Identity 1 & 2."
 - **`models/pcml.py`** — `SoftPCMLLoss`, `TaylorNeighborhoodApproximation`,
   `KKTProjectionLayer`, `PCMLModule` (the soft/hard mode manager).
 - **`controllers/mras.py`** — `MRASController`, combining classical MRAS
@@ -173,7 +174,6 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.8.0` |
 | Total Python files | 55 |
 | Modules | 11 |
 | Total lines of code | 9,021 |
@@ -233,7 +233,7 @@ Other documents in `docs/architecture/`:
   as-built summary): the three-paradigm merger in depth, the identity → module
   mapping (all ten connections), data-flow diagrams, the training/inference
   pipelines, the stability/safety/testing strategy, dependencies, and the flagged
-  open gaps (G0–G9). This is the authoritative design reference.
+  open gaps. This is the authoritative design reference.
 - **`COMPONENTS.md`** — per-module component breakdown: each module's files, key
   classes/functions, responsibilities, and internal dependencies.
 - **`API.md`** — public API reference: the 17 top-level symbols, their
@@ -252,7 +252,7 @@ Other documents in `docs/architecture/`:
 Project-level references outside this folder:
 
 - **`docs/PITS-MRAS_FINAL_SUMMARY.md`** — the validated feature summary, including
-  the v0.3.0 PCML section.
+  the PCML section.
 - **`src/pits_mras/__init__.py`** — the canonical public API surface.
 
 > *This overview is derived from `dependency-graph.json` (the generated graph),

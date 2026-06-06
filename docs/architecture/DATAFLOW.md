@@ -1,7 +1,5 @@
 # PITS-MRAS — Data Flow
 
-**Version**: 0.4.5 | **Last Updated**: 2026-06-04
-
 This document traces how tensors move through the PITS-MRAS stack. Every shape,
 dict key, loss term, and control-flow branch below is grounded in the source
 under `src/pits_mras/`; line references point at the implementing file. For the
@@ -146,8 +144,8 @@ energy_loss scalar)`.
 | `lam_hat`       | `[batch, n_lambda]` | **only if** a `lagrangian_head` is set  |
 
 `lam_hat` is emitted only when an optional `LagrangianMultiplierHead` was passed
-to `__init__` (pitnn.py:49–52, 146–147, 163–164); otherwise the v0.2.0 output
-contract is unchanged. It is the KKT warm-start multiplier consumed by PCML.
+to `__init__` (pitnn.py:49–52, 146–147, 163–164); otherwise the base output
+contract applies. It is the KKT warm-start multiplier consumed by PCML.
 
 ---
 
@@ -335,8 +333,8 @@ For each episode/step (cotrain.py:183–319):
      spatial/temporal coords) — the residual is evaluated on `f_hat`;
    - CBF constraint `0.1·cbf_constraint_loss(e, u_safe)` if `use_cbf`.
    `L_total` is a **pure PITNN objective** — the critic-only regularizers (HJB,
-   positivity) are NOT in it (v0.4.0; previously their gradients landed on the
-   critic's `W_c` and were discarded).
+   positivity) are NOT in it; they are applied separately on the critic optimizer
+   (step 6).
 5. **PITNN step** `l_total.backward(); optimizer_pitnn.step()`.
 6. **Critic-only updates on the separate `critic_optimizer`** (Adam lr=1e-3),
    each a fresh `zero_grad`/`backward`/`step`:
@@ -451,8 +449,10 @@ three-thread skeleton around one `RealtimeInferenceEngine`:
   `_critic_lock`, publishes `u_safe`/`e_norm`/`v_hat`/`h_cbf`/`cbf_active` into
   the lock-protected `ControllerState`. Never blocks on adaptation.
 - **`AdaptationThread`** (~100 Hz, parallel.py:108–117): double-buffer pattern —
-  `copy.deepcopy` the critic, update the copy, atomically swap it back under
-  `_critic_lock` (the IRL update itself is a placeholder here, parallel.py:18–23).
+  `copy.deepcopy` the critic, run one IRL Bellman gradient step on the copy
+  (`_adaptation_update`, parallel.py:136–172), then atomically swap it back under
+  `_critic_lock`. The deepcopy and gradient step run off the lock; only the swap
+  is held under it.
 - **`MonitorThread`** (~10 Hz, parallel.py:119–126): snapshots the CBF-activation
   rate from the shared state.
 

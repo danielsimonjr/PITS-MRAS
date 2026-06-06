@@ -17,7 +17,7 @@ symbols, grouped by area:
 | **Training** | `pretrain_pitnn`, `cotraining_loop` |
 | **Inference** | `RealtimeInferenceEngine` |
 
-`__version__` is `"0.4.5"`.
+The package exposes a `__version__` string at the root.
 
 > Note on the configuration layer: `PITSMRASConfig` and its seven sub-config
 > dataclasses (`config.py`) are not in the package-level `__all__`, but they are
@@ -73,8 +73,7 @@ forward(
 Returns a dict with keys:
 `f_hat`, `H_val`, `context`, `alpha`, `h_enc`, `P_diss`, `energy_loss`,
 `attn_reg_loss` (monitoring keys). When a `lagrangian_head` is attached, an
-additional `lam_hat` key is included. (The redundant `f`/`H` aliases of
-`f_hat`/`H_val` were removed in v0.3.1.)
+additional `lam_hat` key is included.
 
 ```python
 update_normalization(x_data: Tensor) -> None   # update running mean/std buffers from a data batch
@@ -174,7 +173,7 @@ forward(e: Tensor) -> tuple[Tensor, Tensor]
 Returns `(lambda_hat, u_optimal)`: `lambda_hat` `[batch, state_dim]` (the costate
 `∇V̂`, always un-scaled), `u_optimal` `[batch, control_dim]`.
 
-### `AdversaryHead` (H∞, v0.4.5)
+### `AdversaryHead` (H∞)
 
 `pits_mras.models.critic.AdversaryHead` — the H∞ worst-case-disturbance head,
 analytic by construction from the critic gradient (the robust-control sibling of
@@ -757,9 +756,8 @@ Main weights: `lambda_physics=1.0`, `lambda_temporal=0.5`, `lambda_stability=2.0
 HJB critic regularizer), `lambda_pcml=1.0`.
 Physics sub-weights: `lambda_energy=1.0`, `lambda_pde=1.0`, `lambda_bc=0.5`,
 `lambda_sym=0.2`.
-(The orphaned `lambda_adjoint` / `alpha_attn` / `alpha_smooth` / `mu_lyap` /
-`beta_param` / `lambda_delta_u` weights were removed in v0.4.1 — they were
-unconsumed; the corresponding sub-loss classes carry their own weights.)
+(The temporal- and stability-sub-loss classes carry their own weights, so
+`LossConfig` holds only the aggregator-level weights above.)
 
 ### `TrainingConfig` — schedule (Algorithms 2 & 3)
 

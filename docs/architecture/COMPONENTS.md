@@ -3,7 +3,7 @@
 > A grounded, per-module component reference for the `pits_mras` package.
 > Every class/function name, responsibility, and dependency below is taken from
 > the actual source under `src/pits_mras/` and cross-checked against
-> `docs/architecture/dependency-graph.json` (v0.8.0, 55 files, 11 modules, 169
+> `docs/architecture/dependency-graph.json` (55 files, 11 modules, 169
 > exports, 0 circular dependencies). Module purposes quote the package
 > `__init__` and file docstrings; class/function responsibilities quote their
 > own docstrings. For the *why* (the ten RL/optimal-control identities and the
@@ -85,7 +85,7 @@ records **zero** runtime or type-only circular dependencies; every arrow points
   `inference`, and `models.PITNN`.
 
 The package root `src/pits_mras/__init__.py` re-exports a flat public API of 17
-symbols (`__version__ = "0.4.5"`): `PITNN`, `QuadraticCritic`, `MRASController`,
+symbols: `PITNN`, `QuadraticCritic`, `MRASController`,
 `LinearReferenceModel`, `CLFCBFSafetyFilter`, `RealtimeInferenceEngine`,
 `pretrain_pitnn`, `cotraining_loop`, plus the PCML surface
 (`PhysicsConstraints`, `ConstraintSpec`, `MechanicalDAE`, `HeatConductionDAE`,
@@ -115,7 +115,7 @@ backbone; IRL (Vrabie & Lewis 2009) makes it model-free.
 | `PhysicsConfig` | Port-Hamiltonian decoder dims: `n_generalized_coords=2`, `hamiltonian_hidden`, `dissipation_hidden`, `use_position_dependent_J`. |
 | `MRASConfig` | Classical + IRL/actor-critic params: `state_dim`, `control_dim`, reference matrices `A_m/B_m/C_m`, LQR cost `Q_cost/R_cost`, adaptation gains, `irl_window_size`, `use_irl_critic`. |
 | `SafetyConfig` | CLF-CBF filter: `enable_cbf`, `safety_margin` (the `c` in `h(e)=c−eᵀPe`), `cbf_decay_rate` (the `γ`). |
-| `LossConfig` | All loss weights: `lambda_physics/temporal/stability/data/irl/hjb/pcml` plus the physics sub-weights (`lambda_energy/pde/bc/sym`). (`lambda_hjb` defaults to `0.0` — opt-in critic regularizer; the 6 unconsumed temporal/stability/adjoint sub-weights were removed in v0.4.1.) |
+| `LossConfig` | All aggregator-level loss weights: `lambda_physics/temporal/stability/data/irl/hjb/pcml` plus the physics sub-weights (`lambda_energy/pde/bc/sym`). (`lambda_hjb` defaults to `0.0` — opt-in critic regularizer; per-sub-loss weights live on the individual loss classes.) |
 | `TrainingConfig` | Schedule for Algorithm 2/3: `pretrain_epochs`, stage epochs, `n_episodes`, `dt`, `device`, `seed`, logging cadence. |
 | `PCMLConfig` | Physics-Constrained ML module: soft-mode residual weights, hard-mode (DAE-HardNet) params (`omega`, `eta`, `delta`, `taylor_order`, Newton settings), and constraint-system selection (`constraint_type` = `"mechanical"`/`"thermal"`, `n_joints`, thermal bounds). |
 | `PITSMRASConfig` | Master config aggregating the seven sub-configs via `field(default_factory=...)`; provides `from_yaml` / `to_yaml`. The single object passed to all components. |
@@ -199,7 +199,7 @@ critic/costate, PITNN." Phase 2. Re-exports the six core model classes;
 |---|---|---|
 | `attention.py` | `PhysicsInformedAttention` | Three-headed attention (temporal + physical + error-driven) fused by a learned 3-way softmax gate into context `c_t` and weights `alpha`. |
 | `decoders.py` | `HamiltonianNet`, `DissipationNet`, `PortHamiltonianDecoder` | Port-Hamiltonian decoder stack (Connection 2). |
-| `critic.py` | `QuadraticCritic`, `CostateHead`, `AdversaryHead` | Value head + costate/optimal-control head (Identity 1 & 2) + H∞ worst-case-disturbance head (v0.4.5). |
+| `critic.py` | `QuadraticCritic`, `CostateHead`, `AdversaryHead` | Value head + costate/optimal-control head (Identity 1 & 2) + H∞ worst-case-disturbance head. |
 | `pitnn.py` | `PITNN` | Top-level dynamics model (Algorithm 1): embed → causal LSTM → attention → port-Hamiltonian decoder. |
 | `pcml.py` | `SoftPCMLLoss`, `TaylorNeighborhoodApproximation`, `KKTProjectionLayer`, `PCMLModule` | Physics-Constrained ML: soft penalty (Patel et al. 2022) and hard KKT projection (DAE-HardNet). |
 | `lagrangian_head.py` | `LagrangianMultiplierHead` | Predicts KKT warm-start multipliers `lambda_hat` from the attention context (PCML Addendum §2.3). |
@@ -212,7 +212,7 @@ critic/costate, PITNN." Phase 2. Re-exports the six core model classes;
 - `PortHamiltonianDecoder` — `f̂ = J(q)∇H − [0; R_θ(q)·∂H/∂p] + B(x_p)u + W_corr c_t + b_corr`, with `J=−Jᵀ`, `R_θ⪰0`, `H_θ>0`; Hamiltonian gradient via autograd (`create_graph=True`). Dissipation is pH-consistent so the energy residual vanishes by construction for the conservative/dissipative/control terms.
 - `QuadraticCritic` — `V̂(e)=W_cᵀφ(e)` over the upper-triangular basis, so `V̂=eᵀP̂e` with `P̂` symmetric and the LQR limit exactly representable; `W_c` initialized near `P̂≈I`; optional `nonlinear_residual` MLP for the nonlinear regime (Connection 10). No bias (`V(0)=0` required for a CLF).
 - `CostateHead` — `λ̂ = ∂V̂/∂e`, `u* = −½R⁻¹Bᵀλ̂`; the action head IS the autodiff gradient of the critic (Identity 2 by construction). Documents the shared factor-of-½ convention with `HJBResidualLoss`.
-- `PITNN` — sliding `(state, control)` history + current error → dynamics prediction `f̂_θ`; causal (forward-only LSTM, no future leakage), energy-conserving (port-Hamiltonian), positive dissipation. Optional `lagrangian_head` emits KKT warm-start multipliers without changing the v0.2.0 output contract.
+- `PITNN` — sliding `(state, control)` history + current error → dynamics prediction `f̂_θ`; causal (forward-only LSTM, no future leakage), energy-conserving (port-Hamiltonian), positive dissipation. Optional `lagrangian_head` emits KKT warm-start multipliers without changing the base output contract.
 - `SoftPCMLLoss` — `L = λ_diff‖D‖² + λ_eq‖h‖² + λ_ineq‖ReLU(g)‖²` (Patel et al. 2022); generalizes the port-Hamiltonian `L_physics`.
 - `TaylorNeighborhoodApproximation` — multi-point neighborhood approximation converting differential operators into algebraic variables `d` for the KKT projection (DAE-HardNet Eq. 9).
 - `KKTProjectionLayer` — differentiable Newton projection onto the DAE constraint manifold (min-distance problem with Fischer-Burmeister complementarity).
@@ -299,10 +299,9 @@ trainer." Phase 5. Re-exports the three entry points.
 | `__init__.py` | re-exports three functions | Subpackage public surface. |
 
 > The source design docs pin the schedules and the additions to Algorithm 3 but
-> leave the base loop bodies / signatures prose-only (Gaps G5–G7); the
-> docstrings note that the function signatures, synthetic-trajectory generators,
-> and returned metrics are designed in-repo and run on tiny synthetic data (no
-> external dataset).
+> leave the base loop bodies / signatures prose-only; the function signatures,
+> synthetic-trajectory generators, and returned metrics are designed in-repo and
+> run on synthetic data (no external dataset — Gap G7).
 
 **Dependencies:** `cotrain.py` imports `losses.hjb.HJBResidualLoss`,
 `losses.irl.IRLBellmanLoss` (runtime) plus `config.PITSMRASConfig`,
@@ -329,10 +328,10 @@ architecture." Phase 6. Docstring-only package init.
 `v_hat`, `h_cbf`, `cbf_active`). The docstrings flag that the engine reconciles
 the real Phase-4 controller signature `MRASController.forward(e, r, x_plant,
 apply_safety=True)` with the §9 spec text (it computes `V̂` itself via
-`controller.critic`). As of v0.4.4 the `parallel.py` adaptation step is a **real**
-double-buffered IRL critic update (no longer a no-op placeholder); remaining
-scaffold: fixed `x_p`/`r` (no live sensor), a cooperative `Event.wait` scheduler
-(not hard-real-time), and the CBF `P` fixed at `setup_safety_filter` time.
+`controller.critic`). The `parallel.py` adaptation step is a **real**
+double-buffered IRL critic update; remaining scaffold: fixed `x_p`/`r` (no live
+sensor), a cooperative `Event.wait` scheduler (not hard-real-time), and the CBF
+`P` fixed at `setup_safety_filter` time.
 
 **Dependencies:** `realtime.py` imports `controllers.mras.MRASController`,
 `controllers.reference_models.LinearReferenceModel`, `models.pitnn.PITNN`, and
