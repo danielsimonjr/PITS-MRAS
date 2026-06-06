@@ -19,8 +19,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. As o
 upgrades physics enforcement from soft penalties to hard KKT-projection constraint
 satisfaction.
 
-**Version `0.5.3` · 48 source files · 11 modules · 7,726 LOC · 150 exports
-(54 re-exports) · 51 classes · 1 Protocol/ABC · 44 functions · 0 circular
+**Version `0.5.4` · 49 source files · 11 modules · 7,881 LOC · 151 exports
+(54 re-exports) · 52 classes · 1 Protocol/ABC · 44 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -85,14 +85,14 @@ the v0.2.0 behavior is unchanged unless PCML is explicitly wired in.
 
 ## 2. Module Map
 
-Eleven modules, 48 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
+Eleven modules, 49 files (incl. the `examples/`). One-line purposes are taken verbatim (abridged) from each
 subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 | Module | Files | Purpose |
 |---|---|---|
 | `src/pits_mras` (package root) | 2 | Top-level package: `config.py` (centralized dataclass config, IP §4.2) + `__init__.py` (public-API barrel re-exporting 17 symbols). |
 | `src/pits_mras/constraints` | 4 | Physics constraint systems for PCML (PCML Addendum §2.1): `PhysicsConstraints` ABC, `MechanicalDAE`, `HeatConductionDAE`. |
-| `src/pits_mras/controllers` | 4 | Reference models, CLF-CBF safety filter, and the actor-critic MRAS controller. |
+| `src/pits_mras/controllers` | 5 | Reference models, CLF-CBF safety filter, the actor-critic MRAS controller, and the Koopman-LQR controller (CARE on lifted coords). |
 | `src/pits_mras/data` | 2 | Opt-in trajectory dataset/loader: `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader` (G7). |
 | `src/pits_mras/inference` | 3 | Real-time closed-loop inference engine and the parallel multi-thread deployment architecture (IP §9). |
 | `src/pits_mras/losses` | 7 | Loss functions (Phase 3): physics, temporal, stability, IRL-Bellman, HJB-residual, adaptive/causal weighting, plus the `TotalLoss` aggregator. |
@@ -173,13 +173,13 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 
 | Metric | Value |
 |---|---|
-| Version | `0.5.3` |
-| Total Python files | 48 |
+| Version | `0.5.4` |
+| Total Python files | 49 |
 | Modules | 11 |
-| Total lines of code | 7,726 |
-| Total exports | 150 |
+| Total lines of code | 7,881 |
+| Total exports | 151 |
 | Re-exports (barrel) | 54 |
-| Classes | 51 |
+| Classes | 52 |
 | Interfaces (Protocol/ABC) | 1 |
 | Enums | 0 |
 | Functions | 44 |

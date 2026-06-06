@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.5.3 | **Last Updated**: 2026-06-05
+**Version**: 0.5.4 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -14,7 +14,7 @@ The codebase is organized into the following modules:
 - **root**: 1 file
 - **src/pits_mras**: 2 files
 - **src/pits_mras/constraints**: 4 files
-- **src/pits_mras/controllers**: 4 files
+- **src/pits_mras/controllers**: 5 files
 - **src/pits_mras/data**: 2 files
 - **src/pits_mras/inference**: 3 files
 - **src/pits_mras/losses**: 7 files
@@ -310,6 +310,33 @@ The codebase is organized into the following modules:
 ## Src / pits_mras / controllers Dependencies
 
 ### `src/pits_mras/controllers/__init__.py` - Controllers subpackage: reference models, CLF-CBF safety filter, MRAS actor.
+
+---
+
+### `src/pits_mras/controllers/koopman_control.py` - Koopman-LQR controller (ROADMAP integration #5). NEW capability.
+
+**Third-party Dependencies:**
+| Package | Import |
+|---------|--------|
+| `numpy` | `(module)` |
+| `torch` | `(module)` |
+| `torch.nn` | `(module)` |
+| `torch` | `Tensor` |
+
+**Standard-library Dependencies:**
+| Module | Import |
+|--------|--------|
+| `__future__` | `annotations` |
+| `typing` | `Optional, Union` |
+
+**Internal Dependencies:**
+| Module | Imports | Type |
+|--------|---------|------|
+| `src/pits_mras/models/koopman.py` | `KoopmanLiftingModel` | Import |
+| `src/pits_mras/utils/lyapunov.py` | `solve_care` | Import |
+
+**Exports:**
+- Classes: `KoopmanLQRController`
 
 ---
 
@@ -1086,87 +1113,88 @@ graph TD
 
     subgraph Src / pits_mras / controllers
         N12[__init__]
-        N13[mras]
-        N14[reference_models]
-        N15[safety]
+        N13[koopman_control]
+        N14[mras]
+        N15[reference_models]
+        N16[safety]
     end
 
     subgraph Src / pits_mras / data
-        N16[__init__]
-        N17[trajectory]
+        N17[__init__]
+        N18[trajectory]
     end
 
     subgraph Src / pits_mras / inference
-        N18[__init__]
-        N19[parallel]
-        N20[realtime]
+        N19[__init__]
+        N20[parallel]
+        N21[realtime]
     end
 
     subgraph Src / pits_mras / losses
-        N21[__init__]
-        N22[adaptive_weighting]
-        N23[hjb]
-        N24[irl]
-        N25[physics]
-        N26[...2 more]
+        N22[__init__]
+        N23[adaptive_weighting]
+        N24[hjb]
+        N25[irl]
+        N26[physics]
+        N27[...2 more]
     end
 
     subgraph Src / pits_mras / models
-        N27[__init__]
-        N28[adversary]
-        N29[attention]
-        N30[critic]
-        N31[decoders]
-        N32[...4 more]
+        N28[__init__]
+        N29[adversary]
+        N30[attention]
+        N31[critic]
+        N32[decoders]
+        N33[...4 more]
     end
 
     subgraph Src / pits_mras / training
-        N33[__init__]
-        N34[cotrain]
-        N35[hinf_minmax]
-        N36[irl_trainer]
-        N37[pretrain]
+        N34[__init__]
+        N35[cotrain]
+        N36[hinf_minmax]
+        N37[irl_trainer]
+        N38[pretrain]
     end
 
     subgraph Src / pits_mras / utils
-        N38[__init__]
-        N39[diagnostics]
-        N40[hamiltonian]
-        N41[lyapunov]
-        N42[pe_monitor]
-        N43[...1 more]
+        N39[__init__]
+        N40[diagnostics]
+        N41[hamiltonian]
+        N42[lyapunov]
+        N43[pe_monitor]
+        N44[...1 more]
     end
 
     N0 --> N7
-    N0 --> N13
     N0 --> N14
-    N0 --> N20
-    N0 --> N27
+    N0 --> N15
+    N0 --> N21
+    N0 --> N28
     N1 --> N7
-    N1 --> N13
     N1 --> N14
-    N1 --> N20
-    N1 --> N27
+    N1 --> N15
+    N1 --> N21
+    N1 --> N28
     N2 --> N8
     N4 --> N7
-    N4 --> N13
     N4 --> N14
-    N4 --> N20
-    N4 --> N27
-    N4 --> N36
+    N4 --> N15
+    N4 --> N21
+    N4 --> N28
+    N4 --> N37
     N6 --> N8
-    N6 --> N13
     N6 --> N14
     N6 --> N15
-    N6 --> N20
-    N6 --> N30
-    N6 --> N33
+    N6 --> N16
+    N6 --> N21
+    N6 --> N31
+    N6 --> N34
     N8 --> N9
     N8 --> N10
     N8 --> N11
     N10 --> N9
     N11 --> N9
-    N13 --> N14
+    N13 --> N42
 ```
 
 ---
@@ -1175,12 +1203,12 @@ graph TD
 
 | Category | Count |
 |----------|-------|
-| Total Python Files | 48 |
+| Total Python Files | 49 |
 | Total Modules | 11 |
-| Total Lines of Code | 7726 |
-| Total Public Exports | 150 |
+| Total Lines of Code | 7881 |
+| Total Public Exports | 151 |
 | Total Re-exports | 54 |
-| Total Classes | 51 |
+| Total Classes | 52 |
 | Total Protocols/ABCs | 1 |
 | Total Enums | 0 |
 | Total Functions | 44 |
@@ -1192,4 +1220,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.5.3
+*Last Updated*: 2026-06-05  |  *Version*: 0.5.4

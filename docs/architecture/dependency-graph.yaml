@@ -1,10 +1,10 @@
 metadata:
   name: pits_mras
-  version: 0.5.3
+  version: 0.5.4
   lastUpdated: '2026-06-05'
-  totalFiles: 48
+  totalFiles: 49
   totalModules: 11
-  totalExports: 150
+  totalExports: 151
 entryPoints:
 - file: examples/autonomous_vehicle.py
   type: cli
@@ -571,6 +571,42 @@ modules:
       stdlibDependencies: []
       internalDependencies: []
       exports: []
+    src/pits_mras/controllers/koopman_control.py:
+      description: 'Koopman-LQR controller (ROADMAP integration #5). NEW capability.'
+      externalDependencies:
+      - package: numpy
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - (module)
+      - package: torch.nn
+        imports:
+        - (module)
+      - package: torch
+        imports:
+        - Tensor
+      stdlibDependencies:
+      - module: __future__
+        imports:
+        - annotations
+      - module: typing
+        imports:
+        - Optional
+        - Union
+      internalDependencies:
+      - file: src/pits_mras/models/koopman.py
+        module: pits_mras.models.koopman
+        imports:
+        - KoopmanLiftingModel
+      - file: src/pits_mras/utils/lyapunov.py
+        module: pits_mras.utils.lyapunov
+        imports:
+        - solve_care
+      exports:
+      - KoopmanLQRController
+      classes:
+      - KoopmanLQRController
     src/pits_mras/controllers/mras.py:
       description: Actor-critic MRAS controller (IP §7.3). Identities 1, 2, 3, 4.
       externalDependencies:
@@ -1783,6 +1819,7 @@ dependencyGraph:
   - name: Src / pits_mras / controllers
     files:
     - src/pits_mras/controllers/__init__.py
+    - src/pits_mras/controllers/koopman_control.py
     - src/pits_mras/controllers/mras.py
     - src/pits_mras/controllers/reference_models.py
     - src/pits_mras/controllers/safety.py
@@ -1831,11 +1868,11 @@ dependencyGraph:
     - src/pits_mras/utils/pe_monitor.py
     - src/pits_mras/utils/uq.py
 statistics:
-  totalPythonFiles: 48
+  totalPythonFiles: 49
   totalModules: 11
-  totalLinesOfCode: 7726
-  totalExports: 150
-  totalClasses: 51
+  totalLinesOfCode: 7881
+  totalExports: 151
+  totalClasses: 52
   totalInterfaces: 1
   totalEnums: 0
   totalFunctions: 44

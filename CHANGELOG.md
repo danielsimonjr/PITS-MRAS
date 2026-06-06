@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-06-05
+
+Gap-closure sprint — integration item **#5** (wire deep Koopman lifting into the
+control loop). Additive; suite green (344); ruff + mypy clean.
+
+### Added
+
+- **`KoopmanLQRController`** (`controllers/koopman_control.py`, importable via
+  `from pits_mras.controllers.koopman_control import KoopmanLQRController`) — closes
+  the loop on Koopman-lifted coordinates: reads the learned latent linear system
+  `(A_z, B_z)` from a (frozen) `KoopmanLiftingModel`, embeds the state-cost `Q`
+  into the lifted coordinates (`q_latent` override supported), solves
+  `P_z, K_z = solve_care(A_z, B_z, Q_z, R)` at construction, and produces
+  `u = -(encode(x) - encode(x_ref)) @ K_zᵀ`. This realizes the v0.4.14 Koopman
+  model's purpose — applying the verifiable linear core (CARE) on the lifted space.
+  Verified by oracle recovery (`K_z` equals a direct `solve_care`; latent closed
+  loop `A_z - B_z K_z` Hurwitz) + lifted-error decay. 12 new tests.
+
 ## [0.5.3] - 2026-06-05
 
 Hotfix for v0.5.2: the `src/pits_mras/data/` source package was silently excluded

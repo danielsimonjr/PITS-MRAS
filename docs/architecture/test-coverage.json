@@ -1,11 +1,11 @@
 {
   "metadata": {
     "generatedAt": "2026-06-05",
-    "totalSourceFiles": 48,
-    "totalTestFiles": 32,
-    "testedCount": 40,
+    "totalSourceFiles": 49,
+    "totalTestFiles": 33,
+    "testedCount": 41,
     "untestedCount": 8,
-    "coveragePercent": "83.3"
+    "coveragePercent": "83.7"
   },
   "untestedFiles": [
     "examples/autonomous_vehicle.py",
@@ -24,6 +24,7 @@
     "src/pits_mras/constraints/base.py",
     "src/pits_mras/constraints/mechanical.py",
     "src/pits_mras/constraints/thermal.py",
+    "src/pits_mras/controllers/koopman_control.py",
     "src/pits_mras/controllers/mras.py",
     "src/pits_mras/controllers/reference_models.py",
     "src/pits_mras/controllers/safety.py",
@@ -112,6 +113,9 @@
       "tests/test_pcml_soft.py"
     ],
     "src/pits_mras/controllers/__init__.py": [],
+    "src/pits_mras/controllers/koopman_control.py": [
+      "tests/test_koopman_control.py"
+    ],
     "src/pits_mras/controllers/mras.py": [
       "tests/test_controllers.py",
       "tests/test_identity_costate.py",
@@ -225,6 +229,7 @@
       "tests/test_data.py",
       "tests/test_inference.py",
       "tests/test_koopman.py",
+      "tests/test_koopman_control.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
@@ -292,6 +297,7 @@
       "tests/test_hinf_minmax.py",
       "tests/test_identity_costate.py",
       "tests/test_identity_lyapunov_value.py",
+      "tests/test_koopman_control.py",
       "tests/test_lyapunov_utils.py"
     ],
     "src/pits_mras/utils/pe_monitor.py": [
@@ -401,6 +407,11 @@
     ],
     "tests/test_koopman.py": [
       "src/pits_mras/models/koopman.py"
+    ],
+    "tests/test_koopman_control.py": [
+      "src/pits_mras/controllers/koopman_control.py",
+      "src/pits_mras/models/koopman.py",
+      "src/pits_mras/utils/lyapunov.py"
     ],
     "tests/test_losses.py": [
       "src/pits_mras/config.py",
