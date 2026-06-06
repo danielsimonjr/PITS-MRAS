@@ -1,35 +1,37 @@
 # TODO
 
-Working tracker for PITS-MRAS. **Current state: released through v0.8.0** — the
+Working tracker for PITS-MRAS. **Current state: released through v0.9.0** — the
 9-phase foundation (v0.2.0), PCML (v0.3.0), v0.3.x simplify/debt, the v0.4.x
 feature line (v0.4.0–v0.4.5), the **2026-06-05 improvement sprint** (v0.4.6–v0.5.0:
 the 10 research proposals, headlined by the H∞ neural min-max capstone), and the
 **2026-06-06 gap-closure sprint** (v0.5.1–v0.8.0: MIMO control, `data/` loader,
 Koopman→control + min-max→dynamics integrations, SAC, TD-MPC2, GENERIC/GFINN).
 After that, the architecture docs + CDG tool were de-versioned to read as
-present-tense snapshots. See [CHANGELOG.md](CHANGELOG.md) for landed work.
+present-tense snapshots, and **v0.9.0** wired the sequence-`PITNN` into the H∞
+min-max loop and brought all living docs + the dev toolchain to current. See
+[CHANGELOG.md](CHANGELOG.md) for landed work.
 
 See **Open items** below for what's not-yet-done; everything in the dated
 release sections further down is DONE.
 
 ## Open items (not started)
 
-None blocking — all gates green (suite 380, ruff + mypy clean, 0 circular / 0
-unused), CI green at v0.8.0. Genuine follow-ons, in rough priority order:
+**None.** All tracked work is resolved through **v0.9.0** — all gates green (suite
+386, ruff + mypy clean, dependency graph 0 circular / 0 unused), CI green. The two
+prior open items are done:
+- ~~Wire the full sequence-`PITNN` into the H∞ min-max loop~~ → **DONE v0.9.0**
+  (`pitnn_one_step` + `hinf_minmax_from_pitnn`; `linearize_dynamics` gained an
+  `autograd` backend so the decoder's inner `autograd.grad` composes).
+- ~~`[Unreleased]` CHANGELOG entries need a tagged home~~ → **DONE** (homed into
+  the v0.9.0 release).
 
-1. **Wire the full sequence-`PITNN` into the H∞ min-max loop** (feature). The
-   building blocks exist (`linearize_dynamics` + `hinf_minmax_from_dynamics`,
-   `KoopmanLQRController`), but collapsing `PITNN.forward`'s history window into a
-   one-step `f(x,u)` (operating-point / history handling) is an ADR-level design
-   choice — needs its own brainstorm.
-2. **`[Unreleased]` CHANGELOG entries** (architecture-doc de-version, CDG
-   de-version, `LatentModel` re-export, COMPONENTS.md catalog sweep) have no tagged
-   release home yet — fine to roll into the next release, or cut a patch tag.
-   Decision only; no code work.
+All living docs are current and version/date-free; the dev toolchain (Ruff) is
+consistent across `setup.py` extras, CI, and the contributor docs.
 
-Deferred / not auto-implementable (need their own brainstorm/design — see ROADMAP
-§3): the **aspirational bucket** — multi-agent, hierarchical PITS-MRAS, GPU/TPU
-support, monitoring dashboard.
+**Deferred — not auto-implementable** (each needs its own brainstorm/design; see
+ROADMAP §3): the **aspirational bucket** — multi-agent, hierarchical PITS-MRAS,
+GPU/TPU support, monitoring dashboard. These are the only forward items, and each
+requires a product/design decision before any code.
 
 > **2026-06-05 — Improvement sprint COMPLETE** (dev-workflow + subagents, full
 > autonomy, per-item version+tag, complexity-ascending). All 14 items done; every
