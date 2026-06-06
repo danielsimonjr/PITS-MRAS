@@ -10,14 +10,14 @@ critic ``P_hat`` to the analytic GARE ``P*``, the implied gain ``K_hat`` to
 iterations is finicky for a stochastic min-max game, so the main recovery test is
 written as an HONEST TREND assertion (oracle distance must drop substantially
 from the warm start and the learned quantities must move toward the oracle); a
-tight-equality variant is marked ``@pytest.mark.skip`` for documentation.
+tight-equality variant (``test_minmax_recovers_gare_oracle_tight``) pins the
+P/K recovery to ~1e-5 with a fixed seed (verified non-flaky across seeds 0-5).
 
 The training-free objective-correctness test (residual ~ 0 at the GARE optimum)
 is the tight check that pins the residual FORMULA.
 """
 
 import numpy as np
-import pytest
 import torch
 
 from pits_mras.models.adversary import NeuralAdversary
@@ -155,18 +155,57 @@ def test_minmax_recovers_gare_oracle_trend() -> None:
     assert all(np.isfinite(p_hist))
 
 
-@pytest.mark.skip(
-    reason="Tight equality on a stochastic min-max game is finicky in bounded "
-    "iters; the trend test (test_minmax_recovers_gare_oracle_trend) is the "
-    "honest, non-flaky version of this result."
-)
 def test_minmax_recovers_gare_oracle_tight() -> None:
-    """Tight-equality variant (documentation): P_hat ~ P*, K_hat ~ K*."""
+    """Tight-equality variant: the ADP loop recovers the GARE oracle to ~1e-5.
+
+    The skip on this test was lifted after a cross-seed convergence study. With a
+    FIXED seed=0, n_iters=8000, batch_size=512 the loop converges the critic to
+    the analytic GARE solution extremely tightly. Measured worst case over seeds
+    0-5 (throwaway sweep, gamma=5.0, same config):
+
+        seed   P_rel      K_rel      adv_rel
+           0   0.00000    0.00000    0.00867
+           1   0.00001    0.00002    0.03932
+           2   0.00001    0.00000    0.01615
+           3   0.00000    0.00001    0.02447
+           4   0.00001    0.00000    0.01392
+           5   0.00000    0.00000    0.00857
+        worst  0.00001    0.00002    0.03932
+
+    So ``||P_hat-P*||/||P*||`` and ``||K_hat-K*||/||K*||`` are ~1e-5 across every
+    seed (the P/K recovery is the deterministic part of the saddle). We assert a
+    relative distance < 5e-3 -- ~200x headroom over the observed 2e-5 worst case,
+    so it cannot flake -- and keep the original allclose(0.05) checks (which have
+    even larger margin). The adversary's recovery of ``L* e`` is the genuinely
+    stochastic quantity (worst ~4%), so it is checked loosely (< 0.1) here and
+    asserted as a TREND in ``test_minmax_recovers_gare_oracle_trend``.
+    """
     A, B, Q, R = _system()
     gamma = 5.0
     out = hinf_minmax_train(A, B, Q, R, gamma, n_iters=8000, batch_size=512, seed=0)
-    assert np.allclose(out["P_hat"], out["P_star"], rtol=0.05, atol=0.05)
-    assert np.allclose(out["K_hat"], out["K_star"], rtol=0.05, atol=0.05)
+
+    P_hat, P_star = out["P_hat"], out["P_star"]
+    K_hat, K_star = out["K_hat"], out["K_star"]
+    p_rel = np.linalg.norm(P_hat - P_star) / np.linalg.norm(P_star)
+    k_rel = np.linalg.norm(K_hat - K_star) / np.linalg.norm(K_star)
+
+    # Tight relative recovery, with ~200x headroom over the worst observed 2e-5.
+    assert p_rel < 5e-3, f"P_hat not tight to P*: rel dist {p_rel:.2e}"
+    assert k_rel < 5e-3, f"K_hat not tight to K*: rel dist {k_rel:.2e}"
+
+    # Original elementwise checks (even larger margin).
+    assert np.allclose(P_hat, P_star, rtol=0.05, atol=0.05)
+    assert np.allclose(K_hat, K_star, rtol=0.05, atol=0.05)
+
+    # Adversary recovers L* e on a fresh batch (loose; the stochastic part).
+    L_star = torch.tensor(out["L_star"], dtype=torch.float32)
+    adv = out["adversary"]
+    e = torch.randn(2048, 2)
+    with torch.no_grad():
+        w = adv(e)
+    w_oracle = e @ L_star.T
+    a_rel = float(torch.linalg.norm(w - w_oracle) / torch.linalg.norm(w_oracle))
+    assert a_rel < 0.1, f"adversary not near L* e: rel dist {a_rel:.3f}"
 
 
 # --------------------------------------------------------------------------- #
