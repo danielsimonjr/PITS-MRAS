@@ -1,20 +1,43 @@
 # TODO
 
-Working tracker for PITS-MRAS. **Current state: released through v0.5.0** — the
-9-phase foundation (v0.2.0), PCML (v0.3.0), v0.3.x simplify/debt, the complete
-v0.4.x feature line (v0.4.0–v0.4.5), and the **2026-06-05 improvement sprint**
-(v0.4.6–v0.5.0: rollout diagnostics, Ruff migration, UQ, cotrain decomposition,
-adaptive loss weighting, vectorized KKT Jacobian, differentiable CARE/GARE, deep
-Koopman lifting, and the **H∞ neural min-max** capstone). See
-[CHANGELOG.md](CHANGELOG.md) for landed work.
+Working tracker for PITS-MRAS. **Current state: released through v0.8.0** — the
+9-phase foundation (v0.2.0), PCML (v0.3.0), v0.3.x simplify/debt, the v0.4.x
+feature line (v0.4.0–v0.4.5), the **2026-06-05 improvement sprint** (v0.4.6–v0.5.0:
+the 10 research proposals, headlined by the H∞ neural min-max capstone), and the
+**2026-06-06 gap-closure sprint** (v0.5.1–v0.8.0: MIMO control, `data/` loader,
+Koopman→control + min-max→dynamics integrations, SAC, TD-MPC2, GENERIC/GFINN).
+After that, the architecture docs + CDG tool were de-versioned to read as
+present-tense snapshots. See [CHANGELOG.md](CHANGELOG.md) for landed work.
 
 See **Open items** below for what's not-yet-done; everything in the dated
 release sections further down is DONE.
 
 ## Open items (not started)
 
-None blocking — the v0.4.0 goal is fully delivered and all gates are green. These
-are genuine optional follow-ons, in rough priority order:
+None blocking — all gates green (suite 380, ruff + mypy clean, 0 circular / 0
+unused), CI green at v0.8.0. Genuine follow-ons, in rough priority order:
+
+1. **`docs/architecture/COMPONENTS.md` detailed catalog is stale** (doc debt).
+   Its per-module sections (§3 `utils`, §5 `models`, §7 `controllers`, §8
+   `training`) and the missing `data/` section omit ALL of the modules added in
+   the two sprints: `models/{adversary,koopman,sac,tdmpc,generic}.py`,
+   `utils/{diagnostics,uq,linearization}.py`, `losses/adaptive_weighting.py`,
+   `controllers/koopman_control.py`, `training/{hinf_minmax,sac,tdmpc}.py`,
+   `data/trajectory.py`. The OVERVIEW/ARCHITECTURE summary tables were kept in
+   sync, but COMPONENTS.md's per-module *body* was not. Sweep it to cover the new
+   files (grounded against source), version/date-free per the doc-style rule.
+2. **Wire the full sequence-`PITNN` into the H∞ min-max loop** (feature). The
+   building blocks exist (`linearize_dynamics` + `hinf_minmax_from_dynamics`,
+   `KoopmanLQRController`), but collapsing `PITNN.forward`'s history window into a
+   one-step `f(x,u)` (operating-point / history handling) is an ADR-level design
+   choice — needs its own brainstorm.
+3. **`[Unreleased]` CHANGELOG entries** (architecture-doc de-version, CDG
+   de-version, `LatentModel` re-export) have no tagged release home yet — fine to
+   roll into the next release, or cut a patch tag. Decision only; no code work.
+
+Deferred / not auto-implementable (need their own brainstorm/design — see ROADMAP
+§3): the **aspirational bucket** — multi-agent, hierarchical PITS-MRAS, GPU/TPU
+support, monitoring dashboard.
 
 > **2026-06-05 — Improvement sprint COMPLETE** (dev-workflow + subagents, full
 > autonomy, per-item version+tag, complexity-ascending). All 14 items done; every
@@ -58,6 +81,19 @@ are genuine optional follow-ons, in rough priority order:
 > one-step `f(x,u)` to feed the min-max loop (ADR-level operating-point/history
 > choice). **Excluded aspirational bucket** (own brainstorm/design needed):
 > multi-agent, hierarchical PITS-MRAS, GPU/TPU, monitoring dashboard.
+
+> **2026-06-06 — Docs de-versioned to present-tense snapshots** (no release).
+> The hand-written architecture docs (`ARCHITECTURE/OVERVIEW/COMPONENTS/API/
+> DATAFLOW.md`) had accumulated changelog artifacts in their bodies (version
+> numbers, dates, `NEW`/`RESOLVED vX`/`shipped in vX`, per-version Status blocks,
+> a `Version:` stat field) — all removed and rewritten present-tense. The
+> `create-dependency-graph` tool was changed to stop stamping version/date into
+> its generated reports (fully reproducible now). Also re-exported `LatentModel`
+> (TD-MPC2 planner Protocol) from `pits_mras.models`, restoring a truthful 0
+> unused exports (the v0.7.0/v0.8.0 "0 unused" had been a carried-forward figure;
+> it was actually 1). Standing rule saved to memory `design-docs-no-version-date`.
+> **Caveat:** this synced the OVERVIEW/ARCHITECTURE summary tables but NOT
+> COMPONENTS.md's per-module body — see Open item 1.
 
 ## Done
 
