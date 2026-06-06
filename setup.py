@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="pits_mras",
-    version="0.8.0",
+    version="0.9.0",
     author="PITS-MRAS Contributors",
     author_email="your.email@example.com",
     description="Physics-Informed Time-Series Model-Reference Adaptive Systems",
@@ -35,12 +35,10 @@ setup(
     install_requires=requirements,
     extras_require={
         "dev": [
-            "flake8>=6.0.0",
+            "ruff==0.8.1",
             "mypy>=1.4.0",
             "pytest>=7.4.0",
             "pytest-cov>=4.1.0",
-            "black>=23.0.0",
-            "isort>=5.12.0",
         ],
         "logging": [
             "tensorboard",

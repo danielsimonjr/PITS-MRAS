@@ -39,10 +39,10 @@ Feature requests are welcome! Please include:
 
 5. **Run tests and linters**
    ```bash
+   ruff check .          # lint (add --fix to auto-fix)
+   ruff format .         # format
+   mypy src/pits_mras
    pytest
-   black src/
-   flake8 src/
-   mypy src/
    ```
 
 6. **Commit with descriptive messages**
@@ -77,7 +77,7 @@ pre-commit install
 
 ### Python Style
 - Follow PEP 8
-- Use `black` for code formatting
+- Use Ruff for linting and formatting (`ruff check` + `ruff format`)
 - Maximum line length: 100 characters
 - Use type hints for function signatures
 

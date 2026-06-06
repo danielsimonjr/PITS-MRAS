@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-06
+
+Closes the last open feature follow-on (sequence-`PITNN` → H∞ min-max wiring) and
+homes the accumulated tooling/docs work: de-versioned architecture docs + CDG
+reports, the `LatentModel` re-export, the COMPONENTS catalog sweep, the living-doc
+refresh, and the dev-extras toolchain fix. Suite green (386); ruff + mypy clean;
+graph 0 circular / 0 unused.
+
 ### Added
 
 - **`pitnn_one_step` + `hinf_minmax_from_pitnn`** (`training/hinf_minmax.py`,
@@ -35,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version/date-free snapshots (matching the narrative docs) and fully reproducible
   (no per-day churn). The tool still reads the project name; version/date live in the
   CHANGELOG.
+- **`setup.py` dev extras now install Ruff**, not the retired flake8/black/isort —
+  `pip install -e ".[dev]"` matches the actual toolchain (`ruff==0.8.1` + mypy +
+  pytest + pytest-cov).
 
 ### Fixed
 
@@ -48,6 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Docs
 
+- **Living user-facing docs refreshed to the current state.** `README.md`
+  (version badge, capability list, project tree, CI/toolchain), `src/README.md`
+  (present-tense module inventory), `CONTRIBUTING.md` / `GITHUB_SETUP.md` (Ruff
+  workflow, not flake8/black/isort), and `PROJECT_SETUP_SUMMARY.md` de-versioned.
+  Stale version stamps and hardcoded test counts removed (non-churning phrasing).
 - **`COMPONENTS.md` per-module catalog brought current.** Its detailed sections
   (`utils`, `models`, `losses`, `controllers`, `training`) omitted every module
   added in the two feature sprints; extended them — grounded in the source
