@@ -43,6 +43,29 @@ def test_linearize_affine_recovers_matrices_exactly() -> None:
     assert torch.allclose(B, B0, atol=1e-10)
 
 
+def test_linearize_autograd_backend_matches_jacrev_on_affine() -> None:
+    """The opt-in 'autograd' backend returns the same Jacobians as 'jacrev'.
+
+    Additive backend (for callables that use torch.autograd.grad internally, e.g.
+    a PITNN adapter): on an affine f both engines must agree exactly.
+    """
+    A0 = torch.tensor([[0.0, 1.0], [-2.0, -3.0]], dtype=torch.float64)
+    B0 = torch.tensor([[0.0], [1.5]], dtype=torch.float64)
+
+    def f(x: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
+        return A0 @ x + B0 @ u
+
+    x0 = torch.tensor([0.4, -1.1], dtype=torch.float64)
+    u0 = torch.tensor([0.9], dtype=torch.float64)
+
+    A_j, B_j = linearize_dynamics(f, x0, u0, backend="jacrev")
+    A_a, B_a = linearize_dynamics(f, x0, u0, backend="autograd")
+    assert torch.allclose(A_j, A_a, atol=1e-10)
+    assert torch.allclose(B_j, B_a, atol=1e-10)
+    assert torch.allclose(A_a, A0, atol=1e-10)
+    assert torch.allclose(B_a, B0, atol=1e-10)
+
+
 # --------------------------------------------------------------------------- #
 # linearize_dynamics: correctness on a nonlinear f (pendulum-like).
 # --------------------------------------------------------------------------- #

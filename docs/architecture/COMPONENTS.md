@@ -3,7 +3,7 @@
 > A grounded, per-module component reference for the `pits_mras` package.
 > Every class/function name, responsibility, and dependency below is taken from
 > the actual source under `src/pits_mras/` and cross-checked against
-> `docs/architecture/dependency-graph.json` (55 files, 11 modules, 170
+> `docs/architecture/dependency-graph.json` (55 files, 11 modules, 174
 > exports, 0 circular dependencies). Module purposes quote the package
 > `__init__` and file docstrings; class/function responsibilities quote their
 > own docstrings. For the *why* (the ten RL/optimal-control identities and the
@@ -185,9 +185,12 @@ calibration size); `conformal_interval(pred, q)` forms the symmetric interval
 update `α_{t+1}=α_t+γ(α*−err_t)` that tracks a running miscoverage level
 (`current_alpha`, `update(covered)`), clamped to `[0,1]`.
 
-**`linearization.py` detail:** `linearize_dynamics(dynamics_fn, x0, u0)` returns
-the tangent linear model `(A, B)` — `A=∂f/∂x`, `B=∂f/∂u` at `(x0,u0)` — via
-`torch.func.jacrev` (`argnums=0`/`1`), detached on the dtype/device of `x0`. It
+**`linearization.py` detail:** `linearize_dynamics(dynamics_fn, x0, u0, backend="jacrev")`
+returns the tangent linear model `(A, B)` — `A=∂f/∂x`, `B=∂f/∂u` at `(x0,u0)` —
+detached on the dtype/device of `x0`. The default `"jacrev"` backend uses
+`torch.func.jacrev` (`argnums=0`/`1`); the opt-in `"autograd"` backend uses
+`torch.autograd.functional.jacobian`, which composes with callables that run
+`torch.autograd.grad` internally (e.g. a `PITNN` adapter). It
 is exact for affine `f` and a local first-order approximation otherwise; it
 validates the Jacobian shapes and requires single (unbatched) `x`/`u` inputs.
 
@@ -371,7 +374,7 @@ trainer." Phase 5. Re-exports the three entry points.
 | `pretrain.py` | `pretrain_pitnn`, `data_weight_schedule`, `temporal_weight_schedule` | Three-stage physics-informed pre-training curriculum (Algorithm 2): Stage 1A physics-only, Stage 1B cosine-anneal the data weight 0.1→1.0, Stage 1C add temporal loss with linear warm-up. A validation guard halves the data weight when the physics residual spikes. |
 | `cotrain.py` | `cotraining_loop` | The closed-loop actor-critic training loop ("the most critical training file", Algorithm 3 extended). Per step: PITNN forward → tracking error + MRAS control → PITNN objective (physics + optional PCML + CBF) on `optimizer_pitnn` (Adam lr=1e-4); then the critic-only updates on a separate `critic_optimizer` (Adam lr=1e-3): an opt-in HJB residual (`lambda_hjb>0`), a guarded positivity regularizer, and the IRL Bellman policy-evaluation step (grad-clip 1.0) + policy-improvement read `K=R⁻¹BᵀP̂`. |
 | `irl_trainer.py` | `train_irl_critic` | Offline batch least-squares critic pre-training (§8.3): recovers `P` from the integral-RL Bellman identity `V(e(t))−V(e(t+T)) = ∫r ds` without knowing the drift; iterates and stops when `‖P̂−P_opt‖_F/‖P_opt‖_F < tol`. |
-| `hinf_minmax.py` | `hji_residual`, `hinf_minmax_train`, `hinf_minmax_from_dynamics` | Neural H∞ adversarial min-max loop: three-network ADP (critic + costate protagonist + neural adversary) solving the HJI game against the analytic GARE oracle, plus the residual and a linearize-then-train bridge for dynamics callables. |
+| `hinf_minmax.py` | `hji_residual`, `hinf_minmax_train`, `hinf_minmax_from_dynamics`, `pitnn_one_step`, `hinf_minmax_from_pitnn` | Neural H∞ adversarial min-max loop: three-network ADP (critic + costate protagonist + neural adversary) solving the HJI game against the analytic GARE oracle, the residual, a linearize-then-train bridge for any dynamics callable, and a one-step adapter that collapses a sequence `PITNN` into `f(x,u)` so the loop can run on the learned plant model. |
 | `sac.py` | `SACTrainer` | Soft Actor-Critic learner with automatic entropy temperature: owns the policy/twin-critic/target/optimizers and one `update` of the three SAC losses + soft target update. |
 | `tdmpc.py` | `tdmpc_update` | One joint TD-MPC2 world-model gradient step (latent-consistency + reward-prediction + TD value losses) over a transition batch. |
 | `__init__.py` | re-exports three functions | Subpackage public surface. |
@@ -393,6 +396,12 @@ implicit slow player read off the critic), computing the analytic GARE
 the trained modules). `hinf_minmax_from_dynamics(dynamics_fn, x0, u0, …)`
 linearizes any continuous-time `f(x,u)` via `linearize_dynamics` and drives the
 unchanged `hinf_minmax_train` with the extracted `(A, B)` (also returned).
+`pitnn_one_step(pitnn, history=None)` collapses the sequence `PITNN` into a
+one-step `f(x,u) -> xdot` (fixed operating-point history; varies the current
+`[q, p]` state + control; first-order tangent about `e = 0`), and
+`hinf_minmax_from_pitnn(...)` wires that adapter into the loop via the `autograd`
+linearization backend (the decoder's inner `autograd.grad` precludes `jacrev`).
+A learned `PITNN` is nonlinear, so GARE-oracle recovery is not expected here.
 
 **`SACTrainer`** holds a `GaussianPolicy`, a `TwinQCritic` + frozen target copy,
 a learnable `log_alpha` (temperature, `alpha` property) tuned toward

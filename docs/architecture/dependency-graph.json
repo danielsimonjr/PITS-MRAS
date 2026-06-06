@@ -3,7 +3,7 @@
     "name": "pits_mras",
     "totalFiles": 55,
     "totalModules": 11,
-    "totalExports": 170
+    "totalExports": 174
   },
   "entryPoints": [
     {
@@ -2435,8 +2435,10 @@
             "module": "pits_mras.training.hinf_minmax",
             "imports": [
               "hinf_minmax_from_dynamics",
+              "hinf_minmax_from_pitnn",
               "hinf_minmax_train",
-              "hji_residual"
+              "hji_residual",
+              "pitnn_one_step"
             ],
             "reExport": true
           },
@@ -2479,6 +2481,8 @@
           "train_irl_critic",
           "hinf_minmax_train",
           "hinf_minmax_from_dynamics",
+          "hinf_minmax_from_pitnn",
+          "pitnn_one_step",
           "hji_residual",
           "SACTrainer",
           "tdmpc_update"
@@ -2486,8 +2490,10 @@
         "reExported": [
           "cotraining_loop",
           "hinf_minmax_from_dynamics",
+          "hinf_minmax_from_pitnn",
           "hinf_minmax_train",
           "hji_residual",
+          "pitnn_one_step",
           "train_irl_critic",
           "pretrain_pitnn",
           "SACTrainer",
@@ -2663,6 +2669,7 @@
             "module": "typing",
             "imports": [
               "Callable",
+              "Literal",
               "Optional"
             ]
           }
@@ -2684,6 +2691,13 @@
             ]
           },
           {
+            "file": "src/pits_mras/models/pitnn.py",
+            "module": "pits_mras.models.pitnn",
+            "imports": [
+              "PITNN"
+            ]
+          },
+          {
             "file": "src/pits_mras/utils/linearization.py",
             "module": "pits_mras.utils.linearization",
             "imports": [
@@ -2701,12 +2715,16 @@
         "exports": [
           "hji_residual",
           "hinf_minmax_train",
-          "hinf_minmax_from_dynamics"
+          "hinf_minmax_from_dynamics",
+          "pitnn_one_step",
+          "hinf_minmax_from_pitnn"
         ],
         "functions": [
           "hji_residual",
           "hinf_minmax_train",
-          "hinf_minmax_from_dynamics"
+          "hinf_minmax_from_dynamics",
+          "pitnn_one_step",
+          "hinf_minmax_from_pitnn"
         ]
       },
       "src/pits_mras/training/irl_trainer.py": {
@@ -3071,6 +3089,12 @@
           {
             "package": "torch",
             "imports": [
+              "(module)"
+            ]
+          },
+          {
+            "package": "torch",
+            "imports": [
               "Tensor"
             ]
           },
@@ -3092,6 +3116,7 @@
             "module": "typing",
             "imports": [
               "Callable",
+              "Literal",
               "Tuple"
             ]
           }
@@ -3402,15 +3427,15 @@
   "statistics": {
     "totalPythonFiles": 55,
     "totalModules": 11,
-    "totalLinesOfCode": 9022,
-    "totalExports": 170,
+    "totalLinesOfCode": 9253,
+    "totalExports": 174,
     "totalClasses": 58,
     "totalInterfaces": 2,
     "totalEnums": 0,
-    "totalFunctions": 47,
+    "totalFunctions": 49,
     "totalTypeGuards": 0,
     "totalConstants": 0,
-    "totalReExports": 63,
+    "totalReExports": 65,
     "totalTypeCheckingImports": 13,
     "runtimeCircularDeps": 0,
     "typeCheckingCircularDeps": 0,

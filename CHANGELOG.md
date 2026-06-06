@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`pitnn_one_step` + `hinf_minmax_from_pitnn`** (`training/hinf_minmax.py`,
+  re-exported from `pits_mras.training`) — wire the full sequence-`PITNN` into the
+  H∞ neural min-max loop. `pitnn_one_step(pitnn, history=None)` collapses the
+  sequence model into a one-step `f(x, u) -> xdot` (documented operating-point /
+  history convention: fixed history context, varies the current `[q, p]` state +
+  control, first-order tangent about tracking error `e = 0`);
+  `hinf_minmax_from_pitnn(...)` runs the existing min-max loop on it. A learned
+  PITNN is nonlinear, so GARE-oracle recovery is not expected — verification is
+  finiteness / shape / differentiability / end-to-end. This closes the last open
+  feature follow-on.
+- **`linearize_dynamics` gains an opt-in `backend="autograd"`** (default
+  `"jacrev"` unchanged). The `autograd` backend
+  (`torch.autograd.functional.jacobian`) composes with dynamics callables that run
+  `torch.autograd.grad` internally — required for the PITNN adapter, whose
+  port-Hamiltonian decoder differentiates a learned Hamiltonian inside `forward`
+  (which `torch.func.jacrev` forbids).
+
 ### Tooling
 
 - **`create-dependency-graph` no longer stamps version/date into its reports.** The

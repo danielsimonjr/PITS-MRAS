@@ -1,7 +1,7 @@
 {
   "metadata": {
     "totalSourceFiles": 55,
-    "totalTestFiles": 37,
+    "totalTestFiles": 38,
     "testedCount": 47,
     "untestedCount": 8,
     "coveragePercent": "85.5"
@@ -82,6 +82,7 @@
       "tests/test_losses.py",
       "tests/test_models.py",
       "tests/test_pcml_integration.py",
+      "tests/test_pitnn_one_step.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
@@ -271,6 +272,7 @@
       "tests/test_inference.py",
       "tests/test_models.py",
       "tests/test_pcml_integration.py",
+      "tests/test_pitnn_one_step.py",
       "tests/test_smoke.py",
       "tests/test_training.py"
     ],
@@ -304,6 +306,7 @@
       "tests/test_hinf_minmax.py",
       "tests/test_imports.py",
       "tests/test_linearization.py",
+      "tests/test_pitnn_one_step.py",
       "tests/test_smoke.py"
     ],
     "src/pits_mras/training/irl_trainer.py": [
@@ -338,7 +341,8 @@
       "tests/test_hamiltonian_utils.py"
     ],
     "src/pits_mras/utils/linearization.py": [
-      "tests/test_linearization.py"
+      "tests/test_linearization.py",
+      "tests/test_pitnn_one_step.py"
     ],
     "src/pits_mras/utils/lyapunov.py": [
       "tests/test_controllers.py",
@@ -560,6 +564,12 @@
     ],
     "tests/test_pe_monitor.py": [
       "src/pits_mras/utils/pe_monitor.py"
+    ],
+    "tests/test_pitnn_one_step.py": [
+      "src/pits_mras/config.py",
+      "src/pits_mras/models/pitnn.py",
+      "src/pits_mras/training/hinf_minmax.py",
+      "src/pits_mras/utils/linearization.py"
     ],
     "tests/test_sac.py": [
       "src/pits_mras/models/sac.py",

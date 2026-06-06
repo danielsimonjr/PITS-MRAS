@@ -18,8 +18,8 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. The
 framework includes a **PCML (Physics-Constrained ML)** layer that upgrades physics
 enforcement from soft penalties to hard KKT-projection constraint satisfaction.
 
-**55 source files · 11 modules · 9,022 LOC · 170 exports
-(63 re-exports) · 58 classes · 2 Protocol/ABC · 47 functions · 0 circular
+**55 source files · 11 modules · 9,253 LOC · 174 exports
+(65 re-exports) · 58 classes · 2 Protocol/ABC · 49 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
 
@@ -176,13 +176,13 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 |---|---|
 | Total Python files | 55 |
 | Modules | 11 |
-| Total lines of code | 9,022 |
-| Total exports | 170 |
-| Re-exports (barrel) | 63 |
+| Total lines of code | 9,253 |
+| Total exports | 174 |
+| Re-exports (barrel) | 65 |
 | Classes | 58 |
 | Interfaces (Protocol/ABC) | 2 |
 | Enums | 0 |
-| Functions | 47 |
+| Functions | 49 |
 | Constants | 0 |
 | Type-checking-only imports | 10 |
 | Runtime circular dependencies | 0 |
@@ -191,7 +191,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 | Unused exports | 0 |
 
 The single interface/ABC is `PhysicsConstraints` in `constraints/base.py`. The
-63 re-exports are the convenience barrels in the package and subpackage
+65 re-exports are the convenience barrels in the package and subpackage
 `__init__.py` files (`pits_mras`, `constraints`, `losses`, `models`, `training`).
 The 10 type-only imports are `TYPE_CHECKING`-guarded edges (mostly into
 `training/cotrain.py`, `training/irl_trainer.py`, `training/pretrain.py`, and

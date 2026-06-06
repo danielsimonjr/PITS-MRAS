@@ -27,8 +27,9 @@ FIRST-ORDER (tangent) linearization about ``(x0, u0)``: it is exact for an affin
 
 from __future__ import annotations
 
-from typing import Callable, Tuple
+from typing import Callable, Literal, Tuple
 
+import torch
 from torch import Tensor
 from torch.func import jacrev
 
@@ -37,6 +38,7 @@ def linearize_dynamics(
     dynamics_fn: Callable[[Tensor, Tensor], Tensor],
     x0: Tensor,
     u0: Tensor,
+    backend: Literal["jacrev", "autograd"] = "jacrev",
 ) -> Tuple[Tensor, Tensor]:
     r"""First-order linearization of ``dynamics_fn`` about the point ``(x0, u0)``.
 
@@ -64,6 +66,17 @@ def linearize_dynamics(
             mutation of captured tensors).
         x0: operating-point state, shape ``[state_dim]``.
         u0: operating-point control, shape ``[control_dim]``.
+        backend: Jacobian engine. ``"jacrev"`` (default, UNCHANGED behavior) uses
+            :func:`torch.func.jacrev` -- fast and exact, but ``dynamics_fn`` must
+            be a pure ``torch.func`` target (no ``requires_grad_`` /
+            ``torch.autograd.grad`` inside it). ``"autograd"`` uses
+            :func:`torch.autograd.functional.jacobian` (classic double-backward),
+            which is the correct engine when ``dynamics_fn`` ITSELF calls
+            ``torch.autograd.grad`` internally -- e.g. a ``PITNN`` adapter, whose
+            port-Hamiltonian decoder differentiates a learned Hamiltonian inside
+            its forward pass (functorch transforms forbid that; classic autograd
+            composes with it). Both engines return the same Jacobians for an
+            affine ``f``.
 
     Returns:
         ``(A, B)`` where ``A`` is ``df/dx`` of shape ``[state_dim, state_dim]``
@@ -92,9 +105,19 @@ def linearize_dynamics(
     state_dim = x0.shape[0]
     control_dim = u0.shape[0]
 
-    # jacrev(argnums=0) -> df/dx, jacrev(argnums=1) -> df/du, both at (x0, u0).
-    A = jacrev(dynamics_fn, argnums=0)(x0, u0).detach()
-    B = jacrev(dynamics_fn, argnums=1)(x0, u0).detach()
+    if backend == "jacrev":
+        # jacrev(argnums=0) -> df/dx, jacrev(argnums=1) -> df/du, both at (x0, u0).
+        A = jacrev(dynamics_fn, argnums=0)(x0, u0).detach()
+        B = jacrev(dynamics_fn, argnums=1)(x0, u0).detach()
+    elif backend == "autograd":
+        # Classic double-backward; composes with inner torch.autograd.grad in
+        # dynamics_fn (which functorch transforms forbid). jacobian returns a
+        # tuple aligned with the inputs (x0, u0).
+        A, B = torch.autograd.functional.jacobian(dynamics_fn, (x0, u0))
+        A = A.detach()
+        B = B.detach()
+    else:  # pragma: no cover - guarded by the Literal type
+        raise ValueError(f"backend must be 'jacrev' or 'autograd'; got {backend!r}.")
 
     if A.shape != (state_dim, state_dim):
         raise ValueError(

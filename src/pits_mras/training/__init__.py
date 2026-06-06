@@ -8,8 +8,10 @@ are implemented.
 from pits_mras.training.cotrain import cotraining_loop
 from pits_mras.training.hinf_minmax import (
     hinf_minmax_from_dynamics,
+    hinf_minmax_from_pitnn,
     hinf_minmax_train,
     hji_residual,
+    pitnn_one_step,
 )
 from pits_mras.training.irl_trainer import train_irl_critic
 from pits_mras.training.pretrain import pretrain_pitnn
@@ -22,6 +24,8 @@ __all__ = [
     "train_irl_critic",
     "hinf_minmax_train",
     "hinf_minmax_from_dynamics",
+    "hinf_minmax_from_pitnn",
+    "pitnn_one_step",
     "hji_residual",
     "SACTrainer",
     "tdmpc_update",

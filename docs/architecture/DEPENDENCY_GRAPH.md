@@ -904,14 +904,14 @@ The codebase is organized into the following modules:
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/training/cotrain.py` | `cotraining_loop` | Re-export |
-| `src/pits_mras/training/hinf_minmax.py` | `hinf_minmax_from_dynamics, hinf_minmax_train, hji_residual` | Re-export |
+| `src/pits_mras/training/hinf_minmax.py` | `hinf_minmax_from_dynamics, hinf_minmax_from_pitnn, hinf_minmax_train, hji_residual, pitnn_one_step` | Re-export |
 | `src/pits_mras/training/irl_trainer.py` | `train_irl_critic` | Re-export |
 | `src/pits_mras/training/pretrain.py` | `pretrain_pitnn` | Re-export |
 | `src/pits_mras/training/sac.py` | `SACTrainer` | Re-export |
 | `src/pits_mras/training/tdmpc.py` | `tdmpc_update` | Re-export |
 
 **Exports:**
-- Re-exports: `cotraining_loop`, `hinf_minmax_from_dynamics`, `hinf_minmax_train`, `hji_residual`, `train_irl_critic`, `pretrain_pitnn`, `SACTrainer`, `tdmpc_update`
+- Re-exports: `cotraining_loop`, `hinf_minmax_from_dynamics`, `hinf_minmax_from_pitnn`, `hinf_minmax_train`, `hji_residual`, `pitnn_one_step`, `train_irl_critic`, `pretrain_pitnn`, `SACTrainer`, `tdmpc_update`
 
 ---
 
@@ -964,18 +964,19 @@ The codebase is organized into the following modules:
 |--------|--------|
 | `__future__` | `annotations` |
 | `logging` | `(module)` |
-| `typing` | `Callable, Optional` |
+| `typing` | `Callable, Literal, Optional` |
 
 **Internal Dependencies:**
 | Module | Imports | Type |
 |--------|---------|------|
 | `src/pits_mras/models/adversary.py` | `NeuralAdversary` | Import |
 | `src/pits_mras/models/critic.py` | `CostateHead, QuadraticCritic` | Import |
+| `src/pits_mras/models/pitnn.py` | `PITNN` | Import |
 | `src/pits_mras/utils/linearization.py` | `linearize_dynamics` | Import |
 | `src/pits_mras/utils/lyapunov.py` | `solve_gare` | Import |
 
 **Exports:**
-- Functions: `hji_residual`, `hinf_minmax_train`, `hinf_minmax_from_dynamics`
+- Functions: `hji_residual`, `hinf_minmax_train`, `hinf_minmax_from_dynamics`, `pitnn_one_step`, `hinf_minmax_from_pitnn`
 
 ---
 
@@ -1129,6 +1130,7 @@ The codebase is organized into the following modules:
 **Third-party Dependencies:**
 | Package | Import |
 |---------|--------|
+| `torch` | `(module)` |
 | `torch` | `Tensor` |
 | `torch.func` | `jacrev` |
 
@@ -1136,7 +1138,7 @@ The codebase is organized into the following modules:
 | Module | Import |
 |--------|--------|
 | `__future__` | `annotations` |
-| `typing` | `Callable, Tuple` |
+| `typing` | `Callable, Literal, Tuple` |
 
 **Exports:**
 - Functions: `linearize_dynamics`
@@ -1333,13 +1335,13 @@ graph TD
 |----------|-------|
 | Total Python Files | 55 |
 | Total Modules | 11 |
-| Total Lines of Code | 9022 |
-| Total Public Exports | 170 |
-| Total Re-exports | 63 |
+| Total Lines of Code | 9253 |
+| Total Public Exports | 174 |
+| Total Re-exports | 65 |
 | Total Classes | 58 |
 | Total Protocols/ABCs | 2 |
 | Total Enums | 0 |
-| Total Functions | 47 |
+| Total Functions | 49 |
 | Total Type Guards (is_*) | 0 |
 | Total Constants | 0 |
 | TYPE_CHECKING Imports | 13 |

@@ -5,7 +5,7 @@
 | Metric | Count |
 |--------|-------|
 | Total Source Files | 55 |
-| Total Test Files | 37 |
+| Total Test Files | 38 |
 | Source Files with Tests | 47 |
 | Source Files without Tests | 8 |
 | Coverage | 85.5% |
@@ -32,7 +32,7 @@
 | Source File | Test Files |
 |-------------|------------|
 | `src/pits_mras/__init__.py` | `test_imports.py` |
-| `src/pits_mras/config.py` | `test_config.py`, `test_data.py`, `test_inference.py`, `test_losses.py`, `test_models.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/config.py` | `test_config.py`, `test_data.py`, `test_inference.py`, `test_losses.py`, `test_models.py`, `test_pcml_integration.py`, `test_pitnn_one_step.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/constraints/__init__.py` | `test_imports.py`, `test_pcml_constraints.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_jacobian_vectorized.py`, `test_pcml_soft.py` |
 | `src/pits_mras/constraints/base.py` | `test_imports.py`, `test_pcml_constraints.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_jacobian_vectorized.py`, `test_pcml_soft.py` |
 | `src/pits_mras/constraints/mechanical.py` | `test_imports.py`, `test_pcml_constraints.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_jacobian_vectorized.py`, `test_pcml_soft.py` |
@@ -61,12 +61,12 @@
 | `src/pits_mras/models/koopman.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_koopman.py`, `test_koopman_control.py`, `test_linearization.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/lagrangian_head.py` | `test_imports.py`, `test_pcml_integration.py`, `test_pcml_soft.py` |
 | `src/pits_mras/models/pcml.py` | `test_imports.py`, `test_pcml_hard.py`, `test_pcml_integration.py`, `test_pcml_jacobian_vectorized.py`, `test_pcml_soft.py` |
-| `src/pits_mras/models/pitnn.py` | `test_data.py`, `test_generic.py`, `test_imports.py`, `test_inference.py`, `test_models.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
+| `src/pits_mras/models/pitnn.py` | `test_data.py`, `test_generic.py`, `test_imports.py`, `test_inference.py`, `test_models.py`, `test_pcml_integration.py`, `test_pitnn_one_step.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/sac.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_sac.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/models/tdmpc.py` | `test_data.py`, `test_generic.py`, `test_inference.py`, `test_smoke.py`, `test_tdmpc.py`, `test_training.py` |
 | `src/pits_mras/training/__init__.py` | `test_imports.py`, `test_smoke.py` |
 | `src/pits_mras/training/cotrain.py` | `test_imports.py`, `test_pcml_integration.py`, `test_smoke.py`, `test_training.py` |
-| `src/pits_mras/training/hinf_minmax.py` | `test_hinf_minmax.py`, `test_imports.py`, `test_linearization.py`, `test_smoke.py` |
+| `src/pits_mras/training/hinf_minmax.py` | `test_hinf_minmax.py`, `test_imports.py`, `test_linearization.py`, `test_pitnn_one_step.py`, `test_smoke.py` |
 | `src/pits_mras/training/irl_trainer.py` | `test_identity_lyapunov_value.py`, `test_imports.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/training/pretrain.py` | `test_data.py`, `test_imports.py`, `test_smoke.py`, `test_training.py` |
 | `src/pits_mras/training/sac.py` | `test_imports.py`, `test_sac.py`, `test_smoke.py` |
@@ -74,7 +74,7 @@
 | `src/pits_mras/utils/__init__.py` | `test_lyapunov_utils.py` |
 | `src/pits_mras/utils/diagnostics.py` | `test_diagnostics.py` |
 | `src/pits_mras/utils/hamiltonian.py` | `test_hamiltonian_utils.py` |
-| `src/pits_mras/utils/linearization.py` | `test_linearization.py` |
+| `src/pits_mras/utils/linearization.py` | `test_linearization.py`, `test_pitnn_one_step.py` |
 | `src/pits_mras/utils/lyapunov.py` | `test_controllers.py`, `test_differentiable_riccati.py`, `test_hinf.py`, `test_hinf_minmax.py`, `test_identity_costate.py`, `test_identity_lyapunov_value.py`, `test_koopman_control.py`, `test_lyapunov_utils.py`, `test_tdmpc.py` |
 | `src/pits_mras/utils/pe_monitor.py` | `test_pe_monitor.py` |
 | `src/pits_mras/utils/uq.py` | `test_uq.py` |

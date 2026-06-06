@@ -62,7 +62,7 @@ TREND from the warm start.
 from __future__ import annotations
 
 import logging
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 import numpy as np
 import torch
@@ -70,6 +70,7 @@ from torch import Tensor
 
 from pits_mras.models.adversary import NeuralAdversary
 from pits_mras.models.critic import CostateHead, QuadraticCritic
+from pits_mras.models.pitnn import PITNN
 from pits_mras.utils.linearization import linearize_dynamics
 from pits_mras.utils.lyapunov import solve_gare
 
@@ -347,6 +348,8 @@ def hinf_minmax_from_dynamics(
     R: np.ndarray,
     gamma: float,
     D: Optional[np.ndarray] = None,
+    *,
+    linearize_backend: Literal["jacrev", "autograd"] = "jacrev",
     **kwargs: object,
 ) -> dict[str, object]:
     r"""Run the H-infinity min-max loop on a learned/analytic dynamics callable.
@@ -371,6 +374,11 @@ def hinf_minmax_from_dynamics(
         Q, R: cost matrices on the (linearized) state and control.
         gamma: H-infinity attenuation level (must be GARE-feasible at ``(A, B)``).
         D: disturbance input matrix ``[state_dim, n_w]``; defaults to ``B``.
+        linearize_backend: Jacobian engine forwarded to
+            :func:`~pits_mras.utils.linearization.linearize_dynamics`. ``"jacrev"``
+            (default, unchanged) for pure ``torch.func`` callables; ``"autograd"``
+            for callables that use ``torch.autograd.grad`` internally (e.g. a
+            ``PITNN`` one-step adapter).
         **kwargs: forwarded verbatim to :func:`hinf_minmax_train` (e.g.
             ``n_iters``, ``batch_size``, ``seed``).
 
@@ -384,7 +392,7 @@ def hinf_minmax_from_dynamics(
         operating point is an ADR-level design decision and is the caller's
         responsibility — wrap such a model in a one-step adapter first.
     """
-    A_t, B_t = linearize_dynamics(dynamics_fn, x0, u0)
+    A_t, B_t = linearize_dynamics(dynamics_fn, x0, u0, backend=linearize_backend)
     A = A_t.detach().cpu().numpy().astype(np.float64)
     B = B_t.detach().cpu().numpy().astype(np.float64)
 
@@ -392,3 +400,199 @@ def hinf_minmax_from_dynamics(
     metrics["A"] = A
     metrics["B"] = B
     return metrics
+
+
+def pitnn_one_step(
+    pitnn: PITNN,
+    *,
+    history: Optional[Tensor] = None,
+) -> Callable[[Tensor, Tensor], Tensor]:
+    r"""Collapse a sequence ``PITNN`` into a one-step ``f(x, u) -> xdot`` adapter.
+
+    ``PITNN.forward`` is a SEQUENCE model: it consumes a history window (state +
+    control + error sequences of shape ``[batch, T, dim]``) plus the current
+    state/control/error, and its port-Hamiltonian decoder returns the
+    instantaneous state derivative ``f_hat`` of shape ``[batch, output_dim]``
+    where ``output_dim == 2 * n_q`` (the canonical ``[q, p]`` block). The neural
+    H-infinity min-max loop and :func:`~pits_mras.utils.linearization.linearize_dynamics`
+    instead need a one-step ``f(x, u) -> xdot`` on a SINGLE (unbatched) state.
+
+    Operating-point / history convention (the ADR-level design decision)
+    --------------------------------------------------------------------
+    The returned ``f`` holds a FIXED operating-point CONTEXT and varies ONLY the
+    current state ``x`` and control ``u``:
+
+    * **State** ``x`` has dimension ``state_dim = output_dim = 2 * n_q`` -- the
+      canonical ``[q, p]`` block that the decoder actually reads (the only part of
+      the plant state that affects ``f_hat``), and exactly the dimension of the
+      returned derivative, so ``A = df/dx`` is square ``[state_dim, state_dim]``.
+    * ``x`` is placed BOTH as ``x_p_curr`` (the decoder's current state) AND as
+      the ``[q, p]`` channels of the LATEST entry of the history window. The
+      remaining ``input_dim - 2*n_q`` plant channels (if any) and all earlier
+      window rows come from the FIXED ``history`` (held constant); they form the
+      operating-point context that the LSTM encoder + attention condition on.
+    * **Control** ``u`` (dim ``control_dim`` = the wired ``n_q``) is placed as
+      ``u_curr`` and as the corresponding channels of the latest control-history
+      entry.
+    * The current/history tracking error is held at ZERO (the linearization is
+      about the tracking operating point ``e = 0``; the error only feeds the
+      attention gate, not the derivative directly).
+
+    ``f`` returns the decoder ``f_hat`` for the single sample, squeezed to
+    ``[state_dim]``. It is built FUNCTIONALLY (out-of-place ``cat``/``stack``, no
+    buffer mutation) and runs UNDER grad (not ``no_grad``), so
+    ``torch.func.jacrev`` / ``torch.autograd`` flow through it and
+    :func:`linearize_dynamics` works.
+
+    Args:
+        pitnn: a constructed :class:`~pits_mras.models.pitnn.PITNN`. Read-only
+            here -- no parameters are updated; ``pitnn`` is just evaluated.
+        history: optional FIXED operating-point window of shape
+            ``[T, input_dim]`` (state/control history; the same tensor seeds both
+            the state and control history windows). ``None`` (default) uses a
+            single zero step ``T = 1`` -- the simplest neutral operating point.
+
+    Returns:
+        A callable ``f(x, u) -> xdot`` mapping a single state ``x``
+        ``[state_dim]`` and control ``u`` ``[control_dim]`` to ``xdot``
+        ``[state_dim]`` (``= 2 * n_q``), suitable for
+        :func:`linearize_dynamics` and hence :func:`hinf_minmax_from_dynamics`.
+
+    Note:
+        A learned PITNN is a NONLINEAR model, so this is a FIRST-ORDER (tangent)
+        linearization about ``(x, u, e=0)``; it is not a clean LTI system and
+        oracle (GARE ``P*``) recovery is NOT expected -- the honest verification
+        is finiteness/shape/differentiability/end-to-end runnability.
+    """
+    n_q = pitnn.n_q
+    state_dim = 2 * n_q
+    input_dim = pitnn.input_dim
+    output_dim = pitnn.output_dim
+    e_dim = output_dim  # error dim wired to output dim (see PITNN.__init__)
+    control_dim = n_q  # wired control dim (momentum channel)
+
+    if input_dim < state_dim:
+        raise ValueError(
+            f"PITNN input_dim ({input_dim}) < 2*n_q ({state_dim}); the [q, p] "
+            "block does not fit in the plant-state vector."
+        )
+
+    # Resolve the fixed operating-point window [T, input_dim] (default: one zero step).
+    if history is None:
+        hist = torch.zeros(1, input_dim, dtype=pitnn.mu_x.dtype, device=pitnn.mu_x.device)
+    else:
+        if history.dim() != 2 or history.shape[1] != input_dim:
+            raise ValueError(
+                f"history must have shape [T, input_dim={input_dim}]; got "
+                f"{tuple(history.shape)}."
+            )
+        hist = history.to(dtype=pitnn.mu_x.dtype, device=pitnn.mu_x.device)
+    T = hist.shape[0]
+    ref_dtype = hist.dtype
+    ref_device = hist.device
+
+    # Fixed "tail" of the plant-state vector beyond the [q, p] block (channels
+    # 2*n_q .. input_dim), taken from the last history row -- the operating-point
+    # context for those non-canonical channels.
+    tail_dim = input_dim - state_dim
+
+    def f(x: Tensor, u: Tensor) -> Tensor:
+        x = x.to(dtype=ref_dtype, device=ref_device)
+        u = u.to(dtype=ref_dtype, device=ref_device)
+
+        # Current plant state x_p_curr [1, input_dim]: [q, p] = x, tail = fixed.
+        if tail_dim > 0:
+            tail = hist[-1, state_dim:]
+            x_full = torch.cat([x, tail], dim=0)  # [input_dim]
+        else:
+            x_full = x
+        x_p_curr = x_full.unsqueeze(0)  # [1, input_dim]
+
+        # Current control u_curr [1, control_dim].
+        u_curr = u.unsqueeze(0)  # [1, control_dim]
+
+        # State history [1, T, input_dim]: fixed window, but the LATEST row's
+        # [q, p] channels are overwritten with the current x (functionally).
+        if T > 1:
+            x_hist = torch.cat(
+                [hist[:-1].unsqueeze(0), x_full.unsqueeze(0).unsqueeze(0)], dim=1
+            )  # [1, T, input_dim]
+        else:
+            x_hist = x_full.unsqueeze(0).unsqueeze(0)  # [1, 1, input_dim]
+
+        # Control history [1, T, input_dim]: fixed window with the latest row's
+        # leading control_dim channels set to the current u (rest = fixed tail).
+        u_last_tail = hist[-1, control_dim:]  # [input_dim - control_dim]
+        u_last = torch.cat([u, u_last_tail], dim=0)  # [input_dim]
+        if T > 1:
+            u_hist = torch.cat(
+                [hist[:-1].unsqueeze(0), u_last.unsqueeze(0).unsqueeze(0)], dim=1
+            )  # [1, T, input_dim]
+        else:
+            u_hist = u_last.unsqueeze(0).unsqueeze(0)  # [1, 1, input_dim]
+
+        # Tracking error pinned at the operating point e = 0.
+        e_curr = torch.zeros(1, e_dim, dtype=ref_dtype, device=ref_device)
+        e_hist = torch.zeros(1, T, e_dim, dtype=ref_dtype, device=ref_device)
+
+        out = pitnn(x_hist, u_hist, x_p_curr, u_curr, e_curr, e_hist)
+        return out["f_hat"].squeeze(0)  # [output_dim] == [2*n_q] == [state_dim]
+
+    _ = control_dim  # documented contract; control_dim == n_q by wiring.
+    return f
+
+
+def hinf_minmax_from_pitnn(
+    pitnn: PITNN,
+    x0: Tensor,
+    u0: Tensor,
+    Q: np.ndarray,
+    R: np.ndarray,
+    gamma: float,
+    *,
+    history: Optional[Tensor] = None,
+    D: Optional[np.ndarray] = None,
+    **kwargs: object,
+) -> dict[str, object]:
+    r"""Run the H-infinity min-max loop on a sequence ``PITNN`` (the capstone wiring).
+
+    Thin convenience wrapper that builds a one-step ``f(x, u)`` adapter from
+    ``pitnn`` via :func:`pitnn_one_step` (fixed operating-point ``history``;
+    varies the current ``[q, p]`` state and control) and forwards it to the
+    EXISTING :func:`hinf_minmax_from_dynamics`. The min-max logic is NOT
+    duplicated -- this only collapses the sequence model into the one-step
+    contract that the bridge already expects.
+
+    See :func:`pitnn_one_step` for the operating-point / history convention and
+    the state dimension (``state_dim = 2 * n_q == output_dim``).
+
+    Args:
+        pitnn: a constructed :class:`~pits_mras.models.pitnn.PITNN`.
+        x0: operating-point state ``[2*n_q]`` (the canonical ``[q, p]`` block).
+        u0: operating-point control ``[control_dim]`` (``= n_q`` by wiring).
+        Q, R: cost matrices on the (linearized) state ``[2*n_q]`` and control.
+        gamma: H-infinity attenuation level (must be GARE-feasible at the
+            linearized ``(A, B)``).
+        history: optional FIXED operating-point window ``[T, input_dim]`` passed
+            to :func:`pitnn_one_step`.
+        D: disturbance input matrix ``[2*n_q, n_w]``; defaults to ``B``.
+        **kwargs: forwarded verbatim to :func:`hinf_minmax_train` via
+            :func:`hinf_minmax_from_dynamics` (e.g. ``n_iters``, ``seed``).
+
+    Returns:
+        The :func:`hinf_minmax_from_dynamics` metrics dict, including the
+        extracted linear model under keys ``"A"`` / ``"B"``.
+
+    Note:
+        A learned PITNN is nonlinear; the linearization is first-order about
+        ``(x0, u0, e=0)`` and oracle (GARE ``P*``) recovery is NOT expected (an
+        untrained / non-LTI model). Finiteness, shapes, and end-to-end
+        runnability are the honest verification.
+    """
+    f = pitnn_one_step(pitnn, history=history)
+    # The port-Hamiltonian decoder differentiates a learned Hamiltonian via
+    # torch.autograd.grad inside its forward pass, which torch.func.jacrev
+    # forbids; the "autograd" backend (classic double-backward) composes with it.
+    return hinf_minmax_from_dynamics(
+        f, x0, u0, Q, R, gamma, D=D, linearize_backend="autograd", **kwargs
+    )
