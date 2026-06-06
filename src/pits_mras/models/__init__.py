@@ -17,7 +17,7 @@ from pits_mras.models.generic import GFINNDecoder
 from pits_mras.models.koopman import KoopmanLiftingModel, koopman_loss
 from pits_mras.models.pitnn import PITNN
 from pits_mras.models.sac import GaussianPolicy, TwinQCritic
-from pits_mras.models.tdmpc import MPPIPlanner, WorldModel
+from pits_mras.models.tdmpc import LatentModel, MPPIPlanner, WorldModel
 
 __all__ = [
     "PhysicsInformedAttention",
@@ -36,4 +36,5 @@ __all__ = [
     "TwinQCritic",
     "WorldModel",
     "MPPIPlanner",
+    "LatentModel",
 ]

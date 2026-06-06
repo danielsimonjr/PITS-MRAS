@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tooling
+
+- **`create-dependency-graph` no longer stamps version/date into its reports.** The
+  generated `DEPENDENCY_GRAPH.md` / `TEST_COVERAGE.md` / `unused-analysis.md` and the
+  JSON/YAML no longer carry `**Version**`/`**Last Updated**`/`**Generated**`/
+  `lastUpdated`/`generatedAt`/`v`/`d` fields — so the architecture reports are
+  version/date-free snapshots (matching the narrative docs) and fully reproducible
+  (no per-day churn). The tool still reads the project name; version/date live in the
+  CHANGELOG.
+
+### Fixed
+
+- **`LatentModel` (TD-MPC2 planner interface) is now re-exported** from
+  `pits_mras.models`. It was a public `Protocol` used only as an internal type
+  annotation, so the dependency graph (correctly) flagged it as an unused export;
+  re-exporting it makes the typed contract importable for custom world models and
+  restores a truthful **0 unused exports**. (The prior "0 unused" in v0.7.0/v0.8.0
+  notes was a carried-forward figure — it had actually been 1 since `LatentModel`
+  was introduced.)
+
 ### Docs
 
 - **Architecture docs de-versioned to read as a present-tense design snapshot.**

@@ -1,11 +1,9 @@
 {
   "metadata": {
     "name": "pits_mras",
-    "version": "0.8.0",
-    "lastUpdated": "2026-06-06",
     "totalFiles": 55,
     "totalModules": 11,
-    "totalExports": 169
+    "totalExports": 170
   },
   "entryPoints": [
     {
@@ -1854,6 +1852,7 @@
             "file": "src/pits_mras/models/tdmpc.py",
             "module": "pits_mras.models.tdmpc",
             "imports": [
+              "LatentModel",
               "MPPIPlanner",
               "WorldModel"
             ],
@@ -1876,7 +1875,8 @@
           "GaussianPolicy",
           "TwinQCritic",
           "WorldModel",
-          "MPPIPlanner"
+          "MPPIPlanner",
+          "LatentModel"
         ],
         "reExported": [
           "NeuralAdversary",
@@ -1893,6 +1893,7 @@
           "PITNN",
           "GaussianPolicy",
           "TwinQCritic",
+          "LatentModel",
           "MPPIPlanner",
           "WorldModel"
         ]
@@ -3401,19 +3402,19 @@
   "statistics": {
     "totalPythonFiles": 55,
     "totalModules": 11,
-    "totalLinesOfCode": 9021,
-    "totalExports": 169,
+    "totalLinesOfCode": 9022,
+    "totalExports": 170,
     "totalClasses": 58,
     "totalInterfaces": 2,
     "totalEnums": 0,
     "totalFunctions": 47,
     "totalTypeGuards": 0,
     "totalConstants": 0,
-    "totalReExports": 62,
+    "totalReExports": 63,
     "totalTypeCheckingImports": 13,
     "runtimeCircularDeps": 0,
     "typeCheckingCircularDeps": 0,
     "unusedFilesCount": 0,
-    "unusedExportsCount": 1
+    "unusedExportsCount": 0
   }
 }

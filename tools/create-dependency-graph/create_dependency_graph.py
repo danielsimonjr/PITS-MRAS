@@ -37,7 +37,6 @@ import os
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import date
 from typing import Dict, List, Optional, Set, Tuple
 
 # Directory names skipped at any depth: VCS, build output, caches, virtualenvs,
@@ -790,8 +789,7 @@ def file_to_json(f: ParsedFile) -> dict:
     return data
 
 
-def generate_json(files, modules, stats, circular, name, version, script_eps) -> dict:
-    today = date.today().isoformat()
+def generate_json(files, modules, stats, circular, name, script_eps) -> dict:
     modules_json: Dict[str, Dict[str, dict]] = {}
     for cat, cat_files in modules.items():
         modules_json[cat] = {p: file_to_json(f) for p, f in cat_files.items()}
@@ -808,8 +806,6 @@ def generate_json(files, modules, stats, circular, name, version, script_eps) ->
     return {
         "metadata": {
             "name": name,
-            "version": version,
-            "lastUpdated": today,
             "totalFiles": stats["totalPythonFiles"],
             "totalModules": stats["totalModules"],
             "totalExports": stats["totalExports"],
@@ -865,12 +861,9 @@ def generate_mermaid(modules, files) -> str:
     return "\n".join(lines)
 
 
-def generate_markdown(files, modules, stats, circular, name, version) -> str:
-    today = date.today().isoformat()
+def generate_markdown(files, modules, stats, circular, name) -> str:
     L: List[str] = []
     L.append(f"# {name} - Dependency Graph")
-    L.append("")
-    L.append(f"**Version**: {version} | **Last Updated**: {today}")
     L.append("")
     L.append(
         "Comprehensive dependency graph of all Python modules, imports, exports, "
@@ -992,17 +985,13 @@ def generate_markdown(files, modules, stats, circular, name, version) -> str:
     for key, lab in labels.items():
         L.append(f"| {lab} | {stats[key]} |")
     L.append("")
-    L.append(f"*Last Updated*: {today}  |  *Version*: {version}")
-    L.append("")
     return "\n".join(L)
 
 
-def generate_compact(files, modules, stats, circular, name, version) -> str:
+def generate_compact(files, modules, stats, circular, name) -> str:
     summary: Dict[str, object] = {
         "m": {
             "n": name,
-            "v": version,
-            "d": date.today().isoformat(),
             "f": stats["totalPythonFiles"],
             "e": stats["totalExports"],
             "re": stats["totalReExports"],
@@ -1057,8 +1046,7 @@ def generate_compact(files, modules, stats, circular, name, version) -> str:
 
 
 def generate_test_coverage_md(cov: dict) -> str:
-    today = date.today().isoformat()
-    L: List[str] = ["# Test Coverage Analysis", "", f"**Generated**: {today}", ""]
+    L: List[str] = ["# Test Coverage Analysis", ""]
     total = len(cov["sourceFiles"])
     tested = len(cov["testedFiles"])
     pct = f"{(tested / total * 100):.1f}" if total else "0"
@@ -1107,7 +1095,6 @@ def generate_test_coverage_json(cov: dict) -> dict:
     tested = len(cov["testedFiles"])
     return {
         "metadata": {
-            "generatedAt": date.today().isoformat(),
             "totalSourceFiles": total,
             "totalTestFiles": len(cov["testFiles"]),
             "testedCount": tested,
@@ -1122,11 +1109,8 @@ def generate_test_coverage_json(cov: dict) -> dict:
 
 
 def generate_unused_md(unused: dict) -> str:
-    today = date.today().isoformat()
     L = [
         "# Unused Files and Exports Analysis",
-        "",
-        f"**Generated**: {today}",
         "",
         "## Summary",
         "",
@@ -1203,7 +1187,7 @@ def run(argv: Optional[List[str]] = None) -> int:
     output_dir = os.path.join(root, "docs", "architecture")
     os.makedirs(output_dir, exist_ok=True)
 
-    name, version, script_eps = read_project_meta(root)
+    name, _version, script_eps = read_project_meta(root)
     source_abs, test_abs = find_py_files(root, exclude)
     all_rel = {os.path.relpath(p, root).replace(os.sep, "/") for p in source_abs + test_abs}
     package_roots = discover_package_roots(root, exclude)
@@ -1225,7 +1209,7 @@ def run(argv: Optional[List[str]] = None) -> int:
     unused = detect_unused(files, test_files, script_eps)
     stats = generate_statistics(files, modules, circular, unused)
 
-    json_obj = generate_json(files, modules, stats, circular, name, version, script_eps)
+    json_obj = generate_json(files, modules, stats, circular, name, script_eps)
     with open(os.path.join(output_dir, "dependency-graph.json"), "w", encoding="utf-8") as fh:
         json.dump(json_obj, fh, indent=2)
     print("Written: docs/architecture/dependency-graph.json")
@@ -1240,12 +1224,12 @@ def run(argv: Optional[List[str]] = None) -> int:
         print("PyYAML not installed; skipping dependency-graph.yaml")
 
     with open(os.path.join(output_dir, "DEPENDENCY_GRAPH.md"), "w", encoding="utf-8") as fh:
-        fh.write(generate_markdown(files, modules, stats, circular, name, version))
+        fh.write(generate_markdown(files, modules, stats, circular, name))
     print("Written: docs/architecture/DEPENDENCY_GRAPH.md")
 
     compact_path = os.path.join(output_dir, "dependency-summary.compact.json")
     with open(compact_path, "w", encoding="utf-8") as fh:
-        fh.write(generate_compact(files, modules, stats, circular, name, version))
+        fh.write(generate_compact(files, modules, stats, circular, name))
     print("Written: docs/architecture/dependency-summary.compact.json")
 
     with open(os.path.join(output_dir, "unused-analysis.md"), "w", encoding="utf-8") as fh:
