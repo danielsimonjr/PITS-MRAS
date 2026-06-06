@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-05
+
+Gap-closure sprint — gap **G8** (MIMO control input). Suite green (317);
+ruff + mypy clean.
+
+### Fixed
+
+- **G8 — MIMO control input generalized in the port-Hamiltonian decoder.** The
+  control term was `f_ctrl = B(x_p)·sum(u)` (a scalar collapse of multi-input
+  control). It is now a true input-matrix product `f_ctrl = B(x_p) @ u`:
+  `B_net` emits `[batch, 2·n_q, control_dim]` and `f_ctrl = bmm(B, u)`. `control_dim`
+  is threaded into `PortHamiltonianDecoder` (default 1) and wired from `PITNN`.
+  **`control_dim=1` is exactly preserved** (mathematically identical to the old
+  path; locked by a characterization test), so the shipped single-input examples
+  are unaffected; multi-coordinate plants now get genuine per-channel control.
+  4 new tests (characterization + MIMO correctness).
+
+### Docs
+
+- Marked the now-stale ARCHITECTURE.md notes resolved: the H∞ neural min-max loop
+  (shipped v0.5.0) and gap G8 (this release).
+
 ## [0.5.0] - 2026-06-05
 
 **H∞ neural adversarial min-max training loop** (ROADMAP #1) — the headline new

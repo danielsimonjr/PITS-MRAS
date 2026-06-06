@@ -106,7 +106,7 @@ def test_attention_regularization_loss_is_scalar() -> None:
 def test_decoder_forward_shapes() -> None:
     torch.manual_seed(0)
     n_q, c_dim = 2, 2
-    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q)
+    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q, control_dim=c_dim)
     batch = 6
     q = torch.randn(batch, n_q)
     p = torch.randn(batch, n_q)
@@ -134,7 +134,7 @@ def test_port_hamiltonian_energy_residual_vanishes() -> None:
     """
     torch.manual_seed(0)
     n_q = 2
-    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q)
+    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q, control_dim=n_q)
     with torch.no_grad():
         dec.W_corr.weight.zero_()
         dec.W_corr.bias.zero_()
@@ -152,7 +152,7 @@ def test_decoder_backward_runs() -> None:
     """loss.backward() must run without an in-place-modification autograd error."""
     torch.manual_seed(0)
     n_q, c_dim = 2, 2
-    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q)
+    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q, control_dim=c_dim)
     batch = 6
     q = torch.randn(batch, n_q)
     p = torch.randn(batch, n_q)
@@ -165,6 +165,128 @@ def test_decoder_backward_runs() -> None:
     grads = [pm.grad for pm in dec.parameters() if pm.grad is not None]
     assert len(grads) > 0
     assert all(torch.isfinite(g).all() for g in grads)
+
+
+# --------------------------------------------------------------------------- #
+# G8: generalized MIMO control input  f_ctrl = B(x_p) @ u.
+# --------------------------------------------------------------------------- #
+def test_decoder_control_dim1_matches_old_scalar_formula() -> None:
+    """Characterization: at control_dim=1 the generalized B(x_p) @ u reduces
+    EXACTLY to the pre-G8 single-input form B_val * u.sum(dim=-1, keepdim=True).
+
+    At control_dim=1 the B_net head width is 2*n_q (== old layout), so for a
+    fixed seed B_net produces the identical [batch, 2*n_q] output. The old code
+    multiplied that by u.sum() (a no-op for a 1-column u). We recompute that
+    reference inline from B_net and require bit-tight equality with the f_ctrl
+    embedded in f_hat (isolated by zeroing every other dynamics channel).
+    """
+    torch.manual_seed(0)
+    n_q = 3
+    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q, control_dim=1)
+    # Head width must be unchanged from the old single-input layout.
+    assert dec.B_net[-1].out_features == 2 * n_q
+    batch = 7
+    q = torch.randn(batch, n_q)
+    p = torch.randn(batch, n_q)
+    q_dot = torch.randn(batch, n_q)
+    u = torch.randn(batch, 1)
+    c_t = torch.randn(batch, 8)
+
+    # Reference: OLD formula f_ctrl = B_val * u.sum(dim=-1, keepdim=True).
+    with torch.no_grad():
+        B_val = dec.B_net(torch.cat([q, p], dim=-1))  # [batch, 2*n_q]
+        f_ctrl_old = B_val * u.sum(dim=-1, keepdim=True)  # [batch, 2*n_q]
+
+    # Isolate f_ctrl inside the model: zero the H, dissipation, and correction
+    # channels so f_hat == f_ctrl. With H == 0, grad_H == 0 -> f_cons, f_diss = 0.
+    with torch.no_grad():
+        for layer in dec.H_net.net:
+            if isinstance(layer, torch.nn.Linear):
+                layer.weight.zero_()
+                layer.bias.zero_()
+        dec.W_corr.weight.zero_()
+        dec.W_corr.bias.zero_()
+    f_hat, _, _, _ = dec(q, p, q_dot, u, c_t)
+    assert torch.allclose(f_hat, f_ctrl_old, atol=1e-6)
+
+
+def test_decoder_mimo_control_equals_bmm() -> None:
+    """MIMO: f_ctrl == bmm(B_mat, u) exactly, read from the model's own B_net."""
+    torch.manual_seed(1)
+    n_q, c_dim = 2, 3
+    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q, control_dim=c_dim)
+    assert dec.B_net[-1].out_features == 2 * n_q * c_dim
+    batch = 5
+    q = torch.randn(batch, n_q)
+    p = torch.randn(batch, n_q)
+    q_dot = torch.randn(batch, n_q)
+    u = torch.randn(batch, c_dim)
+    c_t = torch.randn(batch, 8)
+
+    # Zero everything but the control channel so f_hat == f_ctrl.
+    with torch.no_grad():
+        for layer in dec.H_net.net:
+            if isinstance(layer, torch.nn.Linear):
+                layer.weight.zero_()
+                layer.bias.zero_()
+        dec.W_corr.weight.zero_()
+        dec.W_corr.bias.zero_()
+        B_mat = dec.B_net(torch.cat([q, p], dim=-1)).view(batch, 2 * n_q, c_dim)
+        f_ctrl_ref = torch.bmm(B_mat, u.unsqueeze(-1)).squeeze(-1)
+    f_hat, _, _, _ = dec(q, p, q_dot, u, c_t)
+    assert torch.allclose(f_hat, f_ctrl_ref, atol=1e-6)
+
+
+def test_decoder_mimo_columns_act_independently() -> None:
+    """The columns of B act independently: u=[1,0] vs u=[0,1] give DIFFERENT,
+    column-specific f_ctrl (not the scalar-sum collapse, which would be equal).
+    """
+    torch.manual_seed(2)
+    n_q, c_dim = 2, 2
+    dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q, control_dim=c_dim)
+    batch = 4
+    q = torch.randn(batch, n_q)
+    p = torch.randn(batch, n_q)
+    q_dot = torch.randn(batch, n_q)
+    c_t = torch.randn(batch, 8)
+    with torch.no_grad():
+        for layer in dec.H_net.net:
+            if isinstance(layer, torch.nn.Linear):
+                layer.weight.zero_()
+                layer.bias.zero_()
+        dec.W_corr.weight.zero_()
+        dec.W_corr.bias.zero_()
+        B_mat = dec.B_net(torch.cat([q, p], dim=-1)).view(batch, 2 * n_q, c_dim)
+
+    u_e0 = torch.tensor([[1.0, 0.0]]).expand(batch, c_dim)
+    u_e1 = torch.tensor([[0.0, 1.0]]).expand(batch, c_dim)
+    f0, _, _, _ = dec(q, p, q_dot, u_e0, c_t)
+    f1, _, _, _ = dec(q, p, q_dot, u_e1, c_t)
+    # Each selects the corresponding column of B.
+    assert torch.allclose(f0, B_mat[:, :, 0], atol=1e-6)
+    assert torch.allclose(f1, B_mat[:, :, 1], atol=1e-6)
+    # The columns are genuinely distinct -> the scalar-sum collapse (which would
+    # make f0 == f1 for any unit input) is gone.
+    assert not torch.allclose(f0, f1, atol=1e-4)
+
+
+def test_decoder_control_dim_shapes() -> None:
+    """f_ctrl/f_hat shape is [batch, 2*n_q] for control_dim in {1, 2, 3}."""
+    n_q = 2
+    batch = 6
+    for c_dim in (1, 2, 3):
+        torch.manual_seed(c_dim)
+        dec = PortHamiltonianDecoder(n_q=n_q, context_dim=8, output_dim=2 * n_q, control_dim=c_dim)
+        q = torch.randn(batch, n_q)
+        p = torch.randn(batch, n_q)
+        q_dot = torch.randn(batch, n_q)
+        u = torch.randn(batch, c_dim)
+        c_t = torch.randn(batch, 8)
+        f_hat, H_val, P_diss, energy_loss = dec(q, p, q_dot, u, c_t)
+        assert f_hat.shape == (batch, 2 * n_q)
+        assert H_val.shape == (batch, 1)
+        assert P_diss.shape == (batch,)
+        assert energy_loss.shape == ()
 
 
 # --------------------------------------------------------------------------- #

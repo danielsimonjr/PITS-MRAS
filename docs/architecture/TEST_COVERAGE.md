@@ -7,7 +7,7 @@
 | Metric | Count |
 |--------|-------|
 | Total Source Files | 46 |
-| Total Test Files | 30 |
+| Total Test Files | 31 |
 | Source Files with Tests | 38 |
 | Source Files without Tests | 8 |
 | Coverage | 82.6% |

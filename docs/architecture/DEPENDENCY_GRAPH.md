@@ -1,6 +1,6 @@
 # pits_mras - Dependency Graph
 
-**Version**: 0.5.0 | **Last Updated**: 2026-06-05
+**Version**: 0.5.1 | **Last Updated**: 2026-06-05
 
 Comprehensive dependency graph of all Python modules, imports, exports, functions, classes, and constants in the codebase.
 
@@ -1134,7 +1134,7 @@ graph TD
 |----------|-------|
 | Total Python Files | 46 |
 | Total Modules | 10 |
-| Total Lines of Code | 7314 |
+| Total Lines of Code | 7332 |
 | Total Public Exports | 144 |
 | Total Re-exports | 51 |
 | Total Classes | 50 |
@@ -1149,4 +1149,4 @@ graph TD
 | Potentially Unused Files | 0 |
 | Potentially Unused Exports | 0 |
 
-*Last Updated*: 2026-06-05  |  *Version*: 0.5.0
+*Last Updated*: 2026-06-05  |  *Version*: 0.5.1

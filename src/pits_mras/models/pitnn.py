@@ -79,6 +79,9 @@ class PITNN(nn.Module):
         )
 
         # -- Port-Hamiltonian decoder --
+        # Control enters the canonical port-Hamiltonian system through the
+        # momentum channel, so the wired control_dim == n_q (matches the
+        # attention module and u_curr above).
         self.decoder = PortHamiltonianDecoder(
             n_q=phys_cfg.n_generalized_coords,
             context_dim=net_cfg.hidden_dim,
@@ -86,6 +89,7 @@ class PITNN(nn.Module):
             hamiltonian_hidden=phys_cfg.hamiltonian_hidden,
             dissipation_hidden=phys_cfg.dissipation_hidden,
             use_position_dependent_J=phys_cfg.use_position_dependent_J,
+            control_dim=phys_cfg.n_generalized_coords,
         )
 
     def update_normalization(self, x_data: Tensor) -> None:

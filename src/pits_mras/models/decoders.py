@@ -114,9 +114,11 @@ class PortHamiltonianDecoder(nn.Module):
         hamiltonian_hidden: int = 64,
         dissipation_hidden: int = 32,
         use_position_dependent_J: bool = False,
+        control_dim: int = 1,  # dimension of the control input u (MIMO, G8)
     ) -> None:
         super().__init__()
         self.n_q = n_q
+        self.control_dim = control_dim
         self.use_position_dependent_J = use_position_dependent_J
         self.H_net = HamiltonianNet(n_q, hamiltonian_hidden)
         self.L_net = DissipationNet(n_q, dissipation_hidden)
@@ -133,11 +135,15 @@ class PortHamiltonianDecoder(nn.Module):
             J_canon[:n_q, n_q:] = torch.eye(n_q)
             J_canon[n_q:, :n_q] = -torch.eye(n_q)
             self.register_buffer("J_canonical", J_canon)
-        # Input matrix B (state-dependent, small MLP).
+        # Input matrix B(x_p) (state-dependent, small MLP). MIMO-general (G8):
+        # emits a flattened input matrix of shape [batch, 2*n_q * control_dim],
+        # reshaped to [batch, 2*n_q, control_dim] in forward(). At control_dim=1
+        # the head width is 2*n_q -- identical to the pre-G8 single-input layout,
+        # so weights/initialization (and thus the computation) are preserved.
         self.B_net = nn.Sequential(
             nn.Linear(2 * n_q, 32),
             nn.Tanh(),
-            nn.Linear(32, 2 * n_q),
+            nn.Linear(32, 2 * n_q * control_dim),
         )
         # Temporal correction from the attention context.
         self.W_corr = nn.Linear(context_dim, output_dim)
@@ -199,10 +205,18 @@ class PortHamiltonianDecoder(nn.Module):
         f_diss_p = -(R_theta @ grad_H_p.unsqueeze(-1)).squeeze(-1)  # [batch, n_q]
         f_diss = torch.cat([torch.zeros_like(q), f_diss_p], dim=-1)
 
-        # 5. Control input: f_ctrl = B(x_p) u (MIMO-simplified per IP §5.2 / G8).
-        B_val = self.B_net(torch.cat([q, p], dim=-1))  # [batch, 2*n_q]
-        u_scalar = u.sum(dim=-1, keepdim=True)
-        f_ctrl = B_val * u_scalar  # [batch, 2*n_q]
+        # 5. Control input: f_ctrl = B(x_p) @ u (true MIMO input matrix, IP §5.2 /
+        #    G8). B_net emits a flattened [batch, 2*n_q * control_dim] which is
+        #    reshaped to the input matrix B_mat = [batch, 2*n_q, control_dim], then
+        #    contracted with u = [batch, control_dim] via a batched matmul:
+        #    f_ctrl = B_mat @ u -> [batch, 2*n_q]. At control_dim=1 this reduces
+        #    exactly to the old single-input form B_val * u (since u has a single
+        #    column, its sum equals itself).
+        batch = q.shape[0]
+        B_mat = self.B_net(torch.cat([q, p], dim=-1)).view(
+            batch, 2 * self.n_q, self.control_dim
+        )  # [batch, 2*n_q, control_dim]
+        f_ctrl = torch.bmm(B_mat, u.unsqueeze(-1)).squeeze(-1)  # [batch, 2*n_q]
 
         # 6. Temporal correction from the attention context.
         f_corr = self.W_corr(c_t)  # [batch, 2*n_q]
@@ -213,7 +227,7 @@ class PortHamiltonianDecoder(nn.Module):
         # 8. Energy-loss terms for the physics loss L_physics. Dissipated power
         #    uses the SAME velocity channel (dH/dp) as f_diss, so that
         #    P_diss == -grad_H . f_diss and the residual cancels analytically.
-        P_control = (B_val * u_scalar * grad_H).sum(dim=-1)  # [batch]
+        P_control = (f_ctrl * grad_H).sum(dim=-1)  # [batch]
         P_diss = (grad_H_p.unsqueeze(1) @ R_theta @ grad_H_p.unsqueeze(-1)).reshape(
             -1
         )  # [batch]  (dH/dp)^T R (dH/dp) >= 0

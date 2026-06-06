@@ -2,7 +2,7 @@
   "metadata": {
     "generatedAt": "2026-06-05",
     "totalSourceFiles": 46,
-    "totalTestFiles": 30,
+    "totalTestFiles": 31,
     "testedCount": 38,
     "untestedCount": 8,
     "coveragePercent": "82.6"
@@ -286,6 +286,7 @@
   },
   "testToSourceMap": {
     "tests/__init__.py": [],
+    "tests/conftest.py": [],
     "tests/test_adaptive_weighting.py": [
       "src/pits_mras/losses/adaptive_weighting.py"
     ],

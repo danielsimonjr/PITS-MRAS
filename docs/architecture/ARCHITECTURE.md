@@ -81,7 +81,7 @@ projection → MRAS controller (costate-head feedback) → CLF-CBF safety filter
 plant**. The dependency graph reports **0 circular dependencies** and **0 unused
 files / exports**.
 
-Key statistics (graph-generated): 46 files · 10 modules · ~7,314 LOC · 144
+Key statistics (graph-generated): 46 files · 10 modules · ~7,332 LOC · 144
 public exports (51 re-exported through barrels) · 50 classes · 1 ABC
 (`PhysicsConstraints`) · 42 functions · 10 `TYPE_CHECKING`-guarded imports.
 
@@ -263,7 +263,7 @@ certificates, generalized Lyapunov)" as sound but higher-complexity.
 | Identity 8 — HJB Residual Loss | Connection 8 | 0=ℓ(e,u*)+∇_eV̂·(A_m e+B u*+f_corr); add as PINN-style residual. | Higher complexity | `losses/hjb.py` | `[IP PAGE 5; BP PAGE 7]` |
 | (port-Hamiltonian storage = value) | Connection 2 | H_θ is a storage/value function; passivity = L2-gain. | Rigorous | `models/decoders.py`, `utils/hamiltonian.py` | `[BP PAGE 4; IP PAGE 13]` |
 | (SAC entropy ↔ R-matrix) | Connection 5 | SAC temperature α ≡ control-penalty R⁻¹; entropy bonus = excitation. | Rigorous | **No dedicated module** (see G1). PE/excitation surfaced via `utils/pe_monitor.py` + attention entropy reg. | `[BP PAGE 5; IP PAGE 14]` |
-| (H∞ two-player game) | Connection 7 | H∞ robust control = zero-sum game; add disturbance/adversary head. | Rigorous | **Analytic core built in v0.4.5** (see G1): `solve_gare` (GARE) + `AdversaryHead` (`w*=γ⁻²DᵀPe`). Neural min-max training loop still pending (v0.5.0). | `[BP PAGE 6]` |
+| (H∞ two-player game) | Connection 7 | H∞ robust control = zero-sum game; add disturbance/adversary head. | Rigorous | **Analytic core built in v0.4.5** (see G1): `solve_gare` (GARE) + `AdversaryHead` (`w*=γ⁻²DᵀPe`). **Neural min-max training loop shipped in v0.5.0** (`NeuralAdversary` + `hinf_minmax_train`, `training/hinf_minmax.py`; recovers the GARE oracle). | `[BP PAGE 6]` |
 | (TD-MPC2 latent planning) | Connection 9 | PITNN is a learned world model → latent MPC + terminal value head. | Higher complexity | **No dedicated module** (see G1). | `[BP PAGE 8]` |
 | (Neural / generalized Lyapunov) | Connection 10 | keep V=eᵀPe backbone; add learned residual V=eᵀPe+φ_NN(e) only for nonlinear regime. | Higher complexity | optional `nonlinear_residual` flag in `QuadraticCritic` | `[BP PAGE 9; IP PAGE 22]` |
 
@@ -607,14 +607,14 @@ Library usage explicitly referenced:
 | ID | Gap | Where |
 |---|---|---|
 | **G0** | **No single verbatim "§2 target tree" exists in the source.** The plan's §2 is "Updated Dependencies." Paths are scattered inline as "Create `src/...`" across §4–§12. The tree in this doc's §2 was assembled from those inline directives and cited per-path. The orchestrator must rely on that assembled list, not a literal source block. | `[IP PAGE 2, §2]` |
-| **G1** | **[PARTLY RESOLVED v0.4.5]** The Blueprint's "disturbance/adversary head" (H∞, Connection 7) originally had no concrete module (the plan built critic/costate/CBF). v0.4.5 added the **analytic H∞ core**: `solve_gare` (`utils/lyapunov.py`) + `AdversaryHead` (`models/critic.py`, `w*=γ⁻²DᵀPe`, by construction). So the "middle head" now exists alongside costate. Remaining: the neural adversarial **min-max training loop** (v0.5.0), and Connection 5 (SAC/entropy) / Connection 9 (TD-MPC2) still have no dedicated modules. | `[BP PAGE 1,6] vs [IP §5,§7]` |
+| **G1** | **[PARTLY RESOLVED v0.4.5]** The Blueprint's "disturbance/adversary head" (H∞, Connection 7) originally had no concrete module (the plan built critic/costate/CBF). v0.4.5 added the **analytic H∞ core**: `solve_gare` (`utils/lyapunov.py`) + `AdversaryHead` (`models/critic.py`, `w*=γ⁻²DᵀPe`, by construction). So the "middle head" now exists alongside costate. **[RESOLVED v0.5.0]** the neural adversarial **min-max training loop** (`NeuralAdversary` + `hinf_minmax_train`). Remaining: Connection 5 (SAC/entropy) / Connection 9 (TD-MPC2) still have no dedicated modules. | `[BP PAGE 1,6] vs [IP §5,§7]` |
 | **G2** | **setup.py / requirements.txt conflict** between current scaffold (`pits-mras`, v1.0.0, no `control`/`isort`) and the plan (`pits_mras`, v0.1.0, adds `control`, `torchvision`, `pytest-cov`, `isort`; "Replace entirely"). Scaffolder must decide whether to overwrite. | `[IP PAGES 2–3, §2]` |
 | **G3** | **`control>=0.9.4` is listed as a dependency** ("Riccati, Lyapunov solvers") but the actual `lyapunov.py` code in the plan uses **scipy** (`solve_continuous_lyapunov`/`solve_continuous_are`), not `control`. The `control` dependency may be unused as written. | `[IP PAGE 2 vs PAGES 10–12]` |
 | **G4** | **`docs/PITS-MRAS — Physics-Informed...md` (1,543 lines) is cited as the "source of truth for the existing design"** and referenced for "Algorithm 1/2/3", `L_physics §2.2`, etc. — but that file was **not provided** to this task. Several losses (`physics.py` PDE operator, `temporal.py`, `stability.py`) are described only by reference to it. Their exact formulas live there, unseen here. | `[IP PAGE 1, §0]` |
 | **G5** | **`cotrain.py` references "line 52 of the existing algorithm"** and "Algorithm 3" as a pre-existing object to extend, but only the *additions* are given as code; the base co-training loop body is described prose-only. | `[IP PAGE 39, §8.2]` |
 | **G6** | **`pretrain.py` exports `pretrain_pitnn` and `cotrain.py` exports `cotraining_loop`** (per `__init__.py`), but §8.1/§8.2 describe stage logic without giving those functions' full signatures/return types. | `[IP PAGES 6,38–40]` |
 | **G7** | **Dataset / trajectory data source** for pretraining and the standalone IRL trainer is referenced ("trajectory data", "fixed dataset of trajectories", "demonstration data") but its **format, generation, and loader are not specified**; there is **no `data/` module** in the layout. | `[IP PAGES 38,40]` |
-| **G8** | **MIMO control input** is flagged incomplete in the decoder: `f_ctrl = B_val * u.sum(...)` is annotated "simplified; generalize for MIMO." | `[IP PAGE 21, §5.2]` |
+| **G8** | **[RESOLVED v0.5.1]** MIMO control input was simplified in the decoder (`f_ctrl = B_val * u.sum(...)`). Now a proper input-matrix product `f_ctrl = B(x_p) @ u` (`B_net` emits `[batch, 2*n_q, control_dim]`, `bmm` with `u`); `control_dim=1` exactly preserved. | `[IP PAGE 21, §5.2]` |
 | **G9** | **`examples/` vs README:** the repo scaffold has `examples/README.md`; the plan defines three example scripts but does not mention a `train_pendulum.py`/`evaluate_tracking.py` (those were a misread from the digest, not in the source). The real examples are robotic_manipulator / autonomous_vehicle / building_hvac. | `[IP PAGE 43, §10]` |
 
 ---
