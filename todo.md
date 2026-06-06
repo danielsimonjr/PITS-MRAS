@@ -17,23 +17,15 @@ release sections further down is DONE.
 None blocking — all gates green (suite 380, ruff + mypy clean, 0 circular / 0
 unused), CI green at v0.8.0. Genuine follow-ons, in rough priority order:
 
-1. **`docs/architecture/COMPONENTS.md` detailed catalog is stale** (doc debt).
-   Its per-module sections (§3 `utils`, §5 `models`, §7 `controllers`, §8
-   `training`) and the missing `data/` section omit ALL of the modules added in
-   the two sprints: `models/{adversary,koopman,sac,tdmpc,generic}.py`,
-   `utils/{diagnostics,uq,linearization}.py`, `losses/adaptive_weighting.py`,
-   `controllers/koopman_control.py`, `training/{hinf_minmax,sac,tdmpc}.py`,
-   `data/trajectory.py`. The OVERVIEW/ARCHITECTURE summary tables were kept in
-   sync, but COMPONENTS.md's per-module *body* was not. Sweep it to cover the new
-   files (grounded against source), version/date-free per the doc-style rule.
-2. **Wire the full sequence-`PITNN` into the H∞ min-max loop** (feature). The
+1. **Wire the full sequence-`PITNN` into the H∞ min-max loop** (feature). The
    building blocks exist (`linearize_dynamics` + `hinf_minmax_from_dynamics`,
    `KoopmanLQRController`), but collapsing `PITNN.forward`'s history window into a
    one-step `f(x,u)` (operating-point / history handling) is an ADR-level design
    choice — needs its own brainstorm.
-3. **`[Unreleased]` CHANGELOG entries** (architecture-doc de-version, CDG
-   de-version, `LatentModel` re-export) have no tagged release home yet — fine to
-   roll into the next release, or cut a patch tag. Decision only; no code work.
+2. **`[Unreleased]` CHANGELOG entries** (architecture-doc de-version, CDG
+   de-version, `LatentModel` re-export, COMPONENTS.md catalog sweep) have no tagged
+   release home yet — fine to roll into the next release, or cut a patch tag.
+   Decision only; no code work.
 
 Deferred / not auto-implementable (need their own brainstorm/design — see ROADMAP
 §3): the **aspirational bucket** — multi-agent, hierarchical PITS-MRAS, GPU/TPU
@@ -92,8 +84,14 @@ support, monitoring dashboard.
 > (TD-MPC2 planner Protocol) from `pits_mras.models`, restoring a truthful 0
 > unused exports (the v0.7.0/v0.8.0 "0 unused" had been a carried-forward figure;
 > it was actually 1). Standing rule saved to memory `design-docs-no-version-date`.
-> **Caveat:** this synced the OVERVIEW/ARCHITECTURE summary tables but NOT
-> COMPONENTS.md's per-module body — see Open item 1.
+> **Caveat (now resolved):** this synced the OVERVIEW/ARCHITECTURE summary tables
+> but not COMPONENTS.md's per-module body — sweep completed 2026-06-06 (below).
+
+> **2026-06-06 — COMPONENTS.md detailed catalog sweep DONE.** Extended the
+> per-module sections (§3 `utils`, §5 `models`, §6 `losses`, §7 `controllers`,
+> §8 `training`) with all 12 modules added across the two sprints and added a new
+> §9 `data/` section — grounded against source docstrings, present-tense and
+> version/date-free. Closes the doc-debt formerly tracked as Open item 1.
 
 ## Done
 

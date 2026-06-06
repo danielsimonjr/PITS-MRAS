@@ -135,18 +135,24 @@ submodules directly.
 
 | File | Key functions / classes | Responsibility |
 |---|---|---|
-| `lyapunov.py` | `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `check_hurwitz`, `lyapunov_derivative`, `quadratic_basis` | "The mathematical engine for all P." SciPy-backed Lyapunov/Riccati solvers (Identity 1 foundation). |
+| `lyapunov.py` | `solve_lyapunov`, `kleinman_iteration`, `solve_care`, `solve_gare`, `check_hurwitz`, `differentiable_care`, `differentiable_gare`, `lyapunov_derivative`, `quadratic_basis`, `pack_symmetric`, `unpack_symmetric` | "The mathematical engine for all P." SciPy-backed Lyapunov/Riccati/H∞-game solvers plus their differentiable (implicit-function-theorem) variants and the symmetric-pack basis (Identity 1 foundation). |
 | `hamiltonian.py` | `make_skew_symmetric`, `make_positive_definite`, `port_hamiltonian_energy_loss`, `hamiltonian_positivity_loss` | Port-Hamiltonian structure helpers (Connection 2: storage = value). |
 | `pe_monitor.py` | `PEMonitor` | Persistence-of-excitation monitor for IRL/ADP convergence. |
+| `diagnostics.py` | `energy_drift`, `max_energy_drift`, `valid_prediction_time`, `rollout_jacobian_spectral_radius` | Long-horizon rollout-stability + conservation-drift diagnostics (pure `torch`). |
+| `uq.py` | `DeepEnsemble`, `split_conformal_quantile`, `conformal_interval`, `AdaptiveConformalInference` | Uncertainty quantification: epistemic (ensemble spread) + distribution-free conformal coverage. |
+| `linearization.py` | `linearize_dynamics` | First-order (Jacobian) linearization of a dynamics callable `f(x,u)` at an operating point. |
 | `__init__.py` | (none) | Docstring-only package init. |
 
 **`lyapunov.py` function detail:**
 - `solve_lyapunov(A_m, Q)` — solves `A_mᵀP + PA_m = −Q` for `P≻0`; raises `ValueError` if `P` is not positive definite (i.e. `A_m` not Hurwitz).
 - `kleinman_iteration(A,B,Q,R,…)` — Kleinman's 1968 policy iteration: alternates policy evaluation (closed-loop Lyapunov solve) and policy improvement `K ← R⁻¹BᵀP`; returns `(P_star, K_star)`.
 - `solve_care(A,B,Q,R)` — solves the CARE directly via `scipy.linalg.solve_continuous_are`; returns `(P_star, K_star)`.
+- `solve_gare(A,B,Q,R,gamma,D=None)` — solves the H∞ Game ARE `AᵀP+PA+Q−P(BR⁻¹Bᵀ−γ⁻²DDᵀ)P=0` via the Hamiltonian-Schur method (no iteration); returns `(P, K, L)` — the stabilizing `P`, robust gain `K=R⁻¹BᵀP`, and worst-case disturbance gain `L=γ⁻²DᵀP`. Raises `ValueError` when `gamma` is infeasible (no proper stable subspace / `P` not PD / worst-case loop not Hurwitz). `D` defaults to `B`.
 - `check_hurwitz(A)` — `True` if all eigenvalues of `A` have negative real parts.
+- `differentiable_care(A,B,Q,R)` / `differentiable_gare(A,B,Q,R,gamma,D=None)` — `torch.autograd.Function`-wrapped CARE/GARE solves: the forward solve runs under `torch.no_grad` via the scipy-backed direct solvers, while the backward differentiates the Riccati *residual* `F(P,θ)=0` implicitly so gradients flow back to `A,B,Q,R` (and `D` for the GARE). `gamma` is a non-differentiable scalar; `Q`/`R` are symmetrized internally.
 - `lyapunov_derivative(e,P,A_m,B,u)` — analytic `V̇ = 2eᵀP(A_m e + Bu)`.
 - `quadratic_basis(e)` — upper-triangular Kronecker basis `[e1², e1·e2, …, en²]` so a linear critic represents `V̂ = eᵀP̂e` exactly.
+- `pack_symmetric(P)` / `unpack_symmetric(vec,n)` — the single source of truth for the basis convention: pack a symmetric `[n,n]` matrix into the row-major upper-triangular coefficient vector (diagonal coeff = `P[i,i]`, cross-term coeff = `P[i,j]+P[j,i]`) so `eᵀPe = φ(e)ᵀpack(P)`, and its inverse (off-diagonals split symmetrically).
 
 **`hamiltonian.py` function detail:** `make_skew_symmetric` returns
 `(raw−rawᵀ)/2` (guarantees `J=−Jᵀ`); `make_positive_definite` returns
@@ -157,6 +163,33 @@ residual `‖dH/dt − P_control + P_diss‖²`; `hamiltonian_positivity_loss` i
 **`PEMonitor`** tracks the min eigenvalue of the regressor Gram matrix over a
 sliding window (`update`, `is_pe_satisfied`) and emits probing noise
 (`get_probing_noise`) when PE is not met.
+
+**`diagnostics.py` function detail:** `energy_drift(quantity, relative=True)`
+returns the per-timestep drift of a nominally conserved series (e.g. `H(t)`)
+versus its first sample — `q_t−q_0`, or `(q_t−q_0)/(|q_0|+eps)` when relative —
+with `drift[...,0]==0` by construction; `max_energy_drift` is its worst-case
+absolute excursion over the time axis. `valid_prediction_time(pred, truth,
+threshold, dt)` returns the VPT — `t*·dt` where `t*` is the first step whose
+normalized L2 error exceeds `threshold` (else the full `(T−1)·dt` horizon).
+`rollout_jacobian_spectral_radius(step_fn, x)` computes the one-step Jacobian via
+`torch.autograd.functional.jacobian` and returns its spectral radius `ρ(J)` — the
+local error-amplification factor (`ρ>1` ⇒ geometric error growth / instability).
+
+**`uq.py` detail:** `DeepEnsemble` wraps `K` independent member callables and
+exposes `predict_all` (stacked `[K,batch,d]`) and `mean_and_std` (the population
+std is the epistemic-uncertainty estimate). `split_conformal_quantile(scores,
+alpha)` returns the finite-sample (`n+1`-corrected) split-conformal half-width
+giving ≥`1−alpha` marginal coverage (`+inf` when `alpha` is too small for the
+calibration size); `conformal_interval(pred, q)` forms the symmetric interval
+`(pred−q, pred+q)`. `AdaptiveConformalInference` is the online (Gibbs & Candès)
+update `α_{t+1}=α_t+γ(α*−err_t)` that tracks a running miscoverage level
+(`current_alpha`, `update(covered)`), clamped to `[0,1]`.
+
+**`linearization.py` detail:** `linearize_dynamics(dynamics_fn, x0, u0)` returns
+the tangent linear model `(A, B)` — `A=∂f/∂x`, `B=∂f/∂u` at `(x0,u0)` — via
+`torch.func.jacrev` (`argnums=0`/`1`), detached on the dtype/device of `x0`. It
+is exact for affine `f` and a local first-order approximation otherwise; it
+validates the Jacobian shapes and requires single (unbatched) `x`/`u` inputs.
 
 **Dependencies:** no internal dependencies. **Imported by:**
 `models/critic.py` (`quadratic_basis`), `models/decoders.py` (all four
@@ -203,7 +236,12 @@ critic/costate, PITNN." Phase 2. Re-exports the six core model classes;
 | `pitnn.py` | `PITNN` | Top-level dynamics model (Algorithm 1): embed → causal LSTM → attention → port-Hamiltonian decoder. |
 | `pcml.py` | `SoftPCMLLoss`, `TaylorNeighborhoodApproximation`, `KKTProjectionLayer`, `PCMLModule` | Physics-Constrained ML: soft penalty (Patel et al. 2022) and hard KKT projection (DAE-HardNet). |
 | `lagrangian_head.py` | `LagrangianMultiplierHead` | Predicts KKT warm-start multipliers `lambda_hat` from the attention context (PCML Addendum §2.3). |
-| `__init__.py` | re-exports six classes | Subpackage public surface. |
+| `adversary.py` | `NeuralAdversary` | Learned worst-case-disturbance policy `w=π_w(e)` (Tanh-MLP); the independent-learner counterpart to the analytic `AdversaryHead`, trained by ascent in the min-max loop. |
+| `koopman.py` | `KoopmanLiftingModel`, `koopman_loss` | Deep Koopman lifting model (Lusch et al. 2018, with control): encoder → exactly-linear latent dynamics → decoder, plus the reconstruction/linearity/prediction training losses. |
+| `sac.py` | `GaussianPolicy`, `TwinQCritic` | Soft Actor-Critic networks: tanh-squashed diagonal-Gaussian stochastic actor + twin (clipped double-Q) critic. |
+| `tdmpc.py` | `WorldModel`, `MPPIPlanner`, `LatentModel` | TD-MPC2 latent world model (encoder/dynamics/reward/value/Q heads) + sampling-based MPPI/CEM latent planner; `LatentModel` is the structural `Protocol` the planner consumes. |
+| `generic.py` | `GFINNDecoder` | GENERIC/GFINN thermodynamic decoder enforcing skew `L`, PSD `M`, and the degeneracy conditions by construction (first + second laws hold structurally). |
+| `__init__.py` | re-exports the model classes | Subpackage public surface. |
 
 **Class detail:**
 - `PhysicsInformedAttention` — temporal attention (scaled dot-product over LSTM states), physical attention (learned map over `[x_p, x_p_dot, u]`), error-driven attention (cosine similarity between current and past tracking errors).
@@ -217,8 +255,19 @@ critic/costate, PITNN." Phase 2. Re-exports the six core model classes;
 - `TaylorNeighborhoodApproximation` — multi-point neighborhood approximation converting differential operators into algebraic variables `d` for the KKT projection (DAE-HardNet Eq. 9).
 - `KKTProjectionLayer` — differentiable Newton projection onto the DAE constraint manifold (min-distance problem with Fischer-Burmeister complementarity).
 - `PCMLModule` — wraps a backbone prediction, returning the constrained prediction + PCML loss, switching from soft to hard mode once the data loss drops below `eta` (`update_activation`).
+- `NeuralAdversary` — a plain Tanh-MLP mapping the tracking error `e` to a disturbance `w`; the output layer is linear (no squashing) so the loop can recover the linear analytic policy `w*(e)=L*e` in the LTI regime, and its output weights are initialized small so the adversary starts as a weak perturbation. Additive counterpart to `AdversaryHead` (which it leaves untouched as oracle/warm-start).
+- `KoopmanLiftingModel` — learnable `encode` + exactly-linear `latent_step` `z_{k+1}=z_k A_zᵀ + u_k B_zᵀ` (no bias/nonlinearity) + `decode`. With `include_state=True` (default) the lift is `z=[x; ψ(x)]` so the decoder is the exact state slice (zero reconstruction error) and warm-starts as the trivial linear-in-state predictor; `forward` is `decode(latent_step(encode(x),u))`. `latent_matrices()` returns `(A_z, B_z)` — the bridge to the linear core (`solve_care`/`solve_gare`), which it does not call itself.
+- `koopman_loss(model, x, u, x_next, …)` — the three canonical deep-Koopman MSE terms `recon` (reconstruction, zero when `include_state=True`), `lin` (latent linearity `‖g(x_next)−L(g(x),u)‖²`), `pred` (state prediction), plus the weighted `loss`.
+- `GaussianPolicy` — a shared MLP trunk emitting per-dim `mean`/`log_std` (clamped); `sample` draws a reparameterized `a=scale·tanh(mean+std·ε)` and returns the exact squashed-Gaussian `log_prob` (with the tanh change-of-variables and `log(scale)` Jacobian corrections); `mean` is the deterministic greedy action.
+- `TwinQCritic` — two independent Q-networks (clipped double-Q); `forward` returns `(q1,q2)` and `q_min` their elementwise minimum, mitigating value over-estimation.
+- `WorldModel` — TD-MPC2 latent model as ReLU-MLP heads over a shared latent: `encode`, `next` (latent dynamics), `reward`, `value` (terminal `V`), and an optional `Q`; `forward` returns the differentiable `(z_next, reward, value(z_next))`.
+- `MPPIPlanner` — gradient-free (`@torch.no_grad`) sampling-based latent MPC: samples `N` length-`H` action sequences from a per-step diagonal Gaussian, rolls each through the latent model scoring discounted reward + discounted terminal `value`, then re-fits the sampler to the top-`k` elites with MPPI exponential weighting `w_i∝exp((R_i−R_max)/temperature)`; after `iterations` refinements returns the planned first action. `LatentModel` is the `Protocol` (`next`/`reward`/`value`) it accepts.
+- `GFINNDecoder` — learns scalar potentials `E(z)`, `S(z)` (autograd gradients, `create_graph=True`) and parameterizes the skew operator `L(z)=Σ(â_k b̂_kᵀ−b̂_k â_kᵀ)` (projected ⟂ `∇S`) and the PSD friction operator `M(z)=D̂D̂ᵀ` (columns projected ⟂ `∇E`); `forward(z)` returns the GENERIC field `ż=L∇E+M∇S`, so energy conservation (`∇Eᵀż=0`) and entropy production (`∇Sᵀż≥0`) hold by construction.
 
-**Dependencies:** `attention.py` and `lagrangian_head.py` have no internal deps;
+**Dependencies:** `attention.py`, `lagrangian_head.py`, `adversary.py`,
+`sac.py`, `tdmpc.py`, and `generic.py` have no internal deps;
+`koopman.py` has no internal deps (its bridge to `utils.lyapunov` is documented
+but only realized by callers);
 `critic.py` imports `utils.lyapunov.quadratic_basis`; `decoders.py` imports the
 four `utils.hamiltonian` functions; `pcml.py` imports
 `constraints.base.PhysicsConstraints`; `pitnn.py` imports `config`
@@ -241,12 +290,25 @@ its components: physics, temporal, stability, IRL and HJB losses, aggregated by
 | `stability.py` | `LyapunovConstraintLoss`, `ParameterBoundednessLoss`, `ControlEffortLoss`, `MRASStabilityLoss` | Lyapunov-decrease penalty `mean(ReLU(V̇+margin))`, parameter L2 boundedness, quadratic control effort `E[uᵀRu]`, aggregated by `MRASStabilityLoss`. |
 | `irl.py` | `IRLBellmanAccumulator`, `IRLBellmanLoss` | Trapezoidal accumulator of `∫(eᵀQe+uᵀRu)dτ` and the IRL Bellman residual loss `L_IRL = ½·E[δ_IRL²]` (§3.2, Identity 1 — model-free). |
 | `hjb.py` | `HJBResidualLoss`, `LyapunovDecreaseEnforcer` | Hamilton-Jacobi-Bellman residual loss (§3.5, Identity 8) and a tighter `mean(ReLU(∇V̂·f+ℓ+margin))` decrease enforcer. |
+| `adaptive_weighting.py` | `ReLoBRaLo`, `causal_weights` | Cheap, opt-in loss-balancing utilities operating on loss *values* (no extra backward pass): relative loss balancing with random lookback, and causal (temporal-ordering) PINN weights. |
 | `__init__.py` | `TotalLoss` + re-exports | Weighted sum of pre-computed per-component scalar losses. |
 
 **`TotalLoss`** takes a dict mapping component name (subset of `physics,
 temporal, stability, irl, hjb, data, pcml`) to a scalar loss tensor,
 weights each by the matching `LossConfig` attribute, and returns
 `{"loss": total, "loss/physics": …, …}`; missing components are treated as zero.
+
+**`adaptive_weighting.py` detail:** `ReLoBRaLo` (Bischof & Kraus,
+arXiv:2110.09813) is a stateful balancer whose `weights(losses, generator=None)`
+returns per-term weights (each vector summing to `num_losses`) by EMA-combining
+the temperature-scaled softmax of relative-progress ratios with the running
+historical weights, selecting the lookback reference (previous vs initial step)
+via a reproducible Bernoulli draw (supplied generator, else a deterministic
+counter); the first call stores the initial losses and returns all-ones.
+`causal_weights(residuals, eps=1.0)` (Wang, Sankaran & Perdikaris,
+arXiv:2203.07404) returns `w_i=exp(−eps·Σ_{k<i} residual_k)` (detached), so
+`w_0=1` and later weights stay suppressed until the earlier residuals shrink —
+enforcing temporal-order learning.
 
 **Dependencies:** `physics.py`, `temporal.py`, `stability.py` have no internal
 deps. `hjb.py` and `irl.py` import `models.critic.QuadraticCritic`.
@@ -266,6 +328,7 @@ root imports the three classes directly from their files.
 | `reference_models.py` | `LinearReferenceModel` | Hurwitz linear reference model `ẋ_m = A_m x_m + B_m r`. On construction it asserts `A_m` Hurwitz, solves the Lyapunov equation for `P` (policy evaluation), and runs Kleinman iteration for `(P_opt, K_opt)`; `step()` does Euler integration. |
 | `safety.py` | `CLFCBFSafetyFilter` | Closed-form CLF-CBF safety filter (Identity 3): the same `P` serves the CLF (`V=eᵀPe`) and the CBF (`h=c−eᵀPe`); projects nominal control onto the safe half-space without a QP solver. |
 | `mras.py` | `MRASController` | Adaptive controller fusing classical MRAS with the actor-critic upgrade (Identities 1–4). |
+| `koopman_control.py` | `KoopmanLQRController` | LQR controller on Koopman-lifted coordinates: solves the Riccati problem on a frozen model's learned latent dynamics `(A_z, B_z)` and closes the loop on the lifted tracking error. |
 | `__init__.py` | (none) | Docstring-only package init. |
 
 **`MRASController`** control law: `u(t) = u_fb(e) + K_ff·r(t) +
@@ -276,12 +339,24 @@ and adapts thereafter via the learned `P̂`, Identity 4 fusion). The CLF-CBF
 filter (Identity 3) wraps the nominal control. The DPG actor-update half is
 provided by `mras_regressor` (`φ_c=[e,r,x_p]`) and `dpg_actor_step`.
 
+**`KoopmanLQRController`** builds the latent state-cost `Q_z` (with
+`include_state=True` the supplied state-cost `Q` is embedded into the leading
+state block and zero elsewhere; an explicit `q_latent` penalizes the full lifted
+state), reads the frozen model's `latent_matrices()`, and solves
+`P_z, K_z = solve_care(A_z, B_z, Q_z, R)` at construction (registering `Q_z`,
+`P_z`, `K_z` as buffers). `control(x, x_ref)` returns
+`u = −(encode(x)−encode(x_ref)) @ K_zᵀ` — control on the lifted tracking error —
+and `latent_gain()` exposes `K_z`. It is purely additive: it never mutates the
+model or the analytic core.
+
 **Dependencies:** `reference_models.py` imports
 `utils.lyapunov` (`check_hurwitz`, `kleinman_iteration`, `solve_lyapunov`);
 `safety.py` has no internal deps; `mras.py` imports
 `reference_models.LinearReferenceModel`, `safety.CLFCBFSafetyFilter`,
 `models.critic` (`CostateHead`, `QuadraticCritic`), and
-`utils.lyapunov.solve_care`. **Imported by:** `inference/realtime.py`,
+`utils.lyapunov.solve_care`; `koopman_control.py` imports
+`models.koopman.KoopmanLiftingModel` and `utils.lyapunov.solve_care`.
+**Imported by:** `inference/realtime.py`,
 `training/cotrain.py` (type-only), the examples, and the package root.
 
 ---
@@ -296,6 +371,9 @@ trainer." Phase 5. Re-exports the three entry points.
 | `pretrain.py` | `pretrain_pitnn`, `data_weight_schedule`, `temporal_weight_schedule` | Three-stage physics-informed pre-training curriculum (Algorithm 2): Stage 1A physics-only, Stage 1B cosine-anneal the data weight 0.1→1.0, Stage 1C add temporal loss with linear warm-up. A validation guard halves the data weight when the physics residual spikes. |
 | `cotrain.py` | `cotraining_loop` | The closed-loop actor-critic training loop ("the most critical training file", Algorithm 3 extended). Per step: PITNN forward → tracking error + MRAS control → PITNN objective (physics + optional PCML + CBF) on `optimizer_pitnn` (Adam lr=1e-4); then the critic-only updates on a separate `critic_optimizer` (Adam lr=1e-3): an opt-in HJB residual (`lambda_hjb>0`), a guarded positivity regularizer, and the IRL Bellman policy-evaluation step (grad-clip 1.0) + policy-improvement read `K=R⁻¹BᵀP̂`. |
 | `irl_trainer.py` | `train_irl_critic` | Offline batch least-squares critic pre-training (§8.3): recovers `P` from the integral-RL Bellman identity `V(e(t))−V(e(t+T)) = ∫r ds` without knowing the drift; iterates and stops when `‖P̂−P_opt‖_F/‖P_opt‖_F < tol`. |
+| `hinf_minmax.py` | `hji_residual`, `hinf_minmax_train`, `hinf_minmax_from_dynamics` | Neural H∞ adversarial min-max loop: three-network ADP (critic + costate protagonist + neural adversary) solving the HJI game against the analytic GARE oracle, plus the residual and a linearize-then-train bridge for dynamics callables. |
+| `sac.py` | `SACTrainer` | Soft Actor-Critic learner with automatic entropy temperature: owns the policy/twin-critic/target/optimizers and one `update` of the three SAC losses + soft target update. |
+| `tdmpc.py` | `tdmpc_update` | One joint TD-MPC2 world-model gradient step (latent-consistency + reward-prediction + TD value losses) over a transition batch. |
 | `__init__.py` | re-exports three functions | Subpackage public surface. |
 
 > The source design docs pin the schedules and the additions to Algorithm 3 but
@@ -303,17 +381,73 @@ trainer." Phase 5. Re-exports the three entry points.
 > synthetic-trajectory generators, and returned metrics are designed in-repo and
 > run on synthetic data (no external dataset — Gap G7).
 
+**`hinf_minmax.py` detail:** `hji_residual(critic, costate, adversary, e, A, B,
+D, Q, R, gamma)` returns the per-state HJI/game-Bellman residual `ρ(e) = eᵀQe +
+uᵀRu − γ²‖w‖² + ∇V̂·(Ae+Bu+Dw)` with `u` the costate head and `w` the adversary;
+it is differentiable w.r.t. both the critic and the adversary. `hinf_minmax_train`
+co-trains the three networks two-timescale (critic minimizes `E[ρ²]` + a
+positivity penalty; the adversary ascends the value; the protagonist is the
+implicit slow player read off the critic), computing the analytic GARE
+`(P*,K*,L*)` up front as the oracle and returning a metrics dict (per-iter
+`residual`/`value`/`P_dist`/`K_dist`/`adv_dist`, the oracle/learned matrices, and
+the trained modules). `hinf_minmax_from_dynamics(dynamics_fn, x0, u0, …)`
+linearizes any continuous-time `f(x,u)` via `linearize_dynamics` and drives the
+unchanged `hinf_minmax_train` with the extracted `(A, B)` (also returned).
+
+**`SACTrainer`** holds a `GaussianPolicy`, a `TwinQCritic` + frozen target copy,
+a learnable `log_alpha` (temperature, `alpha` property) tuned toward
+`target_entropy=−action_dim`, and three Adam optimizers. `update(batch)` runs the
+entropy-regularized clipped double-Q critic loss, the reparameterized actor loss,
+the temperature loss, and a Polyak soft target update, returning a finite-scalar
+metrics dict.
+
+**`tdmpc_update(model, batch, optimizer, …)`** runs one joint gradient step on a
+`WorldModel` over a `(s,a,r,s',done)` batch: latent-consistency
+`‖next(encode(s),a) − sg[encode(s')]‖²`, reward-prediction MSE, and TD value MSE
+`Q(z,a)` vs `r + γ(1−done)·value(sg[encode(s')])`; returns the per-term and total
+scalar losses.
+
 **Dependencies:** `cotrain.py` imports `losses.hjb.HJBResidualLoss`,
 `losses.irl.IRLBellmanLoss` (runtime) plus `config.PITSMRASConfig`,
 `controllers.mras.MRASController`, `controllers.reference_models`,
 `models.PITNN`, `models.pcml.PCMLModule` (all `TYPE_CHECKING`-only).
 `pretrain.py` and `irl_trainer.py` import `config`/`models`/`controllers`
-symbols as type-only hints. **Imported by:** the package root re-exports
-`pretrain_pitnn` and `cotraining_loop`.
+symbols as type-only hints; `pretrain.py` also imports `data.TrajectoryDataset`
+(type-only) and `data.make_dataloader` (lazily, only when a dataset is passed).
+`hinf_minmax.py` imports `models.adversary.NeuralAdversary`,
+`models.critic` (`CostateHead`, `QuadraticCritic`), `utils.linearization`, and
+`utils.lyapunov.solve_gare`; `sac.py` imports `models.sac` (`GaussianPolicy`,
+`TwinQCritic`); `tdmpc.py` imports `models.tdmpc.WorldModel`. **Imported by:** the
+package root re-exports `pretrain_pitnn` and `cotraining_loop`.
 
 ---
 
-## 9. `inference/` — Real-time closed-loop runtime
+## 9. `data/` — Trajectory dataset, generator, and loader
+
+**Purpose** (from `__init__.py`): "reusable trajectory dataset, generator, and
+loader." Factors the previously-inline synthetic-trajectory plumbing out of the
+training pipelines into a small, **additive and opt-in** surface — importing it
+has no effect on the existing training path unless a caller explicitly threads a
+dataset / loader through `training` (e.g. `pretrain_pitnn(..., dataset=...)`).
+
+| File | Key exports | Responsibility |
+|---|---|---|
+| `trajectory.py` | `TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader` | Windowed `(state, control)` dataset for the PITNN, a seedable forward-Euler synthetic generator, and a `DataLoader` convenience wrapper. |
+| `__init__.py` | re-exports the three symbols | Subpackage public surface. |
+
+**Class / function detail:**
+- `generate_synthetic_trajectories(A_m, B_m, dt, n_trajectories, n_steps, control_dim, …)` — rolls out the *same* linear plant the inline co-training code uses (`ẋ = A_m x + B_m u`, forward Euler), with controls drawn i.i.d. `N(0, control_scale²)` and the initial state `N(0, init_scale²)` from a single seeded generator; returns `(states, controls)` of shape `[n_trajectories, n_steps, *]` (float32).
+- `TrajectoryDataset(states, controls, *, memory_horizon)` — a `torch.utils.data.Dataset` holding one or more trajectories (single `[T, dim]`, batched `[n_traj, T, dim]`, or a list of `[T, dim]`) and yielding the *windowed* samples the PITNN consumes: for each valid current index `i ∈ [W, T−2]` it returns a dict `{state_hist [W, state_dim], control_hist [W, control_dim], state [state_dim], control [control_dim], next_state [state_dim]}`. Requires `T ≥ memory_horizon + 2`.
+- `make_dataloader(dataset, batch_size, *, shuffle=True, drop_last=False, generator=None)` — a thin `DataLoader` wrapper using the default collate, which stacks the per-sample dict fields into the leading-`batch` layout the PITNN expects (`[batch, W, dim]` / `[batch, dim]`).
+
+**Dependencies:** `trajectory.py` has **no internal dependencies** (pure
+`torch` + `torch.utils.data`). **Imported by:** `training/pretrain.py`
+(`TrajectoryDataset` as a type-only hint; `make_dataloader` lazily when a dataset
+is passed) — the opt-in trajectory dataset/loader used by `pretrain_pitnn`.
+
+---
+
+## 10. `inference/` — Real-time closed-loop runtime
 
 **Purpose** (from `__init__.py`): "real-time engine and parallel thread
 architecture." Phase 6. Docstring-only package init.
@@ -341,7 +475,7 @@ three examples.
 
 ---
 
-## 10. `examples/` — Runnable demos
+## 11. `examples/` — Runnable demos
 
 **Purpose:** three CLI entry points (Phase 7) that drive the full PITNN → MRAS →
 CBF stack end-to-end via `RealtimeInferenceEngine`. Each exposes `run` and
@@ -366,7 +500,7 @@ Each example imports `config` (`NetworkConfig`, `PhysicsConfig`,
 
 ---
 
-## 11. Component Interaction — PITNN → PCML → MRASController (+ CBF) at Runtime
+## 12. Component Interaction — PITNN → PCML → MRASController (+ CBF) at Runtime
 
 The runtime composition (grounded in `inference/realtime.py`,
 `controllers/mras.py`, `models/pitnn.py`, and `models/pcml.py`) chains the

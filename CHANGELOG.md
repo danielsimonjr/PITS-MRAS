@@ -29,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Docs
 
+- **`COMPONENTS.md` per-module catalog brought current.** Its detailed sections
+  (`utils`, `models`, `losses`, `controllers`, `training`) omitted every module
+  added in the two feature sprints; extended them — grounded in the source
+  docstrings — to cover `adversary`, `koopman`, `sac`, `tdmpc`, `generic`,
+  `diagnostics`, `uq`, `linearization`, `adaptive_weighting`, `koopman_control`,
+  and the H∞ min-max / SAC / TD-MPC2 trainers, and added a new `data/` section
+  (`TrajectoryDataset`, `generate_synthetic_trajectories`, `make_dataloader`).
+  Present-tense, version/date-free.
 - **Architecture docs de-versioned to read as a present-tense design snapshot.**
   Removed version numbers, dates, and "what changed when" language (e.g. `NEW`,
   `RESOLVED vX`, `shipped in vX`, per-version Status blocks, the resolved-gap rows,
