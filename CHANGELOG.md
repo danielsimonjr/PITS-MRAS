@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Docs
 
+- **Added `CLAUDE.md`** — project guidance for Claude Code / contributors: the gate
+  commands, the pinned-Ruff toolchain, the version/date-free design-doc rule + CDG
+  regen, commit/version cadence, the `data/` gitignore gotcha, and honesty caveats
+  (plants/perf are design targets).
 - **Regenerated the dependency-graph reports and reconciled the living docs to
   them.** Synced drifted counts in `ARCHITECTURE.md` / `OVERVIEW.md` (LOC
   9,253 → 9,251 after the v0.9.0 `setup.py` extras trim; type-checking imports
