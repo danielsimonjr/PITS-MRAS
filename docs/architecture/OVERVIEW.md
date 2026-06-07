@@ -18,7 +18,7 @@ a CLF-CBF-QP safety filter follow with near-zero extra implementation cost. The
 framework includes a **PCML (Physics-Constrained ML)** layer that upgrades physics
 enforcement from soft penalties to hard KKT-projection constraint satisfaction.
 
-**55 source files · 11 modules · 9,253 LOC · 174 exports
+**55 source files · 11 modules · 9,251 LOC · 174 exports
 (65 re-exports) · 58 classes · 2 Protocol/ABC · 49 functions · 0 circular
 dependencies · 0 unused files/exports.**
 *(Source: `dependency-graph.json` → `metadata` + `statistics`.)*
@@ -125,8 +125,10 @@ subpackage's `__init__.py` docstring as recorded in the dependency graph.
 
 ## 3. Entry Points
 
-The graph lists **13 entry points**: the 4 example scripts (CLI), the package +
-6 subpackage `__init__.py` barrels, plus `__init__.py` at the root and `setup.py`.
+The graph lists **15 entry points**: the 5 `examples/` scripts (the 4 CLI demos
+plus `plants.py`), the package root `__init__.py` + the 8 subpackage `__init__.py`
+barrels (`constraints`, `controllers`, `data`, `inference`, `losses`, `models`,
+`training`, `utils`), and `setup.py`.
 
 ### 3.1 Examples (CLI)
 
@@ -176,7 +178,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 |---|---|
 | Total Python files | 55 |
 | Modules | 11 |
-| Total lines of code | 9,253 |
+| Total lines of code | 9,251 |
 | Total exports | 174 |
 | Re-exports (barrel) | 65 |
 | Classes | 58 |
@@ -184,7 +186,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 | Enums | 0 |
 | Functions | 49 |
 | Constants | 0 |
-| Type-checking-only imports | 10 |
+| Type-checking-only imports | 13 |
 | Runtime circular dependencies | 0 |
 | Type-only circular dependencies | 0 |
 | Unused files | 0 |
@@ -193,7 +195,7 @@ All values from `dependency-graph.json` → `statistics` (and `metadata`).
 The single interface/ABC is `PhysicsConstraints` in `constraints/base.py`. The
 65 re-exports are the convenience barrels in the package and subpackage
 `__init__.py` files (`pits_mras`, `constraints`, `losses`, `models`, `training`).
-The 10 type-only imports are `TYPE_CHECKING`-guarded edges (mostly into
+The 13 type-only imports are `TYPE_CHECKING`-guarded edges (mostly into
 `training/cotrain.py`, `training/irl_trainer.py`, `training/pretrain.py`, and
 `inference/realtime.py`) that keep import-time dependencies light.
 

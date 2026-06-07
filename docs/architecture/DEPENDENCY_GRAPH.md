@@ -1335,7 +1335,7 @@ graph TD
 |----------|-------|
 | Total Python Files | 55 |
 | Total Modules | 11 |
-| Total Lines of Code | 9253 |
+| Total Lines of Code | 9251 |
 | Total Public Exports | 174 |
 | Total Re-exports | 65 |
 | Total Classes | 58 |

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs
+
+- **Regenerated the dependency-graph reports and reconciled the living docs to
+  them.** Synced drifted counts in `ARCHITECTURE.md` / `OVERVIEW.md` (LOC
+  9,253 → 9,251 after the v0.9.0 `setup.py` extras trim; type-checking imports
+  10 → 13; entry points 13 → 15) and updated `ROADMAP.md` to v0.9.0 (the
+  sequence-`PITNN` → min-max wiring is shipped, so it is no longer an open
+  follow-on). Historical/point-in-time docs left untouched.
+
 ## [0.9.0] - 2026-06-06
 
 Closes the last open feature follow-on (sequence-`PITNN` → H∞ min-max wiring) and

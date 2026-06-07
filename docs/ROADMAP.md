@@ -15,15 +15,18 @@
 
 ## 1. Status
 
-**v0.8.0 — both sprints complete.** The 2026-06-05 proposal sprint shipped the 10 research
-proposals (§2; v0.4.6 → v0.5.0, headlined by the H∞ neural min-max loop). The 2026-06-06
-gap-closure sprint then closed every remaining gap (§3; v0.5.1 → v0.8.0): MIMO control (G8),
-`data/` loader (G7), Koopman→control + min-max→dynamics integrations, and three new capability
-lines — SAC (v0.6.0), TD-MPC2 (v0.7.0), GENERIC/GFINN (v0.8.0). Gates green: pytest 380/0
-(0 skipped), ruff + mypy clean, dependency graph 55 files / 9,021 LOC / 0 circular / 0 unused.
-The examples run; performance figures in the docs are design targets on illustrative nonlinear
-plants, **not**
-hardware-validated.
+**v0.9.0 — all sprints complete; the control-loop integration is now closed.** The
+2026-06-05 proposal sprint shipped the 10 research proposals (§2; v0.4.6 → v0.5.0, headlined
+by the H∞ neural min-max loop). The 2026-06-06 gap-closure sprint then closed every remaining
+gap (§3; v0.5.1 → v0.8.0): MIMO control (G8), `data/` loader (G7), Koopman→control +
+min-max→dynamics integrations, and three new capability lines — SAC (v0.6.0), TD-MPC2
+(v0.7.0), GENERIC/GFINN (v0.8.0). **v0.9.0** then wired the **full sequence-`PITNN` into the
+H∞ min-max loop**: `pitnn_one_step` collapses a sequence `PITNN` into a one-step `f(x,u)`
+(fixed operating-point history, first-order tangent about `e=0`) and `hinf_minmax_from_pitnn`
+drives the unchanged min-max trainer on the learned plant via the `autograd` linearization
+backend. Gates green: ruff + mypy clean, dependency graph 55 files / 9,251 LOC / 0 circular /
+0 unused. The examples run; performance figures in the docs are design targets on illustrative
+nonlinear plants, **not** hardware-validated.
 
 ---
 
@@ -183,10 +186,13 @@ are candidates, grouped by the three improvement axes.
   path in `pretrain_pitnn`.
 
 ### Remaining open / follow-ons (genuinely not done)
-- **Control-loop integration is partial.** The Koopman→control bridge (`KoopmanLQRController`,
-  v0.5.4) and the min-max→dynamics adapter (`hinf_minmax_from_dynamics`, v0.5.5) exist, but
-  wrapping the **full sequence-`PITNN`** into a one-step `f(x,u)` for the min-max loop (operating
-  point / history handling) is an ADR-level choice left undone.
+> The control-loop integration is now **complete**: the Koopman→control bridge
+> (`KoopmanLQRController`, v0.5.4), the min-max→dynamics adapter
+> (`hinf_minmax_from_dynamics`, v0.5.5), and — as of **v0.9.0** — the full
+> sequence-`PITNN` → one-step `f(x,u)` wrapper for the min-max loop
+> (`pitnn_one_step` + `hinf_minmax_from_pitnn`) are all shipped. The only remaining
+> forward items are aspirational.
+
 - **Aspirational (need their own brainstorm/design — not auto-implementable):** multi-agent,
   hierarchical PITS-MRAS, GPU/TPU support, monitoring dashboard.
 

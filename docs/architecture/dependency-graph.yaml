@@ -2098,7 +2098,7 @@ dependencyGraph:
 statistics:
   totalPythonFiles: 55
   totalModules: 11
-  totalLinesOfCode: 9253
+  totalLinesOfCode: 9251
   totalExports: 174
   totalClasses: 58
   totalInterfaces: 2
