@@ -10,14 +10,14 @@ setup(
     name="pits_mras",
     version="0.9.0",
     author="PITS-MRAS Contributors",
-    author_email="your.email@example.com",
+    author_email="danielsimonjr@yahoo.com",
     description="Physics-Informed Time-Series Model-Reference Adaptive Systems",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/PITS-MRAS",
+    url="https://github.com/danielsimonjr/PITS-MRAS",
     project_urls={
-        "Bug Tracker": "https://github.com/yourusername/PITS-MRAS/issues",
-        "Documentation": "https://github.com/yourusername/PITS-MRAS/tree/main/docs",
+        "Bug Tracker": "https://github.com/danielsimonjr/PITS-MRAS/issues",
+        "Documentation": "https://github.com/danielsimonjr/PITS-MRAS/tree/main/docs",
     },
     classifiers=[
         "Development Status :: 4 - Beta",

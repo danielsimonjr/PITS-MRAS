@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Packaging metadata placeholders in `setup.py`.** Replaced the template
+  `author_email="your.email@example.com"` and the three
+  `github.com/yourusername/PITS-MRAS` URLs (homepage, Bug Tracker, Documentation)
+  with the real owner (`danielsimonjr`) and contact email, so PyPI/sdist metadata
+  points at the actual repository.
+
 ### Docs
 
 - **Added `CLAUDE.md`** — project guidance for Claude Code / contributors: the gate
